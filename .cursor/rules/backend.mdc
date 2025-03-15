@@ -1,0 +1,989 @@
+---
+description: バックエンド実装上の注意事項
+globs: 
+alwaysApply: false
+---
+## バックエンド実装上の注意事項
+
+### クリーンコードと再利用性
+- **適切な抽象化レベルを維持する**: 過度な抽象化は避け、理解しやすく保守しやすいコードを心がけること
+- **DRY原則を適用する**: 同じコードを繰り返し書かず、共通ロジックは再利用可能な関数やクラスに抽出すること
+- **単一責任の原則を守る**: 各モジュールやクラスは一つの責任のみを持つようにし、複数の役割を持たせないこと
+
+### 依存関係管理
+- **依存性注入を活用する**: 直接的な依存関係を避け、依存性注入を使用して結合度を下げること
+- **インターフェースに依存する**: 具体的な実装ではなく、インターフェースに依存するコードを書くこと
+- **循環依存を避ける**: モジュール間の循環依存を作らないよう、依存関係グラフを常に意識すること
+
+### コード構造
+- **関数とクラスを小さく保つ**: 一つの関数やクラスは一つのことだけを行い、20行以内を目安にすること
+- **ネストを浅く保つ**: 条件分岐やループのネストは3レベル以内に抑え、早期リターンを活用すること
+- **コメントよりも自己説明的なコード**: コメントに頼るのではなく、変数名や関数名で意図を明確に表現すること
+
+### エラー処理
+- **例外を適切に使用する**: 例外は本当に例外的な状況でのみ使用し、通常のフロー制御には使用しないこと
+- **エラーメッセージを明確にする**: エラーメッセージは問題の原因と可能な解決策を含む、具体的なものにすること
+- **グローバルエラーハンドラーを実装する**: 未処理の例外を捕捉し、適切なレスポンスを返すグローバルハンドラーを用意すること
+
+### テスト容易性
+- **テスト駆動開発を検討する**: 複雑なロジックはテストファーストで開発し、要件を明確にすること
+- **モックしやすい設計にする**: 外部依存は明確なインターフェースを通じてアクセスし、テスト時にモック可能にすること
+- **テストカバレッジを意識する**: 重要なビジネスロジックは高いテストカバレッジを維持すること
+
+## 1. モノリシック or マイクロサービス
+
+### 選定方針と理由
+
+- **現状はモノリシック構成**:
+  - Next.js（フロント＆バックエンド） + Supabase（DB）を1つのリポジトリ/プロジェクトで管理し、**Vercel** 上で動作させます。
+  - サーバレス環境では「小規模モノリシック」でも十分運用可能、設定が簡単。
+
+- **将来的な拡張**:
+  - コンテンツが大量＆要約処理が大規模になる場合、**Microservices** (AI処理専用サービス等) や別コンテナ分割を検討。
+  - 需要が増えた際には**AI要約処理**を Queue + Worker に切り出す形も想定可。
+
+### メリット/デメリット
+- **メリット**:
+  - コードベースが1つで済み、**初心者でも構成を理解しやすい**。
+  - **Vercel 無料枠**内で管理しやすい。
+- **デメリット**:
+  - 大規模化時、モノリシックがボトルネックになる可能性。
+  - CI/CD や更新が大きくなるとビルド時間が延びる。
+
+---
+
+## 2. サーバレスアーキテクチャ検討
+
+### 対象範囲
+
+- **Next.js** を Vercel 上で Serverless Functions (API Routes) として動かす。
+- Cron Jobs (Vercel) を利用して定期実行。
+- **Supabase** はマネージド PostgreSQL でサーバレスに近い形。
+
+### 導入メリット
+
+- **コストがほぼゼロ** (無料枠内)
+- 運用負荷が少なく、**エンジニアがインフラ構築不要**
+- デプロイとスケールが自動化され、**初心者でも扱いやすい**
+
+### デメリット / 将来検討
+
+- Vercel の無料枠・API 実行回数に制限がある。
+- ステートレスな処理に特化、動画変換などヘビー処理は**有料プラン or Worker化**を検討。
+- AI要約の大規模化時に**外部ジョブキューサービス**との連携が必要になるかも。
+
+---
+
+## 3. レイヤードアーキテクチャ
+
+本システムは小規模モノリシックかつサーバレス環境で動かすため、**シンプルなレイヤー構成**を想定します。
+
+1. **プレゼンテーション層 (UI)**
+   - Next.js のページコンポーネント + Tailwind CSS
+   - フロント側で認証・画面表示・ユーザー操作を受け付け
+
+2. **API/アプリケーション層**
+   - Next.js の API Routes (Serverless Functions) で REST API 的に実装
+   - 要約処理を呼び出すハンドラ、DB CRUD を行うコントローラ的存在
+
+3. **ドメイン/ビジネスロジック層** (将来的に拡張)
+   - 現状はサーバレスAPI内にビジネスロジックを簡易実装
+   - 大規模化した場合、要約ロジックや抽出ロジックをサービスクラス/ドメインクラスで分割
+
+4. **インフラ層**
+   - Supabase (PostgreSQL), AIモデルとの通信, Discord Webhook など
+   - DB接続や外部APIコールはここでまとめるのが望ましい
+
+### ディレクトリ構造
+
+```
+/src
+  ├─ /app                          # Next.jsのApp Routerディレクトリ
+  │   ├─ /page.tsx                 # ダッシュボード画面
+  │   ├─ /sources/page.tsx         # ソース一覧
+  │   ├─ /contents/page.tsx        # コンテンツ一覧
+  │   ├─ /contents/[id]/page.tsx   # コンテンツ詳細
+  │   ├─ /settings/
+  │   │   ├─ /ai-models/page.tsx   # AIモデル設定
+  │   │   ├─ /notifications/page.tsx # 通知設定
+  │   │   └─ /...
+  │   └─ /api                      # APIルートディレクトリ
+  │       ├─ /auth/                # 認証関連API
+  │       │   ├─ /login/route.ts
+  │       │   ├─ /register/route.ts
+  │       │   └─ /...
+  │       ├─ /admin/               # 管理者用API
+  │       │   ├─ /sources/route.ts
+  │       │   ├─ /contents/route.ts
+  │       │   └─ /...
+  │       └─ /user/                # 一般ユーザー用API
+  │           ├─ /contents/route.ts
+  │           └─ /...
+  │
+  ├─ /components                   # 再利用可能なコンポーネント
+  │   ├─ /ui                       # 基本UIコンポーネント
+  │   │   ├─ /Button               # ボタンコンポーネント
+  │   │   │   ├─ Button.tsx        # 基本ボタン
+  │   │   │   ├─ IconButton.tsx    # アイコン付きボタン
+  │   │   │   ├─ ButtonGroup.tsx   # ボタングループ
+  │   │   │   └─ index.ts          # エクスポート
+  │   │   ├─ /Card                 # カードコンポーネント
+  │   │   │   ├─ Card.tsx          # 基本カード
+  │   │   │   ├─ CardHeader.tsx    # カードヘッダー
+  │   │   │   ├─ CardContent.tsx   # カードコンテンツ
+  │   │   │   ├─ CardFooter.tsx    # カードフッター
+  │   │   │   └─ index.ts          # エクスポート
+  │   │   └─ /...
+  │   │
+  │   ├─ /layout                   # レイアウト関連コンポーネント
+  │   │   ├─ /Header               # ヘッダーコンポーネント
+  │   │   │   ├─ Header.tsx        # 基本ヘッダー
+  │   │   │   ├─ HeaderNav.tsx     # ヘッダーナビゲーション
+  │   │   │   └─ index.ts          # エクスポート
+  │   │   └─ /...
+  │   │
+  │   ├─ /features                 # 機能別コンポーネント
+  │   │   ├─ /sources              # ソース関連コンポーネント
+  │   │   │   ├─ SourceList.tsx    # ソース一覧
+  │   │   │   ├─ SourceCard.tsx    # ソースカード
+  │   │   │   ├─ SourceForm.tsx    # ソース追加/編集フォーム
+  │   │   │   └─ index.ts          # エクスポート
+  │   │   └─ /...
+  │   │
+  │   └─ /patterns                 # 再利用可能なパターン
+  │       ├─ /DataTable            # データテーブルパターン
+  │       │   ├─ DataTable.tsx     # 基本テーブル
+  │       │   ├─ TableHeader.tsx   # テーブルヘッダー
+  │       │   └─ index.ts          # エクスポート
+  │       └─ /...
+  │
+  ├─ /hooks                        # カスタムフック
+  │   ├─ /api                      # API関連フック
+  │   │   ├─ /admin                # 管理者API用フック
+  │   │   │   ├─ useSources.ts     # ソース管理フック
+  │   │   │   ├─ useContents.ts    # コンテンツ管理フック
+  │   │   │   └─ ...
+  │   │   ├─ /user                 # ユーザーAPI用フック
+  │   │   │   ├─ useContents.ts    # コンテンツ取得フック
+  │   │   │   └─ ...
+  │   │   └─ /auth                 # 認証API用フック
+  │   │       ├─ useAuth.ts        # 認証フック
+  │   │       └─ ...
+  │   └─ /ui                       # UI関連フック
+  │       ├─ useModal.ts           # モーダル制御フック
+  │       └─ ...
+  │
+  ├─ /lib                          # ユーティリティと共通関数
+  │   ├─ /api                      # API関連ユーティリティ
+  │   │   ├─ client.ts             # APIクライアント
+  │   │   ├─ endpoints.ts          # APIエンドポイント定義
+  │   │   └─ /handlers             # API処理ハンドラー
+  │   │       ├─ /admin            # 管理者API処理
+  │   │       │   ├─ sources.ts    # ソース関連処理
+  │   │       │   └─ ...
+  │   │       ├─ /user             # ユーザーAPI処理
+  │   │       │   ├─ contents.ts   # コンテンツ関連処理
+  │   │       │   └─ ...
+  │   │       └─ /auth             # 認証API処理
+  │   │           ├─ auth.ts       # 認証処理
+  │   │           └─ ...
+  │   ├─ /db.ts                    # Supabase接続
+  │   └─ /utils                    # 汎用ユーティリティ
+  │       ├─ date.ts               # 日付操作関数
+  │       └─ ...
+  │
+  ├─ /types                        # 型定義
+  │   ├─ /api                      # API関連の型
+  │   │   ├─ /admin                # 管理者API型
+  │   │   │   ├─ sources.ts        # ソース関連型
+  │   │   │   ├─ contents.ts       # コンテンツ関連型
+  │   │   │   └─ ...
+  │   │   ├─ /user                 # ユーザーAPI型
+  │   │   │   ├─ contents.ts       # コンテンツ関連型
+  │   │   │   └─ ...
+  │   │   └─ /auth                 # 認証API型
+  │   │       ├─ auth.ts           # 認証関連型
+  │   │       └─ ...
+  │   └─ /models                   # モデル関連の型
+  │       ├─ source.ts             # ソースモデル
+  │       ├─ content.ts            # コンテンツモデル
+  │       └─ ...
+  │
+  ├─ /services                     # ビジネスロジック
+  │   ├─ /summarize                # 要約関連ロジック
+  │   │   ├─ index.ts              # エクスポート
+  │   │   ├─ processor.ts          # 要約処理
+  │   │   └─ ...
+  │   └─ /notification             # 通知関連ロジック
+  │       ├─ index.ts              # エクスポート
+  │       ├─ discord.ts            # Discord通知
+  │       └─ ...
+  │
+  ├─ /context                      # Reactコンテキスト
+  │   ├─ AuthContext.tsx           # 認証コンテキスト
+  │   └─ ...
+  │
+  └─ /config                       # 設定ファイル
+      ├─ constants.ts              # 定数定義
+      ├─ routes.ts                 # ルート定義
+      └─ ...
+```
+
+---
+
+## 4. 例外処理・エラーハンドリング
+
+### 4.1 例外対応の層
+
+- **API Route** (Next.js):
+  - try-catch で外部APIやDB操作失敗時にログを出力
+  - ユーザーには HTTP ステータスコード + JSON メッセージを返す
+- **UI層**:
+  - エラー時にわかりやすいメッセージ or トースト通知を表示
+  - 重要なエラーの場合は管理画面にログ
+
+### 4.2 ログ出力
+
+- **Supabase** に簡易的なログテーブルを作成 or `notifications.metadata` にエラー情報を保存
+- Net new:  メジャーなエラーは**Sentry**などのエラー監視 SaaS (将来導入検討)
+
+### 4.3 ユーザー向けエラー返却
+
+- **API**: JSON 形式 `{"error": "...", "detail": "..."}`
+- **UI**:
+  - Minimal error message(“要約取得に失敗しました。再度お試しください”など)
+  - For dev/ops: Show extended logs if role=admin
+
+## 5. 実装ガイドライン
+
+### 5.1 コーディング規約
+
+1. **命名規則**
+   - **ファイル名**: キャメルケース (`contentService.ts`)
+   - **クラス/インターフェース**: パスカルケース (`ContentService`)
+   - **関数/変数**: キャメルケース (`getContentById`)
+   - **定数**: 大文字スネークケース (`MAX_RETRY_COUNT`)
+
+2. **コメント**
+   - 複雑なロジックには必ずコメントを付ける
+   - JSDoc形式でAPI関数にはドキュメントコメントを記述
+
+3. **型定義**
+   - 必ず型定義を行い、`any`型の使用は最小限に抑える
+   - 共通の型は`/types`ディレクトリに定義
+
+### 5.2 エラー処理
+
+1. **例外処理**
+   - 非同期関数では必ず`try-catch`で例外をキャッチする
+   - エラーは適切なレベルで処理し、ユーザーに分かりやすいメッセージを返す
+
+2. **バリデーション**
+   - ユーザー入力は必ずバリデーションを行う
+   - Zodなどのスキーマバリデーションライブラリを使用
+
+### 5.3 テスト
+
+1. **単体テスト**
+   - サービスとリポジトリの主要関数には単体テストを書く
+   - モックを活用して外部依存を分離
+
+2. **統合テスト**
+   - APIエンドポイントの主要フローをテスト
+   - テスト用DBを使用してE2Eテストを実施
+
+# API実装パターン集
+
+> **前提**
+> - このドキュメントは、DigeClipのバックエンドAPI実装における共通パターンを定義します。
+> - 目的は「**同じようなコードを何度も書かなくて済む**」ようにすることです。
+> - 「**どんなエンジニアでも間違うことなく実装できる**」ことを重視しつつ、「**実装が複雑すぎず時間がかからない**」方法を採用します。
+
+---
+
+## 1. 基本的なAPIエンドポイント実装パターン
+
+### 1.1 一覧取得 (GET /api/[role]/[resource])
+
+```typescript
+// /api/user/contents/index.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../lib/utils/middleware';
+import { validate, schemas } from '../../../lib/utils/validation';
+import { contentService } from '../../../lib/services/content/contentService';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // メソッドチェック
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // クエリパラメータのバリデーション
+  const query = await validate(schemas.contentSearch, req.query);
+
+  // サービス呼び出し
+  const { items, total } = await contentService.searchContents(query);
+
+  // レスポンス
+  return res.status(200).json({
+    data: items,
+    meta: {
+      total,
+      page: query.page,
+      limit: query.limit,
+      pages: Math.ceil(total / query.limit)
+    }
+  });
+};
+
+// ミドルウェア適用（認証＋エラーハンドリング）
+export default withApiHandler(handler, { role: 'user' });
+```
+
+### 1.2 詳細取得 (GET /api/[role]/[resource]/[id])
+
+```typescript
+// /api/user/contents/[id].ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../lib/utils/middleware';
+import { contentService } from '../../../lib/services/content/contentService';
+import { errors } from '../../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const { id } = req.query;
+
+  // IDのバリデーション
+  if (!id || typeof id !== 'string') {
+    throw errors.validation({ id: 'IDが不正です' });
+  }
+
+  // メソッドチェック
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // サービス呼び出し
+  const content = await contentService.getContentById(id);
+
+  // 存在チェック
+  if (!content) {
+    throw errors.notFound('コンテンツ');
+  }
+
+  // レスポンス
+  return res.status(200).json({ data: content });
+};
+
+export default withApiHandler(handler, { role: 'user' });
+```
+
+### 1.3 新規作成 (POST /api/[role]/[resource])
+
+```typescript
+// /api/admin/sources/index.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../lib/utils/middleware';
+import { validate, schemas } from '../../../lib/utils/validation';
+import { sourceService } from '../../../lib/services/source/sourceService';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // メソッドチェック
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // リクエストボディのバリデーション
+  const data = await validate(schemas.sourceCreate, req.body);
+
+  // サービス呼び出し
+  const source = await sourceService.createSource(data);
+
+  // レスポンス
+  return res.status(201).json({ data: source });
+};
+
+export default withApiHandler(handler, { role: 'admin' });
+```
+
+### 1.4 更新 (PUT /api/[role]/[resource]/[id])
+
+```typescript
+// /api/admin/sources/[id].ts (PUT部分)
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../lib/utils/middleware';
+import { validate, schemas } from '../../../lib/utils/validation';
+import { sourceService } from '../../../lib/services/source/sourceService';
+import { errors } from '../../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const { id } = req.query;
+
+  // IDのバリデーション
+  if (!id || typeof id !== 'string') {
+    throw errors.validation({ id: 'IDが不正です' });
+  }
+
+  // メソッドチェック
+  if (req.method !== 'PUT') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // リクエストボディのバリデーション
+  const data = await validate(schemas.sourceUpdate, req.body);
+
+  // 存在チェック
+  const existingSource = await sourceService.getSourceById(id);
+  if (!existingSource) {
+    throw errors.notFound('ソース');
+  }
+
+  // サービス呼び出し
+  const updatedSource = await sourceService.updateSource(id, data);
+
+  // レスポンス
+  return res.status(200).json({ data: updatedSource });
+};
+
+export default withApiHandler(handler, { role: 'admin' });
+```
+
+### 1.5 削除 (DELETE /api/[role]/[resource]/[id])
+
+```typescript
+// /api/admin/sources/[id].ts (DELETE部分)
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../lib/utils/middleware';
+import { sourceService } from '../../../lib/services/source/sourceService';
+import { errors } from '../../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const { id } = req.query;
+
+  // IDのバリデーション
+  if (!id || typeof id !== 'string') {
+    throw errors.validation({ id: 'IDが不正です' });
+  }
+
+  // メソッドチェック
+  if (req.method !== 'DELETE') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // 存在チェック
+  const existingSource = await sourceService.getSourceById(id);
+  if (!existingSource) {
+    throw errors.notFound('ソース');
+  }
+
+  // サービス呼び出し
+  await sourceService.deleteSource(id);
+
+  // レスポンス (204 No Content)
+  return res.status(204).end();
+};
+
+export default withApiHandler(handler, { role: 'admin' });
+```
+
+---
+
+## 2. 複合リソース操作パターン
+
+### 2.1 リレーション取得 (GET /api/[role]/[resource]/[id]/[relation])
+
+```typescript
+// /api/user/contents/[id]/summaries.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../../lib/utils/middleware';
+import { validate, schemas } from '../../../../lib/utils/validation';
+import { contentService } from '../../../../lib/services/content/contentService';
+import { errors } from '../../../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const { id } = req.query;
+
+  // IDのバリデーション
+  if (!id || typeof id !== 'string') {
+    throw errors.validation({ id: 'IDが不正です' });
+  }
+
+  // メソッドチェック
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // 存在チェック
+  const content = await contentService.getContentById(id);
+  if (!content) {
+    throw errors.notFound('コンテンツ');
+  }
+
+  // クエリパラメータのバリデーション
+  const query = await validate(schemas.summarySearch, req.query);
+
+  // サービス呼び出し
+  const summaries = await contentService.getContentSummaries(id, query);
+
+  // レスポンス
+  return res.status(200).json({ data: summaries });
+};
+
+export default withApiHandler(handler, { role: 'user' });
+```
+
+### 2.2 リレーション追加 (POST /api/[role]/[resource]/[id]/[relation])
+
+```typescript
+// /api/user/contents/[id]/tags.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../../lib/utils/middleware';
+import { validate, schemas } from '../../../../lib/utils/validation';
+import { contentService } from '../../../../lib/services/content/contentService';
+import { errors } from '../../../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const { id } = req.query;
+
+  // IDのバリデーション
+  if (!id || typeof id !== 'string') {
+    throw errors.validation({ id: 'IDが不正です' });
+  }
+
+  // メソッドチェック
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // 存在チェック
+  const content = await contentService.getContentById(id);
+  if (!content) {
+    throw errors.notFound('コンテンツ');
+  }
+
+  // リクエストボディのバリデーション
+  const data = await validate(schemas.tagAdd, req.body);
+
+  // サービス呼び出し
+  const updatedContent = await contentService.addTagToContent(id, data.tagId);
+
+  // レスポンス
+  return res.status(200).json({ data: updatedContent });
+};
+
+export default withApiHandler(handler, { role: 'user' });
+```
+
+### 2.3 リレーション削除 (DELETE /api/[role]/[resource]/[id]/[relation]/[relationId])
+
+```typescript
+// /api/user/contents/[id]/tags/[tagId].ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../../../lib/utils/middleware';
+import { contentService } from '../../../../../lib/services/content/contentService';
+import { errors } from '../../../../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const { id, tagId } = req.query;
+
+  // IDのバリデーション
+  if (!id || typeof id !== 'string' || !tagId || typeof tagId !== 'string') {
+    throw errors.validation({
+      id: !id || typeof id !== 'string' ? 'コンテンツIDが不正です' : undefined,
+      tagId: !tagId || typeof tagId !== 'string' ? 'タグIDが不正です' : undefined
+    });
+  }
+
+  // メソッドチェック
+  if (req.method !== 'DELETE') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // 存在チェック
+  const content = await contentService.getContentById(id);
+  if (!content) {
+    throw errors.notFound('コンテンツ');
+  }
+
+  // サービス呼び出し
+  await contentService.removeTagFromContent(id, tagId);
+
+  // レスポンス
+  return res.status(204).end();
+};
+
+export default withApiHandler(handler, { role: 'user' });
+```
+
+---
+
+## 3. 特殊操作パターン
+
+### 3.1 一括操作 (POST /api/[role]/[resource]/batch)
+
+```typescript
+// /api/admin/contents/batch.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../lib/utils/middleware';
+import { validate, schemas } from '../../../lib/utils/validation';
+import { contentService } from '../../../lib/services/content/contentService';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // メソッドチェック
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // リクエストボディのバリデーション
+  const data = await validate(schemas.contentBatchOperation, req.body);
+
+  // 操作タイプに応じた処理
+  let result;
+
+  switch (data.operation) {
+    case 'delete':
+      result = await contentService.batchDelete(data.ids);
+      break;
+    case 'tag':
+      result = await contentService.batchAddTag(data.ids, data.tagId);
+      break;
+    case 'untag':
+      result = await contentService.batchRemoveTag(data.ids, data.tagId);
+      break;
+    default:
+      throw errors.validation({ operation: '不明な操作タイプです' });
+  }
+
+  // レスポンス
+  return res.status(200).json({ data: result });
+};
+
+export default withApiHandler(handler, { role: 'admin' });
+```
+
+### 3.2 アクション実行 (POST /api/[role]/[resource]/[id]/[action])
+
+```typescript
+// /api/admin/contents/[id]/summarize.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../../lib/utils/middleware';
+import { validate, schemas } from '../../../../lib/utils/validation';
+import { contentService } from '../../../../lib/services/content/contentService';
+import { aiService } from '../../../../lib/services/ai/aiService';
+import { errors } from '../../../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const { id } = req.query;
+
+  // IDのバリデーション
+  if (!id || typeof id !== 'string') {
+    throw errors.validation({ id: 'IDが不正です' });
+  }
+
+  // メソッドチェック
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // 存在チェック
+  const content = await contentService.getContentById(id);
+  if (!content) {
+    throw errors.notFound('コンテンツ');
+  }
+
+  // リクエストボディのバリデーション
+  const data = await validate(schemas.summarizeOptions, req.body);
+
+  // サービス呼び出し
+  const summary = await aiService.summarizeContent(id, data.modelId, data.type);
+
+  // レスポンス
+  return res.status(200).json({ data: summary });
+};
+
+export default withApiHandler(handler, { role: 'admin' });
+```
+
+### 3.3 検索 (POST /api/[role]/[resource]/search)
+
+```typescript
+// /api/user/contents/search.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../../lib/utils/middleware';
+import { validate, schemas } from '../../../lib/utils/validation';
+import { contentService } from '../../../lib/services/content/contentService';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // メソッドチェック
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // リクエストボディのバリデーション
+  const searchParams = await validate(schemas.contentAdvancedSearch, req.body);
+
+  // サービス呼び出し
+  const { items, total } = await contentService.advancedSearch(searchParams);
+
+  // レスポンス
+  return res.status(200).json({
+    data: items,
+    meta: {
+      total,
+      page: searchParams.page,
+      limit: searchParams.limit,
+      pages: Math.ceil(total / searchParams.limit)
+    }
+  });
+};
+
+export default withApiHandler(handler, { role: 'user' });
+```
+
+---
+
+## 4. 認証関連パターン
+
+### 4.1 ログイン (POST /api/auth/login)
+
+```typescript
+// /api/auth/login.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withErrorHandling } from '../../lib/utils/middleware';
+import { validate, schemas } from '../../lib/utils/validation';
+import { authService } from '../../lib/services/auth/authService';
+import { errors } from '../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // メソッドチェック
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // リクエストボディのバリデーション
+  const credentials = await validate(schemas.login, req.body);
+
+  // 認証
+  try {
+    const { user, token } = await authService.login(credentials.email, credentials.password);
+
+    // JWTをCookieにセット
+    res.setHeader('Set-Cookie', `auth-token=${token}; Path=/; HttpOnly; SameSite=Strict; ${process.env.NODE_ENV === 'production' ? 'Secure;' : ''} Max-Age=86400`);
+
+    // レスポンス
+    return res.status(200).json({
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        }
+      }
+    });
+  } catch (error) {
+    // 認証エラー
+    return res.status(401).json({
+      error: {
+        code: 'E401',
+        message: 'メールアドレスまたはパスワードが正しくありません'
+      }
+    });
+  }
+};
+
+export default withErrorHandling(handler);
+```
+
+### 4.2 ログアウト (POST /api/auth/logout)
+
+```typescript
+// /api/auth/logout.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../lib/utils/middleware';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // メソッドチェック
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // Cookieを削除
+  res.setHeader('Set-Cookie', 'auth-token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');
+
+  // レスポンス
+  return res.status(200).json({ data: { message: 'ログアウトしました' } });
+};
+
+export default withApiHandler(handler);
+```
+
+### 4.3 ユーザー登録 (POST /api/auth/register)
+
+```typescript
+// /api/auth/register.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withErrorHandling } from '../../lib/utils/middleware';
+import { validate, schemas } from '../../lib/utils/validation';
+import { authService } from '../../lib/services/auth/authService';
+import { errors } from '../../lib/utils/error';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // メソッドチェック
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: { code: 'E405', message: 'Method Not Allowed' } });
+  }
+
+  // リクエストボディのバリデーション
+  const userData = await validate(schemas.register, req.body);
+
+  // メールアドレスの重複チェック
+  const existingUser = await authService.getUserByEmail(userData.email);
+  if (existingUser) {
+    return res.status(400).json({
+      error: {
+        code: 'E400',
+        message: 'このメールアドレスは既に登録されています'
+      }
+    });
+  }
+
+  // ユーザー登録
+  const user = await authService.register(userData);
+
+  // レスポンス
+  return res.status(201).json({
+    data: {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      }
+    }
+  });
+};
+
+export default withErrorHandling(handler);
+```
+
+---
+
+## 5. 定期実行ジョブパターン
+
+### 5.1 コンテンツ取得ジョブ (GET /api/cron/fetch-contents)
+
+```typescript
+// /api/cron/fetch-contents.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../lib/utils/middleware';
+import { sourceService } from '../../lib/services/source/sourceService';
+import { contentService } from '../../lib/services/content/contentService';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // Vercel Cronからの呼び出しのみ許可
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: { code: 'E401', message: '不正なアクセスです' } });
+  }
+
+  // アクティブなソース一覧を取得
+  const sources = await sourceService.getActiveSources();
+
+  // 各ソースから新しいコンテンツを取得
+  const results = await Promise.allSettled(
+    sources.map(async (source) => {
+      try {
+        const newContents = await sourceService.fetchNewContents(source.id);
+
+        // 新しいコンテンツごとに処理
+        for (const content of newContents) {
+          // コンテンツを保存
+          await contentService.createContent({
+            title: content.title,
+            sourceId: source.id,
+            originalUrl: content.url,
+            publishedAt: content.publishedAt,
+            // その他の必要なデータ
+          });
+        }
+
+        return { sourceId: source.id, count: newContents.length };
+      } catch (error) {
+        console.error(`Error fetching contents from source ${source.id}:`, error);
+        return { sourceId: source.id, error: error.message };
+      }
+    })
+  );
+
+  return res.status(200).json({
+    message: 'コンテンツ取得ジョブが完了しました',
+    results
+  });
+};
+
+// 認証不要（Cronからの呼び出し）
+export default withApiHandler(handler);
+```
+
+### 5.2 要約ジョブ (GET /api/cron/summarize)
+
+```typescript
+// /api/cron/summarize.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '../../lib/utils/middleware';
+import { contentService } from '../../lib/services/content/contentService';
+import { aiService } from '../../lib/services/ai/aiService';
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  // Vercel Cronからの呼び出しのみ許可
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: { code: 'E401', message: '不正なアクセスです' } });
+  }
+
+  // 要約が必要なコンテンツを取得
+  const contents = await contentService.getContentsNeedingSummary();
+
+  // 各コンテンツを要約
+  const results = await Promise.allSettled(
+    contents.map(async (content) => {
+      try {
+        // デフォルトAIモデルを取得
+        const defaultModel = await aiService.getDefaultModel();
+
+        // 要約を実行
+        const summary = await aiService.summarizeContent(content.id, defaultModel.id);
+
+        return { contentId: content.id, success: true };
+      } catch (error) {
+        console.error(`Error summarizing content ${content.id}:`, error);
+        return { contentId: content.id, error: error.message };
+      }
+    })
+  );
+
+  return res.status(200).json({
+    message: '要約ジョブが完了しました',
+    results
+  });
+};
+
+// 認証不要（Cronからの呼び出し）
+export default withApiHandler(handler);
+```
+
+---
+
+## 6. まとめ
+
+このドキュメントで紹介した実装パターンを活用することで、以下のメリットが得られます：
+
+1. **コードの一貫性**: 同じパターンで実装することで、コードの可読性と保守性が向上します。
+
+2. **開発効率の向上**: 既存のパターンを再利用することで、新しいAPIエンドポイントを迅速に実装できます。
+
+3. **エラー削減**: 共通のバリデーションやエラーハンドリングを使用することで、バグの発生を減らせます。
+
+4. **学習コスト削減**: 明確なパターンがあることで、新しいエンジニアの学習コストが下がります。
+
+これらのパターンは、DigeClipのバックエンド開発において「**機能追加しやすく、何度も同じようなコードを書かなくていい**」アーキテクチャを実現するための基盤となります。
