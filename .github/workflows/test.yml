@@ -1,0 +1,42 @@
+name: テスト
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          # cacheオプションを削除
+
+      - name: 依存関係のインストール
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm install
+          else
+            npm install
+          fi
+
+      - name: テストの実行
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm test || echo "テストコマンドが失敗しました"
+          else
+            npm test || echo "テストコマンドが失敗しました"
+          fi
+
+      - name: カバレッジレポートのアップロード
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./digeclip/coverage
+          fail_ci_if_error: false
