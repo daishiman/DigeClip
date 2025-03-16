@@ -1,0 +1,80 @@
+repository:
+  # リポジトリの説明
+  description: DigeClip - デジタルコンテンツ管理・要約ツール
+  # トピック
+  topics: nextjs, react, typescript, tailwindcss, vercel, supabase, ai
+  # プライベートかどうか
+  private: false
+  # Wikiを有効にするかどうか
+  has_wiki: true
+  # Projectsを有効にするかどうか
+  has_projects: true
+  # Issuesを有効にするかどうか
+  has_issues: true
+  # ブランチ削除時にPRを自動的にクローズするかどうか
+  delete_branch_on_merge: true
+
+# ラベルの設定
+labels:
+  - name: bug
+    color: d73a4a
+    description: バグ報告
+  - name: enhancement
+    color: a2eeef
+    description: 機能追加・改善
+  - name: documentation
+    color: 0075ca
+    description: ドキュメント関連
+  - name: help wanted
+    color: 008672
+    description: 助けが必要
+  - name: good first issue
+    color: 7057ff
+    description: 初心者向けの課題
+  - name: frontend
+    color: c2e0c6
+    description: フロントエンド関連
+  - name: backend
+    color: fbca04
+    description: バックエンド関連
+  - name: ui
+    color: 0052cc
+    description: UI関連
+  - name: feature
+    color: 5319e7
+    description: 機能実装
+  - name: performance
+    color: ff9900
+    description: パフォーマンス関連
+  - name: accessibility
+    color: 006b75
+    description: アクセシビリティ関連
+  - name: dependencies
+    color: 0366d6
+    description: 依存関係の更新
+  - name: tests
+    color: 0e8a16
+    description: テスト関連
+
+# ブランチ保護ルール
+branches:
+  - name: main
+    protection:
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      required_status_checks:
+        strict: true
+        contexts: ['テスト実行', 'PR自動レビュー', 'PR説明チェック', 'PRタイトルチェック']
+      enforce_admins: false
+      restrictions: null
+  - name: develop
+    protection:
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+      required_status_checks:
+        strict: true
+        contexts: ['テスト実行', 'PR自動レビュー']
+      enforce_admins: false
+      restrictions: null

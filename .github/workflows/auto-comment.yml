@@ -1,0 +1,37 @@
+name: 自動コメント
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  auto-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issueへの自動コメント
+        uses: actions/github-script@v6
+        if: github.event_name == 'issues'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '👋 @${{ github.event.issue.user.login }} さん、Issueを作成いただきありがとうございます！担当者が確認次第、対応いたします。'
+            })
+
+      - name: PRへの自動コメント
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '👍 @${{ github.event.pull_request.user.login }} さん、PRを作成いただきありがとうございます！レビュアーが確認次第、フィードバックいたします。'
+            })
