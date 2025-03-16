@@ -17,11 +17,19 @@ jobs:
 
       - name: 依存関係のインストール
         run: |
+          echo "現在のディレクトリ構造を確認"
+          ls -la
+
           if [ -f "digeclip/package.json" ]; then
             cd digeclip
             npm install
           else
-            npm install
+            if [ -f "package.json" ]; then
+              npm install
+            else
+              echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
+              find . -name "package.json" -type f
+            fi
           fi
 
       - name: テストの実行
