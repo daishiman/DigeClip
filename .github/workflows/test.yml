@@ -14,7 +14,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          # cacheオプションを削除
 
       - name: 依存関係のインストール
         run: |
