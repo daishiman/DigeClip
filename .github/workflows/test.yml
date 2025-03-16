@@ -33,15 +33,41 @@ jobs:
           fi
 
       - name: テストの実行
+        id: run_test
         run: |
+          TEST_SUCCESS=0
           if [ -f "digeclip/package.json" ]; then
             cd digeclip
-            npm test || echo "テストコマンドが失敗しました"
+            if grep -q '"test":' package.json; then
+              npm test && TEST_SUCCESS=1 || echo "テストスクリプトの実行に失敗しました"
+            else
+              echo "警告: package.jsonにテストスクリプトが定義されていません"
+            fi
           else
-            npm test || echo "テストコマンドが失敗しました"
+            if [ -f "package.json" ]; then
+              if grep -q '"test":' package.json; then
+                npm test && TEST_SUCCESS=1 || echo "テストスクリプトの実行に失敗しました"
+              else
+                echo "警告: package.jsonにテストスクリプトが定義されていません"
+              fi
+            else
+              PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+              if [ ! -z "$PKG_DIR" ]; then
+                cd $PKG_DIR
+                if grep -q '"test":' package.json; then
+                  npm test && TEST_SUCCESS=1 || echo "テストスクリプトの実行に失敗しました"
+                else
+                  echo "警告: package.jsonにテストスクリプトが定義されていません"
+                fi
+              else
+                echo "package.jsonが見つからないためテストを実行できません"
+              fi
+            fi
           fi
+          echo "test_success=$TEST_SUCCESS" >> $GITHUB_OUTPUT
 
       - name: カバレッジレポートのアップロード
+        if: steps.run_test.outputs.test_success == '1'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
