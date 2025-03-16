@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: '18'
       - name: 依存関係のインストール
-        run: npm ci
+        run: npm install
       - name: ビルド
         run: npm run build
       - name: Vercelへデプロイ
