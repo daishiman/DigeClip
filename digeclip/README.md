@@ -46,10 +46,6 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 ### インストール
 
 ```bash
-# リポジトリをクローン
-git clone https://github.com/yourusername/digeclip.git
-cd digeclip
-
 # 依存関係をインストール
 npm install
 
@@ -139,18 +135,14 @@ npm run build
 vercel
 ```
 
-## 貢献
+## 学習リソース
 
-1. このリポジトリをフォーク
-2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add some amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
+Next.jsについて詳しく学ぶには、以下のリソースを参照してください：
 
-## ライセンス
-
-このプロジェクトはMITライセンスの下で公開されています。
-
-## 連絡先
-
-プロジェクト管理者: [your-email@example.com](mailto:your-email@example.com)
+- [Next.js ドキュメント](https://nextjs.org/docs) - Next.jsの機能とAPI
+- [Next.js チュートリアル](https://nextjs.org/learn) - インタラクティブなNext.jsチュートリアル
+- [Tailwind CSS ドキュメント](https://tailwindcss.com/docs) - Tailwind CSSの使い方
+- [Shadcn UI ドキュメント](https://ui.shadcn.com) - Shadcn UIコンポーネントの使い方
+- [React Hook Form ドキュメント](https://react-hook-form.com) - フォーム管理の方法
+- [Zustand ドキュメント](https://github.com/pmndrs/zustand) - 状態管理の方法
+- [React Query ドキュメント](https://tanstack.com/query/latest) - データフェッチングの方法
