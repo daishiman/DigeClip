@@ -1,0 +1,499 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# バックエンド実装ガイドライン
+
+## テスト
+
+### APIクライアントのテスト
+
+APIクライアントのテストでは、以下のポイントに注意して実装してください：
+
+```typescript
+// APIクライアントのテスト例
+import axios from 'axios';
+import { apiClient } from '../client';
+
+// axiosをモック化
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+describe('API Client', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    // localStorageのモック
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: jest.fn(),
+        setItem: jest.fn(),
+        removeItem: jest.fn()
+      },
+      writable: true
+    });
+  });
+
+  it('GETリクエストを正しく送信する', async () => {
+    // モックレスポンスの設定
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { id: 1, name: 'テスト' },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    });
+
+    // テスト対象の関数を実行
+    const result = await apiClient.get('/test');
+
+    // 期待する結果を検証
+    expect(mockedAxios.get).toHaveBeenCalledWith('/test');
+    expect(result).toEqual({ id: 1, name: 'テスト' });
+  });
+
+  it('POSTリクエストを正しく送信する', async () => {
+    // モックレスポンスの設定
+    mockedAxios.post.mockResolvedValueOnce({
+      data: { id: 1, name: 'テスト' },
+      status: 201,
+      statusText: 'Created',
+      headers: {},
+      config: {}
+    });
+
+    const postData = { name: 'テスト' };
+
+    // テスト対象の関数を実行
+    const result = await apiClient.post('/test', postData);
+
+    // 期待する結果を検証
+    expect(mockedAxios.post).toHaveBeenCalledWith('/test', postData);
+    expect(result).toEqual({ id: 1, name: 'テスト' });
+  });
+
+  it('認証トークンをヘッダーに追加する', async () => {
+    // localStorageからトークンを取得するモック
+    jest.spyOn(window.localStorage, 'getItem').mockReturnValueOnce('test-token');
+
+    mockedAxios.get.mockResolvedValueOnce({
+      data: {},
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {}
+    });
+
+    await apiClient.get('/authenticated-endpoint');
+
+    // 認証ヘッダーが正しく設定されていることを確認
+    expect(window.localStorage.getItem).toHaveBeenCalledWith('auth-token');
+  });
+
+  it('エラーレスポンスを適切に処理する', async () => {
+    // エラーレスポンスのモック
+    const errorResponse = {
+      response: {
+        data: {
+          error: {
+            code: 'E400',
+            message: 'バリデーションエラー'
+          }
+        },
+        status: 400,
+        statusText: 'Bad Request',
+        headers: {},
+        config: {}
+      }
+    };
+
+    mockedAxios.get.mockRejectedValueOnce(errorResponse);
+
+    // エラーがスローされることを確認
+    await expect(apiClient.get('/error-endpoint')).rejects.toThrow('バリデーションエラー');
+  });
+});
+```
+
+### サービスレイヤーのテスト
+
+サービスレイヤーのテストでは、以下のポイントに注意して実装してください：
+
+```typescript
+// サービスレイヤーのテスト例
+import { contentService } from '../services/contentService';
+import { contentRepository } from '../repositories/contentRepository';
+
+// リポジトリをモック化
+jest.mock('../repositories/contentRepository');
+
+describe('Content Service', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('コンテンツリストを取得する', async () => {
+    // モックデータ
+    const mockContents = [
+      { id: '1', title: 'コンテンツ1', summary: '要約1' },
+      { id: '2', title: 'コンテンツ2', summary: '要約2' }
+    ];
+
+    // リポジトリ関数のモック
+    (contentRepository.findAll as jest.Mock).mockResolvedValueOnce({
+      items: mockContents,
+      total: 2
+    });
+
+    // テスト対象の関数を実行
+    const result = await contentService.getContents({ page: 1, limit: 10 });
+
+    // 期待する結果を検証
+    expect(contentRepository.findAll).toHaveBeenCalledWith({ page: 1, limit: 10 });
+    expect(result).toEqual({
+      data: mockContents,
+      meta: { total: 2 }
+    });
+  });
+
+  it('コンテンツの詳細を取得する', async () => {
+    // モックデータ
+    const mockContent = {
+      id: '1',
+      title: 'コンテンツ1',
+      summary: '要約1',
+      content: '本文',
+      createdAt: new Date().toISOString()
+    };
+
+    // リポジトリ関数のモック
+    (contentRepository.findById as jest.Mock).mockResolvedValueOnce(mockContent);
+
+    // テスト対象の関数を実行
+    const result = await contentService.getContentById('1');
+
+    // 期待する結果を検証
+    expect(contentRepository.findById).toHaveBeenCalledWith('1');
+    expect(result).toEqual(mockContent);
+  });
+
+  it('コンテンツが存在しない場合はnullを返す', async () => {
+    // リポジトリ関数のモック
+    (contentRepository.findById as jest.Mock).mockResolvedValueOnce(null);
+
+    // テスト対象の関数を実行
+    const result = await contentService.getContentById('999');
+
+    // 期待する結果を検証
+    expect(contentRepository.findById).toHaveBeenCalledWith('999');
+    expect(result).toBeNull();
+  });
+
+  it('コンテンツを作成する', async () => {
+    // モックデータ
+    const newContent = {
+      title: '新しいコンテンツ',
+      sourceId: 'source-1',
+      originalUrl: 'https://example.com',
+      publishedAt: new Date().toISOString()
+    };
+
+    const createdContent = {
+      id: '3',
+      ...newContent,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // リポジトリ関数のモック
+    (contentRepository.create as jest.Mock).mockResolvedValueOnce(createdContent);
+
+    // テスト対象の関数を実行
+    const result = await contentService.createContent(newContent);
+
+    // 期待する結果を検証
+    expect(contentRepository.create).toHaveBeenCalledWith(newContent);
+    expect(result).toEqual(createdContent);
+  });
+});
+```
+
+### APIエンドポイントのテスト
+
+APIエンドポイントのテストでは、以下のポイントに注意して実装してください：
+
+```typescript
+// APIエンドポイントのテスト例
+import { createRequest, createResponse } from 'node-mocks-http';
+import contentHandler from '../api/user/contents';
+import { withApiHandler } from '../utils/middleware';
+import { contentService } from '../services/content/contentService';
+
+// サービスをモック化
+jest.mock('../services/content/contentService');
+// ミドルウェアをモック化
+jest.mock('../utils/middleware', () => ({
+  withApiHandler: jest.fn((handler) => handler)
+}));
+
+describe('Content API Endpoint', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('GETリクエストでコンテンツリストを返す', async () => {
+    // モックデータ
+    const mockContents = [
+      { id: '1', title: 'コンテンツ1' },
+      { id: '2', title: 'コンテンツ2' }
+    ];
+
+    // サービス関数のモック
+    (contentService.getContents as jest.Mock).mockResolvedValueOnce({
+      data: mockContents,
+      meta: { total: 2 }
+    });
+
+    // リクエスト/レスポンスオブジェクトの作成
+    const req = createRequest({
+      method: 'GET',
+      query: { page: '1', limit: '10' }
+    });
+    const res = createResponse();
+
+    // ハンドラーを実行
+    await contentHandler(req, res);
+
+    // レスポンスを検証
+    const data = res._getJSONData();
+    expect(res._getStatusCode()).toBe(200);
+    expect(data).toEqual({
+      data: mockContents,
+      meta: { total: 2, page: '1', limit: '10', pages: 1 }
+    });
+    expect(contentService.getContents).toHaveBeenCalledWith({ page: '1', limit: '10' });
+  });
+
+  it('不正なメソッドで405エラーを返す', async () => {
+    // リクエスト/レスポンスオブジェクトの作成
+    const req = createRequest({ method: 'PUT' });
+    const res = createResponse();
+
+    // ハンドラーを実行
+    await contentHandler(req, res);
+
+    // レスポンスを検証
+    const data = res._getJSONData();
+    expect(res._getStatusCode()).toBe(405);
+    expect(data).toEqual({
+      error: { code: 'E405', message: 'Method Not Allowed' }
+    });
+  });
+
+  it('サービスエラー時に適切なエラーレスポンスを返す', async () => {
+    // サービス関数のモック
+    (contentService.getContents as jest.Mock).mockRejectedValueOnce(
+      new Error('データベース接続エラー')
+    );
+
+    // リクエスト/レスポンスオブジェクトの作成
+    const req = createRequest({ method: 'GET' });
+    const res = createResponse();
+
+    // エラーハンドリングミドルウェアをモック
+    (withApiHandler as jest.Mock).mockImplementationOnce((handler) => {
+      return async (req, res) => {
+        try {
+          await handler(req, res);
+        } catch (error) {
+          res.status(500).json({
+            error: { code: 'E500', message: 'Internal Server Error' }
+          });
+        }
+      };
+    });
+
+    // ハンドラーを実行
+    await contentHandler(req, res);
+
+    // レスポンスを検証
+    const data = res._getJSONData();
+    expect(res._getStatusCode()).toBe(500);
+    expect(data).toEqual({
+      error: { code: 'E500', message: 'Internal Server Error' }
+    });
+  });
+});
+```
+
+### 認証・認可のテスト
+
+認証・認可のテストでは、以下のポイントに注意して実装してください：
+
+```typescript
+// 認証・認可のテスト例
+import { createRequest, createResponse } from 'node-mocks-http';
+import { authMiddleware } from '../middleware/auth';
+import { verifyToken } from '../utils/jwt';
+
+// JWT検証関数をモック化
+jest.mock('../utils/jwt');
+
+describe('Auth Middleware', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('有効なトークンで認証を通過する', async () => {
+    // JWTトークンのモック
+    const mockToken = 'valid-token';
+    const mockUser = { id: '1', email: 'test@example.com', role: 'user' };
+
+    // JWT検証関数のモック
+    (verifyToken as jest.Mock).mockReturnValueOnce(mockUser);
+
+    // リクエスト/レスポンスオブジェクトの作成
+    const req = createRequest({
+      headers: { authorization: `Bearer ${mockToken}` }
+    });
+    const res = createResponse();
+    const next = jest.fn();
+
+    // ミドルウェアを実行
+    await authMiddleware(req, res, next);
+
+    // 検証
+    expect(verifyToken).toHaveBeenCalledWith(mockToken);
+    expect(req.user).toEqual(mockUser);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('トークンがない場合は401エラーを返す', async () => {
+    // リクエスト/レスポンスオブジェクトの作成
+    const req = createRequest();
+    const res = createResponse();
+    const next = jest.fn();
+
+    // ミドルウェアを実行
+    await authMiddleware(req, res, next);
+
+    // レスポンスを検証
+    const data = res._getJSONData();
+    expect(res._getStatusCode()).toBe(401);
+    expect(data).toEqual({
+      error: { code: 'E401', message: '認証が必要です' }
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('無効なトークンで401エラーを返す', async () => {
+    // JWT検証関数のモック
+    (verifyToken as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('トークンが無効です');
+    });
+
+    // リクエスト/レスポンスオブジェクトの作成
+    const req = createRequest({
+      headers: { authorization: 'Bearer invalid-token' }
+    });
+    const res = createResponse();
+    const next = jest.fn();
+
+    // ミドルウェアを実行
+    await authMiddleware(req, res, next);
+
+    // レスポンスを検証
+    const data = res._getJSONData();
+    expect(res._getStatusCode()).toBe(401);
+    expect(data).toEqual({
+      error: { code: 'E401', message: '認証が無効です' }
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('権限不足の場合は403エラーを返す', async () => {
+    // JWTトークンのモック
+    const mockToken = 'valid-token';
+    const mockUser = { id: '1', email: 'test@example.com', role: 'user' };
+
+    // JWT検証関数のモック
+    (verifyToken as jest.Mock).mockReturnValueOnce(mockUser);
+
+    // リクエスト/レスポンスオブジェクトの作成
+    const req = createRequest({
+      headers: { authorization: `Bearer ${mockToken}` }
+    });
+    const res = createResponse();
+    const next = jest.fn();
+
+    // 管理者権限が必要なミドルウェア
+    const adminMiddleware = authMiddleware.withRole('admin');
+
+    // ミドルウェアを実行
+    await adminMiddleware(req, res, next);
+
+    // レスポンスを検証
+    const data = res._getJSONData();
+    expect(res._getStatusCode()).toBe(403);
+    expect(data).toEqual({
+      error: { code: 'E403', message: '権限がありません' }
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+});
+```
+
+### テストカバレッジの目標
+
+バックエンドのテストカバレッジは以下の目標を設定してください：
+
+1. **APIクライアント**: 90%以上のカバレッジ
+   - すべてのHTTPメソッド（GET, POST, PUT, DELETE）
+   - 認証トークンの処理
+   - エラーハンドリング
+
+2. **サービスレイヤー**: 85%以上のカバレッジ
+   - 主要なビジネスロジック
+   - データ変換処理
+   - エラー処理
+
+3. **リポジトリレイヤー**: 80%以上のカバレッジ
+   - データベースアクセス
+   - クエリ構築
+   - 結果の変換
+
+4. **APIエンドポイント**: 80%以上のカバレッジ
+   - リクエスト処理
+   - レスポンス形成
+   - エラーハンドリング
+
+5. **ミドルウェア**: 90%以上のカバレッジ
+   - 認証・認可
+   - エラーハンドリング
+   - リクエスト検証
+
+### テスト実行のベストプラクティス
+
+1. **継続的インテグレーション**:
+   - プルリクエスト時に自動的にテストを実行
+   - カバレッジレポートを生成して確認
+
+2. **テストの分類**:
+   - 単体テスト: 個々の関数やモジュール
+   - 統合テスト: 複数のモジュールの連携
+   - E2Eテスト: APIエンドポイントの完全なフロー
+
+3. **テストデータ**:
+   - テストごとにモックデータを用意
+   - テストデータは実際のデータ構造に近いものを使用
+   - 境界値や特殊なケースも考慮
+
+4. **テストの独立性**:
+   - 各テストは独立して実行できるようにする
+   - テスト間で状態を共有しない
+   - beforeEach/afterEachでテスト環境をリセット
+
+5. **データベーステスト**:
+   - インメモリデータベースを使用
+   - テスト前にスキーマを作成し、テスト後にクリーンアップ
+   - トランザクションを使用してテスト間の独立性を確保
