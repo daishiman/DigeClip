@@ -1,0 +1,296 @@
+[
+  {
+    "body": "## 概要\n\nバックエンド開発に必要な環境設定と基本的なライブラリの導入を行います。\n\n- [ ] Node.js と npm (または yarn) のインストール\n- [ ] TypeScript 開発環境の構築 (tsconfig.json 設定)\n- [ ] Git リポジトリの初期化とクローン\n- [ ] .env.local ファイルを作成し、環境変数を設定\n    - [ ] DATABASE_URL (Supabase PostgreSQL 接続文字列)\n    - [ ] NEXT_PUBLIC_SUPABASE_URL と NEXT_PUBLIC_SUPABASE_ANON_KEY (Supabase クライアントキー)\n    - [ ] OPENAI_API_KEY など AI モデルの API キー\n    - [ ] DISCORD_WEBHOOK_URL (Discord 通知用 Webhook URL)\n- [ ] 依存パッケージのインストール (npm install または yarn install)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/2_Language_and_Framework.md](./2_Functional_Requirements/backend/2_Language_and_Framework.md)",
+    "number": 14,
+    "title": "0001.Backend: 環境設定とライブラリ導入",
+    "branch": "chore/14-setup-backend-environment"
+  },
+  {
+    "body": "## データベース (Supabase) のセットアップ\n\n- [ ] Supabase プロジェクトの作成 (supabase.com)\n- [ ] プロジェクト設定からデータベース接続情報を取得 (DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)\n- [ ] Prisma スキーマファイル (prisma/schema.prisma) を定義 (テーブル定義を記述)\n    - [ ] sources テーブル (基本情報)\n    - [ ] youtube_sources テーブル (YouTube固有情報)\n    - [ ] rss_sources テーブル (RSS/ブログ固有情報)\n    - [ ] arxiv_sources テーブル (arXiv固有情報)\n    - [ ] contents テーブル\n    - [ ] ai_models テーブル\n    - [ ] summaries テーブル (stageカラムを含む)\n    - [ ] notifications テーブル\n    - [ ] tags テーブル\n    - [ ] content_tags テーブル\n    - [ ] users テーブル\n    - [ ] app_settings テーブル\n- [ ] Prisma マイグレーションを実行し、DB スキーマを初期化 (npx prisma migrate dev --name init)\n- [ ] Supabase Studio (GUI) でテーブルが作成されたことを確認\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/1_Database_Selection.md](./2_Functional_Requirements/data/1_Database_Selection.md)\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 15,
+    "title": "0002.データベース (Supabase) のセットアップ",
+    "branch": "chore/15-setup-supabase-database"
+  },
+  {
+    "body": "## データアクセス層 (lib/db) の実装 - Prismaクライアント初期化\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] Prisma クライアントの初期化 (src/lib/db/db.ts)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 30,
+    "title": "0003.データアクセス層 (lib/db) の実装 - Prismaクライアント初期化",
+    "branch": "chore/30-implement-data-access-layer-prisma-client"
+  },
+  {
+    "body": "# データアクセス層 (lib/db) の実装 - リポジトリクラス (ソース)\n\n## タスク\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] 各テーブルに対応するリポジトリクラスを作成\n  - [ ] src/lib/db/repositories/sourceRepository.ts (基本ソース情報)\n  - [ ] src/lib/db/repositories/youtubeSourceRepository.ts (YouTube固有情報)\n  - [ ] src/lib/db/repositories/rssSourceRepository.ts (RSS固有情報)\n  - [ ] src/lib/db/repositories/arxivSourceRepository.ts (arXiv固有情報)\n  - [ ] その他必要なリポジトリクラス\n- [ ] 例: sourceRepository.ts を作成し、sources テーブルへのアクセスを行う関数を実装\n  - [ ] ソースタイプごとの関連テーブルも含めた結合クエリの実装\n\n## 関連ドキュメント\n\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 31,
+    "title": "0004.データアクセス層 (lib/db) の実装 - リポジトリクラス (ソース)",
+    "branch": "chore/31-implement-data-access-layer-repository-sources"
+  },
+  {
+    "body": "## データアクセス層 (lib/db) の実装 - リポジトリクラス (コンテンツ)\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] 各テーブルに対応するリポジトリクラスを作成 (src/lib/db/repositories/sourceRepository.ts, src/lib/db/repositories/contentRepository.ts など)\n    - [ ] 例: contentRepository.ts を作成し、contents テーブルへのアクセスを行う関数を実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 32,
+    "title": "0005.データアクセス層 (lib/db) の実装 - リポジトリクラス (コンテンツ)",
+    "branch": "chore/32-implement-data-access-layer-repository-contents"
+  },
+  {
+    "body": "## データアクセス層 (lib/db) の実装 - リポジトリクラス (AIモデル)\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] 各テーブルに対応するリポジトリクラスを作成 (src/lib/db/repositories/sourceRepository.ts, src/lib/db/repositories/contentRepository.ts など)\n    - [ ] 例: aiModelRepository.ts を作成し、ai_models テーブルへのアクセスを行う関数を実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 33,
+    "title": "0006.データアクセス層 (lib/db) の実装 - リポジトリクラス (AIモデル)",
+    "branch": "chore/33-implement-data-access-layer-repository-ai-models"
+  },
+  {
+    "body": "## データアクセス層 (lib/db) の実装 - リポジトリクラス (要約)\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] 各テーブルに対応するリポジトリクラスを作成 (src/lib/db/repositories/sourceRepository.ts, src/lib/db/repositories/contentRepository.ts など)\n    - [ ] 例: summaryRepository.ts を作成し、summaries テーブルへのアクセスを行う関数を実装\n    - [ ] 段階的要約（stage）に対応したクエリ関数の実装\n    - [ ] コンテンツIDとAIモデルIDと段階（stage）の組み合わせで要約を取得する関数の実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 34,
+    "title": "0007.データアクセス層 (lib/db) の実装 - リポジトリクラス (要約)",
+    "branch": "chore/34-implement-data-access-layer-repository-summaries"
+  },
+  {
+    "body": "## データアクセス層 (lib/db) の実装 - リポジトリクラス (通知)\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] 各テーブルに対応するリポジトリクラスを作成 (src/lib/db/repositories/sourceRepository.ts, src/lib/db/repositories/contentRepository.ts など)\n    - [ ] 例: notificationRepository.ts を作成し、notifications テーブルへのアクセスを行う関数を実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 35,
+    "title": "0008.データアクセス層 (lib/db) の実装 - リポジトリクラス (通知)",
+    "branch": "chore/35-implement-data-access-layer-repository-notifications"
+  },
+  {
+    "body": "## データアクセス層 (lib/db) の実装 - リポジトリクラス (タグ)\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] 各テーブルに対応するリポジトリクラスを作成 (src/lib/db/repositories/sourceRepository.ts, src/lib/db/repositories/contentRepository.ts など)\n    - [ ] 例: tagRepository.ts を作成し、tags テーブルへのアクセスを行う関数を実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 36,
+    "title": "0009.データアクセス層 (lib/db) の実装 - リポジトリクラス (タグ)",
+    "branch": "chore/36-implement-data-access-layer-repository-tags"
+  },
+  {
+    "body": "## データアクセス層 (lib/db) の実装 - リポジトリクラス (ユーザー)\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] 各テーブルに対応するリポジトリクラスを作成 (src/lib/db/repositories/sourceRepository.ts, src/lib/db/repositories/contentRepository.ts など)\n    - [ ] 例: userRepository.ts を作成し、users テーブルへのアクセスを行う関数を実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 37,
+    "title": "0010.データアクセス層 (lib/db) の実装 - リポジトリクラス (ユーザー)",
+    "branch": "chore/37-implement-data-access-layer-repository-users"
+  },
+  {
+    "body": "## データアクセス層 (lib/db) の実装 - リポジトリクラス (アプリケーション設定)\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] 各テーブルに対応するリポジトリクラスを作成 (src/lib/db/repositories/sourceRepository.ts, src/lib/db/repositories/contentRepository.ts など)\n    - [ ] 例: appSettingsRepository.ts を作成し、app_settings テーブルへのアクセスを行う関数を実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
+    "number": 38,
+    "title": "0011.データアクセス層 (lib/db) の実装 - リポジトリクラス (アプリケーション設定)",
+    "branch": "chore/38-implement-data-access-layer-repository-app-settings"
+  },
+  {
+    "body": "## 共通処理・ユーティリティ (lib/utils) の実装\n\n- [ ] src/lib/utils ディレクトリを作成\n- [ ] API エラーハンドリングミドルウェア (src/lib/utils/middleware.ts)\n- [ ] バリデーション処理 (src/lib/utils/validation.ts)\n- [ ] カスタムエラークラス (src/lib/utils/error.ts)\n- [ ] HTTP リクエストユーティリティ (src/lib/utils/http.ts)\n- [ ] キャッシュユーティリティ (src/lib/utils/cache.ts)\n- [ ] 認証関連ユーティリティ (src/lib/utils/auth.ts)\n- [ ] ロギングユーティリティ (src/lib/utils/logger.ts)\n- [ ] 日付操作ユーティリティ (src/lib/utils/date.ts)\n- [ ] 文字列操作ユーティリティ (src/lib/utils/string.ts)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/common/reusable_components.md](./2_Functional_Requirements/backend/api/common/reusable_components.md)",
+    "number": 3,
+    "title": "0012.共通処理・ユーティリティ (lib/utils) の実装",
+    "branch": "chore/3-implement-common-utilities"
+  },
+  {
+    "body": "## バックエンドロジック (services) の実装 - 認証サービス\n\n- [ ] src/lib/services ディレクトリを作成\n- [ ] 各機能 (auth, user, admin, summarize, notification, source, content, ai) ごとにサービスファイルを作成 (src/lib/services/auth/authService.ts, src/lib/services/summarize/summarizeService.ts など)\n- [ ] 各サービスファイル内に、API から呼び出されるビジネスロジックを実装\n    - [ ] 例: authService.ts には、ユーザー認証、JWT 発行、パスワードハッシュ化などの関数を実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/auth/README.md](./2_Functional_Requirements/backend/api/auth/README.md)\n- [2_Functional_Requirements/backend/api/common/reusable_components.md](./2_Functional_Requirements/backend/api/common/reusable_components.md)",
+    "number": 24,
+    "title": "0013.バックエンドロジック (services) の実装 - 認証サービス",
+    "branch": "chore/24-implement-backend-logic-auth-service"
+  },
+  {
+    "body": "## バックエンドロジック (services) の実装 - 要約サービス\n\n- [ ] src/lib/services ディレクトリを作成\n- [ ] 各機能 (auth, user, admin, summarize, notification, source, content, ai) ごとにサービスファイルを作成 (src/lib/services/auth/authService.ts, src/lib/services/summarize/summarizeService.ts など)\n- [ ] 各サービスファイル内に、API から呼び出されるビジネスロジックを実装\n    - [ ] 例: summarizeService.ts には、AI モデル API を呼び出して要約を生成する関数を実装\n    - [ ] 段階的要約（概要→見出し→詳細など）のワークフローを実装\n    - [ ] 各段階（stage）ごとに適切なプロンプトを生成する機能\n    - [ ] 要約結果をstageごとに保存する機能\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/common/reusable_components.md](./2_Functional_Requirements/backend/api/common/reusable_components.md)",
+    "number": 25,
+    "title": "0014.バックエンドロジック (services) の実装 - 要約サービス",
+    "branch": "chore/25-implement-backend-logic-summarize-service"
+  },
+  {
+    "body": "## バックエンドロジック (services) の実装 - 通知サービス\n\n- [ ] src/lib/services ディレクトリを作成\n- [ ] 各機能 (auth, user, admin, summarize, notification, source, content, ai) ごとにサービスファイルを作成 (src/lib/services/auth/authService.ts, src/lib/services/summarize/summarizeService.ts など)\n- [ ] 各サービスファイル内に、API から呼び出されるビジネスロジックを実装\n    - [ ] 例: notificationService.ts には、Discord Webhook を使用して通知を送信する関数を実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/common/reusable_components.md](./2_Functional_Requirements/backend/api/common/reusable_components.md)",
+    "number": 26,
+    "title": "0015.バックエンドロジック (services) の実装 - 通知サービス",
+    "branch": "chore/26-implement-backend-logic-notification-service"
+  },
+  {
+    "body": "## バックエンドロジック (services) の実装 - ソースサービス\n\n- [ ] src/lib/services ディレクトリを作成\n- [ ] 各機能 (auth, user, admin, summarize, notification, source, content, ai) ごとにサービスファイルを作成 (src/lib/services/auth/authService.ts, src/lib/services/summarize/summarizeService.ts など)\n- [ ] 各サービスファイル内に、API から呼び出されるビジネスロジックを実装\n    - [ ] 例: sourceService.ts には、YouTube API や RSS フィードからコンテンツを取得する関数を実装\n    - [ ] ソースタイプ（YouTube, RSS, arXiv）ごとの処理を実装\n    - [ ] 各ソースタイプに対応するリポジトリを使用してデータを取得・保存\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/admin/sources/README.md](./2_Functional_Requirements/backend/api/admin/sources/README.md)",
+    "number": 27,
+    "title": "0016.バックエンドロジック (services) の実装 - ソースサービス",
+    "branch": "chore/27-implement-backend-logic-source-service"
+  },
+  {
+    "body": "## バックエンドロジック (services) の実装 - コンテンツサービス\n\n- [ ] src/lib/services ディレクトリを作成\n- [ ] 各機能 (auth, user, admin, summarize, notification, source, content, ai) ごとにサービスファイルを作成 (src/lib/services/auth/authService.ts, src/lib/services/summarize/summarizeService.ts など)\n- [ ] 各サービスファイル内に、API から呼び出されるビジネスロジックを実装\n    - [ ] 例: contentService.ts には、コンテンツのCRUD操作、タグ付け、要約結果の取得などを実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/user/contents/README.md](./2_Functional_Requirements/backend/api/user/contents/README.md)",
+    "number": 28,
+    "title": "0017.バックエンドロジック (services) の実装 - コンテンツサービス",
+    "branch": "chore/28-implement-backend-logic-content-service"
+  },
+  {
+    "body": "## バックエンドロジック (services) の実装 - AIサービス\n\n- [ ] src/lib/services ディレクトリを作成\n- [ ] 各機能 (auth, user, admin, summarize, notification, source, content, ai) ごとにサービスファイルを作成 (src/lib/services/auth/authService.ts, src/lib/services/summarize/summarizeService.ts など)\n- [ ] 各サービスファイル内に、API から呼び出されるビジネスロジックを実装\n    - [ ] 例: aiService.ts には、AI モデルの選択、API キー管理、プロンプト生成などを実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/admin/ai_models/README.md](./2_Functional_Requirements/backend/api/admin/ai_models/README.md)",
+    "number": 29,
+    "title": "0018.バックエンドロジック (services) の実装 - AIサービス",
+    "branch": "chore/29-implement-backend-logic-ai-service"
+  },
+  {
+    "body": "## API ルート (backend) の実装 - 認証系 API (/api/auth)\n\n- [ ] src/app/api ディレクトリを作成 (Next.js App Router の場合)\n- [ ] 認証系 API (/api/auth) の実装\n    - [ ] ユーザー登録 API (/api/auth/register/route.ts)\n    - [ ] ログイン API (/api/auth/login/route.ts)\n    - [ ] Google OAuth コールバック API (/api/auth/google-callback/route.ts)\n    - [ ] ログアウト API (/api/auth/logout/route.ts)\n    - [ ] パスワードリセット API (/api/auth/reset-password/route.ts)\n    - [ ] パスワード変更 API (/api/auth/change-password/route.ts)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/auth/README.md](./2_Functional_Requirements/backend/api/auth/README.md)",
+    "number": 16,
+    "title": "0019.API ルート (backend) の実装 - 認証系 API (/api/auth)",
+    "branch": "chore/16-implement-api-routes-auth"
+  },
+  {
+    "body": "## API ルート (backend) の実装 - ユーザーロール API (/api/user)\n\n- [ ] ユーザーロール API (/api/user) の実装\n    - [ ] コンテンツ一覧取得 API (/api/user/contents/route.ts)\n    - [ ] コンテンツ詳細取得 API (/api/user/contents/[id]/route.ts)\n    - [ ] タグ追加 API (/api/user/contents/[id]/tags/route.ts)\n    - [ ] タグ削除 API (/api/user/contents/[id]/tags/[tagName]/route.ts)\n    - [ ] タグ一覧取得 API (/api/user/tags/route.ts)\n    - [ ] システム状態取得 API (/api/user/system/status/route.ts)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/user/README.md](./2_Functional_Requirements/backend/api/user/README.md)",
+    "number": 17,
+    "title": "0020.API ルート (backend) の実装 - ユーザーロール API (/api/user)",
+    "branch": "chore/17-implement-api-routes-user"
+  },
+  {
+    "body": "## API ルート (backend) の実装 - 管理者ロール API (/api/admin) - ソース管理 API\n\n- [ ] 管理者ロール API (/api/admin) の実装\n    - [ ] ソース管理 API (/api/admin/sources/route.ts, /api/admin/sources/[id]/route.ts など)\n        - [ ] ソース一覧取得 API（ソースタイプごとの詳細情報も含む）\n        - [ ] ソース詳細取得 API（ソースタイプに応じた詳細情報を取得）\n        - [ ] ソース作成 API（ソースタイプに応じた情報を保存）\n        - [ ] ソース更新 API（ソースタイプに応じた情報を更新）\n        - [ ] ソース削除 API（関連するソースタイプテーブルのデータも削除）\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/admin/sources/README.md](./2_Functional_Requirements/backend/api/admin/sources/README.md)",
+    "number": 18,
+    "title": "0021.API ルート (backend) の実装 - 管理者ロール API (/api/admin) - ソース管理 API",
+    "branch": "chore/18-implement-api-routes-admin-sources"
+  },
+  {
+    "body": "## API ルート (backend) の実装 - 管理者ロール API (/api/admin) - コンテンツ管理 API\n\n- [ ] 管理者ロール API (/api/admin) の実装\n    - [ ] コンテンツ管理 API (/api/admin/contents/route.ts, /api/admin/contents/[id]/route.ts など)\n        - [ ] コンテンツ一覧取得 API\n        - [ ] コンテンツ詳細取得 API\n        - [ ] コンテンツ削除 API\n        - [ ] コンテンツ再処理 API\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/admin/contents/README.md](./2_Functional_Requirements/backend/api/admin/contents/README.md)",
+    "number": 19,
+    "title": "0022.API ルート (backend) の実装 - 管理者ロール API (/api/admin) - コンテンツ管理 API",
+    "branch": "chore/19-implement-api-routes-admin-contents"
+  },
+  {
+    "body": "## API ルート (backend) の実装 - 管理者ロール API (/api/admin) - AIモデル管理 API\n\n- [ ] 管理者ロール API (/api/admin) の実装\n    - [ ] AIモデル管理 API (/api/admin/ai-models/route.ts, /api/admin/ai-models/[id]/route.ts など)\n        - [ ] AIモデル一覧取得 API\n        - [ ] AIモデル詳細取得 API\n        - [ ] AIモデル作成 API\n        - [ ] AIモデル更新 API\n        - [ ] AIモデル削除 API\n        - [ ] AIモデルテスト API\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/admin/ai_models/README.md](./2_Functional_Requirements/backend/api/admin/ai_models/README.md)",
+    "number": 20,
+    "title": "0023.API ルート (backend) の実装 - 管理者ロール API (/api/admin) - AIモデル管理 API",
+    "branch": "chore/20-implement-api-routes-admin-ai-models"
+  },
+  {
+    "body": "## API ルート (backend) の実装 - 管理者ロール API (/api/admin) - 通知履歴管理 API\n\n- [ ] 管理者ロール API (/api/admin) の実装\n    - [ ] 通知履歴管理 API (/api/admin/notifications/route.ts)\n        - [ ] 通知履歴一覧取得 API\n        - [ ] 通知テスト送信 API\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/admin/notifications/README.md](./2_Functional_Requirements/backend/api/admin/notifications/README.md)",
+    "number": 21,
+    "title": "0024.API ルート (backend) の実装 - 管理者ロール API (/api/admin) - 通知履歴管理 API",
+    "branch": "chore/21-implement-api-routes-admin-notifications"
+  },
+  {
+    "body": "## API ルート (backend) の実装 - 管理者ロール API (/api/admin) - タグ管理 API\n\n- [ ] 管理者ロール API (/api/admin) の実装\n    - [ ] タグ管理 API (/api/admin/tags/route.ts, /api/admin/tags/[id]/route.ts など)\n        - [ ] タグ一覧取得 API\n        - [ ] タグ詳細取得 API\n        - [ ] タグ作成 API\n        - [ ] タグ更新 API\n        - [ ] タグ削除 API\n        - [ ] タグ一括操作 API\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/admin/tags/README.md](./2_Functional_Requirements/backend/api/admin/tags/README.md)",
+    "number": 22,
+    "title": "0025.API ルート (backend) の実装 - 管理者ロール API (/api/admin) - タグ管理 API",
+    "branch": "chore/22-implement-api-routes-admin-tags"
+  },
+  {
+    "body": "## API ルート (backend) の実装 - 管理者ロール API (/api/admin) - システム設定管理 API\n\n- [ ] 管理者ロール API (/api/admin) の実装\n    - [ ] システム設定管理 API (/api/admin/system/status/route.ts, /api/admin/system/settings/route.ts など)\n        - [ ] システム状態取得 API\n        - [ ] システム設定取得 API\n        - [ ] システム設定更新 API\n        - [ ] 監視処理手動実行 API\n        - [ ] システムログ取得 API\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/api/admin/system/README.md](./2_Functional_Requirements/backend/api/admin/system/README.md)",
+    "number": 23,
+    "title": "0026.API ルート (backend) の実装 - 管理者ロール API (/api/admin) - システム設定管理 API",
+    "branch": "chore/23-implement-api-routes-admin-system"
+  },
+  {
+    "body": "## 定期実行ジョブ (Cron Jobs) の実装 - コンテンツ監視ジョブ\n\n- [ ] src/app/api/cron ディレクトリを作成 (Next.js App Router の場合)\n- [ ] コンテンツ監視ジョブ API (/api/cron/monitor/route.ts) を実装\n    - [ ] sourceService を使用して監視対象ソースを取得\n    - [ ] 各ソースに対して sourceService.fetchNewContents() を実行し、新着コンテンツを取得\n    - [ ] 新着コンテンツを contentService.createContent() で DB に保存\n    - [ ] 取得結果をログ出力\n- [ ] 必要に応じて、要約ジョブ API (/api/cron/summarize/route.ts)、通知ジョブ API (/api/cron/notify/route.ts) などを実装\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/4_External_Integration.md](./2_Functional_Requirements/backend/4_External_Integration.md)",
+    "number": 4,
+    "title": "0027.定期実行ジョブ (Cron Jobs) の実装 - コンテンツ監視ジョブ",
+    "branch": "chore/4-implement-cron-job-content-monitoring"
+  },
+  {
+    "body": "## API ドキュメントの作成\\n\\n- [ ] api/README.md, api/auth/README.md, api/user/README.md, api/admin/README.md を作成\\n- [ ] 各 API エンドポイント (api/admin/sources/create.md, api/admin/sources/list.md など) のドキュメントを作成\\n- [ ] リクエスト/レスポンスの型定義、リクエスト例/レスポンス例、エラー例などを記述\\n\\n**関連ドキュメント:**\\n- [2_Functional_Requirements/backend/3_API_Design.md](./2_Functional_Requirements/backend/3_API_Design.md)",
+    "number": 41,
+    "title": "0028.API ドキュメントの作成",
+    "branch": "chore/41-create-api-documentation"
+  },
+  {
+    "body": "## テスト実装 - 単体テスト\n\n- [ ] 単体テスト (ユニットテスト) を実装 (Jest, Vitest など)\n- [ ] src/lib/services 内の各サービス関数に対してユニットテストを作成\n    - [ ] 例: summarizeService.test.ts, authService.test.ts など\n\n**関連ドキュメント:**\n- [4_Development_Process/5_Test_Strategy.md](./4_Development_Process/5_Test_Strategy.md)",
+    "number": 6,
+    "title": "0029.テスト実装 - 単体テスト",
+    "branch": "chore/6-implement-unit-tests"
+  },
+  {
+    "body": "## テスト実装 - 結合テスト\n\n- [ ] API エンドポイントの結合テストを実装 (supertest, node-fetch など)\n- [ ] src/app/api 内の各 API ルートに対して結合テストを作成\n    - [ ] 例: api/auth/login.test.ts, api/admin/sources/route.ts など\n\n**関連ドキュメント:**\n- [4_Development_Process/5_Test_Strategy.md](./4_Development_Process/5_Test_Strategy.md)",
+    "number": 7,
+    "title": "0030.テスト実装 - 結合テスト",
+    "branch": "chore/7-implement-integration-tests"
+  },
+  {
+    "body": "## 概要\n\nNext.jsプロジェクトを初期化し、UI構築に必要なライブラリを導入します。\n\n- [ ] Next.jsプロジェクトを `create-next-app` で初期化する\n- [ ] Tailwind CSSをインストールし、基本設定を行う\n- [ ] その他UIライブラリ (例: Heroicons) をインストールする\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)",
+    "number": 9,
+    "title": "0031.Frontend: Next.jsプロジェクトの初期化と基本UIライブラリ導入",
+    "branch": "chore/9-initialize-nextjs-project-and-install-ui-libraries"
+  },
+  {
+    "body": "## 概要\n\n ESLintとPrettierを設定し、コードの品質を維持します。\n\n- [ ] ESLintのルールを設定する\n    - [ ]  extends: next/core-web-vitalsを設定する\n- [ ] Prettierを設定する\n    - [ ]  コミット時に自動整形 (husky + lint-staged など追加可)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)",
+    "number": 13,
+    "title": "0032.Frontend: ESLintとPrettierの設定",
+    "branch": "chore/13-configure-eslint-and-prettier"
+  },
+  {
+    "body": "## 概要\n\nAPIとの通信を行うためのクライアントライブラリを導入します。\n\n- [ ] `axios` または `fetch` を使用してAPIクライアントを実装する\n- [ ] APIのエンドポイントを定義する (constants.tsなど)\n- [ ] API呼び出し用の共通関数 (client.ts) を作成する\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)\n- [2_Functional_Requirements/backend/3_API_Design.md](./2_Functional_Requirements/backend/3_API_Design.md)",
+    "number": 10,
+    "title": "0033.Frontend: APIクライアントライブラリ導入",
+    "branch": "chore/10-introduce-api-client-library"
+  },
+  {
+    "body": "## 概要\n\n小〜中規模ならReact Hooks で完結できるが、 Redux, Zustand, Jotai 等の導入を検討する。\n\n- [ ] 状態管理ライブラリ導入するか検討。\n- [ ] 各自で選定した場合は比較検討を実施する。\n- [ ] ReduxToolkit などの Redux 関連ライブラリのインストール\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)",
+    "number": 11,
+    "title": "0034.Frontend: 状態管理ライブラリ導入検討",
+    "branch": "chore/11-consider-state-management-library"
+  },
+  {
+    "body": "## 概要\n\nコンポーネント設計方針とUIライブラリの利用方針を決定します。\n\n- [ ] UIコンポーネントの設計ルールを決定する\n- [ ] 基本コンポーネント (Button, Input, Selectなど) のスタイル定義を行う(Tailwind)\n- [ ] レイアウトコンポーネント (Header, Footer, Sidebarなど) の設計を行う\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/2_Feature_Details.md](./2_Functional_Requirements/frontend/2_Feature_Details.md)\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)",
+    "number": 12,
+    "title": "0035.Frontend: UIコンポーネントの設計と実装方針決定",
+    "branch": "chore/12-decide-component-design-and-ui-library-usage"
+  },
+  {
+    "body": "## 本番環境へのデプロイ準備\n\n- [ ] Vercel プロジェクトを作成し、GitHub リポジトリを連携\n- [ ] Vercel プロジェクトの設定画面で、環境変数を設定 (DATABASE_URL, OPENAI_API_KEY, DISCORD_WEBHOOK_URL など)\n- [ ] Vercel Cron Jobs を設定し、定期実行ジョブを有効化\n- [ ] 本番環境で DB マイグレーションを実行 (npx prisma migrate deploy)\n- [ ] 本番環境で動作確認 (API エンドポイント疎通確認、Cron ジョブ実行確認)\n\n**関連ドキュメント:**\n- [3_NonFunctional_Requirements/1_Infrastructure.md](./3_NonFunctional_Requirements/1_Infrastructure.md)\n- [5_Risk_and_Release_Plan/2_Release_Schedule.md](./5_Risk_and_Release_Plan/2_Release_Schedule.md)",
+    "number": 8,
+    "title": "0036.本番環境へのデプロイ準備",
+    "branch": "chore/8-prepare-for-production-deployment"
+  },
+  {
+    "body": "## 概要\n\nログイン画面を実装します。\n\n- [ ] 画面レイアウトの構築 (フォーム、ボタンなど)\n- [ ] ユーザーID入力欄の作成 (英数字またはメールアドレス形式)\n- [ ] パスワード入力欄の作成 (マスキング表示)\n- [ ] ログインボタンの作成\n- [ ] 認証API (POST /api/auth/login) を呼び出す処理を実装\n- [ ] ログイン成功時の処理 (JWTをCookieに保存、ダッシュボードへリダイレクト)\n- [ ] ログイン失敗時のエラーメッセージ表示\n- [ ] レスポンシブ対応\n- [ ] アクセシビリティ対応 (キーボード操作、スクリーンリーダー対応)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/1_Login.md](./2_Functional_Requirements/frontend/screens/1_Login.md)",
+    "number": 50,
+    "title": "0037.Frontend: ログイン画面 (Login) の実装",
+    "branch": "feature/50-implement-login-screen"
+  },
+  {
+    "body": "## 概要\n\nダッシュボード画面を実装します。\n\n- [ ] 画面レイアウトの構築 (カード形式など)\n- [ ] 新着コンテンツ数のサマリ表示コンポーネントを作成\n- [ ] 通知履歴数のサマリ表示コンポーネントを作成\n- [ ] システムステータス表示コンポーネントを作成\n- [ ] 「ソース管理」「AIモデル設定」「通知設定」「コンテンツ一覧」へのリンクボタンを作成\n- [ ] 最近の活動を表示するコンポーネントを作成する\n- [ ] 各コンポーネントからAPIを呼び出してデータを取得し、表示する\n- [ ] レスポンシブ対応\n- [ ] アクセシビリティ対応 (キーボード操作、スクリーンリーダー対応)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/2_Dashboard.md](./2_Functional_Requirements/frontend/screens/2_Dashboard.md)",
+    "number": 51,
+    "title": "0038.Frontend: ダッシュボード画面 (Dashboard) の実装",
+    "branch": "feature/51-implement-dashboard-screen"
+  },
+  {
+    "body": "## 概要\n\nアドバンストAIモデル比較画面を実装します。\n\n- [ ] 同じコンテンツに対する複数モデル要約をグラフやテキストで詳細比較\n  - [ ] 段階的要約（概要、見出し、詳細など）ごとの比較表示\n  - [ ] 各段階での要約品質や特徴の比較\n- [ ] トークン消費や要約時間などの計測表示\n- [ ] 各段階（stage）ごとのパフォーマンス比較\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/11_AdvancedAIComparison.md](./2_Functional_Requirements/frontend/screens/11_AdvancedAIComparison.md)",
+    "number": 52,
+   "title": "0039.Frontend: ソース管理画面 (Source Management) の実装",
+    "branch": "feature/52-implement-source-management-screen"
+  },
+  {
+    "body": "## 概要\n\nAIモデル設定画面を実装します。\n\n- [ ] AIモデル一覧を表示するテーブルを作成する\n- [ ] APIキーのマスク表示/編集機能を作成する\n- [ ] デフォルトモデルを設定するUIを作成する\n- [ ] AIモデルの追加・編集・削除を行うモーダルフォームを作成する\n- [ ] APIを呼び出してAIモデルのCRUD操作を行う\n- [ ] モデルごとのパラメータ設定UIを作成する（トークン数、温度など）\n- [ ] サービスタイプに応じて表示項目を動的に変更する\n- [ ] レスポンシブ対応\n- [ ] アクセシビリティ対応 (キーボード操作、スクリーンリーダー対応)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/4_AIModelSettings.md](./2_Functional_Requirements/frontend/screens/4_AIModelSettings.md)",
+    "number": 53,
+    "title": "0040.Frontend: AIモデル設定画面 (AI Model Settings) の実装",
+    "branch": "feature/53-implement-ai-model-settings-screen"
+  },
+  {
+    "body": "## 概要\n\n通知設定画面を実装します。\n\n- [ ] Discord Webhook URLを設定するフォームを作成する\n- [ ] Embedテンプレートの編集フォームを作成する\n- [ ] テンプレート変数のヘルプを表示するUIを作成する\n- [ ] リアルタイムプレビューを表示するUIを作成する\n- [ ] テスト送信機能を実装する\n- [ ] APIを呼び出して設定を保存する\n- [ ] レスポンシブ対応\n- [ ] アクセシビリティ対応 (キーボード操作、スクリーンリーダー対応)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/5_NotificationSettings.md](./2_Functional_Requirements/frontend/screens/5_NotificationSettings.md)",
+    "number": 54,
+    "title": "0041.Frontend: 通知設定画面 (Notification Settings) の実装",
+    "branch": "feature/54-implement-notification-settings-screen"
+  },
+  {
+    "body": "## 概要\n\nコンテンツ一覧画面を実装します。\n\n- [ ] コンテンツ一覧を表示するカードリストを作成する\n- [ ] ページネーションを実装する\n- [ ] 検索とフィルタリング機能を実装する (タグ、ソース、日付範囲、ステータス)\n- [ ] カードをクリックするとコンテンツ詳細画面に遷移する機能を実装する\n- [ ] レスポンシブ対応\n- [ ] アクセシビリティ対応 (キーボード操作、スクリーンリーダー対応)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/6_ContentList.md](./2_Functional_Requirements/frontend/screens/6_ContentList.md)",
+    "number": 55,
+    "title": "0042.Frontend: コンテンツ一覧画面 (Content List) の実装",
+    "branch": "feature/55-implement-content-list-screen"
+  },
+  {
+    "body": "## 概要\n\nコンテンツ詳細画面を実装します。\n\n- [ ] コンテンツのタイトル、サムネイル、元リンクを表示する\n- [ ] AIによる要約結果を表示する\n- [ ] タグの追加・削除機能を実装する\n- [ ] 通知履歴を表示する\n- [ ] 一覧画面への戻るリンクを実装する\n- [ ] レスポンシブ対応\n- [ ] アクセシビリティ対応 (キーボード操作、スクリーンリーダー対応)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/7_ContentDetail.md](./2_Functional_Requirements/frontend/screens/7_ContentDetail.md)",
+    "number": 56,
+    "title": "0043.Frontend: コンテンツ詳細画面 (Content Detail) の実装",
+    "branch": "feature/56-implement-content-detail-screen"
+  },
+  {
+    "body": "## 概要\n\nタグ管理画面を実装します。\n\n- [ ] タグの一覧表示・新規登録・色設定\n- [ ] タグの並べ替え / グルーピングなど\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/8_TagManagement.md](./2_Functional_Requirements/frontend/screens/8_TagManagement.md)",
+    "number": 57,
+    "title": "0044.Frontend: タグ管理画面 (Tag Management) の実装",
+    "branch": "feature/57-implement-tag-management-screen"
+  },
+  {
+    "body": "## 概要\n\nユーザー管理画面を実装します。\n\n- [ ] 複数管理者やロールの追加・削除\n- [ ] パスワードリセット機能など\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/9_UserManagement.md](./2_Functional_Requirements/frontend/screens/9_UserManagement.md)",
+    "number": 58,
+    "title": "0045.Frontend: ユーザー管理画面 (User Management) の実装",
+    "branch": "feature/58-implement-user-management-screen"
+  },
+  {
+    "body": "## 概要\n\nシステム設定画面を実装します。\n\n- [ ] Cron 実行間隔、データ保持期間、ログレベルなど細かいシステムパラメータ設定\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/10_SystemSettings.md](./2_Functional_Requirements/frontend/screens/10_SystemSettings.md)",
+    "number": 59,
+    "title": "0046.Frontend: システム設定画面 (System Settings) の実装",
+    "branch": "feature/59-implement-system-settings-screen"
+  },
+  {
+    "body": "## 概要\n\nアドバンストAIモデル比較画面を実装します。\n\n- [ ] 同じコンテンツに対する複数モデル要約をグラフやテキストで詳細比較\n- [ ] トークン消費や要約時間などの計測表示\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/11_AdvancedAIComparison.md](./2_Functional_Requirements/frontend/screens/11_AdvancedAIComparison.md)",
+    "number": 60,
+    "title": "0047.Frontend: アドバンストAIモデル比較画面 (Advanced AI Comparison) の実装",
+    "branch": "feature/60-implement-advanced-ai-comparison-screen"
+  },
+  {
+    "body": "## 概要\n\n翻訳機能画面を実装します。\n\n- [ ] 多言語翻訳の有無や翻訳対象言語を選ぶUI\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/12_TranslationSettings.md](./2_Functional_Requirements/frontend/screens/12_TranslationSettings.md)",
+    "number": 61,
+    "title": "0048.Frontend: 翻訳機能画面 (Translation Settings) の実装",
+    "branch": "feature/61-implement-translation-settings-screen"
+  },
+  {
+    "body": "## 概要\n\n大規模運用向け画面を実装します。\n\n- [ ] CPU/Memory負荷モニタ、API呼び出し回数グラフなど\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/screens/13_LargeScaleOperation.md](./2_Functional_Requirements/frontend/screens/13_LargeScaleOperation.md)",
+    "number": 62,
+    "title": "0049.Frontend: 大規模運用向け画面 (Large-Scale Operation) の実装",
+    "branch": "feature/62-implement-large-scale-operation-screen"
+  }
+]
