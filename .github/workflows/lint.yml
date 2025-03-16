@@ -1,0 +1,103 @@
+name: Lint & Format
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: 依存関係のインストール
+        run: |
+          echo "現在のディレクトリ構造を確認"
+          ls -la
+
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm install
+          else
+            if [ -f "package.json" ]; then
+              npm install
+            else
+              echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
+              find . -name "package.json" -type f
+
+              # package.jsonが見つかった場所に移動
+              PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+              if [ ! -z "$PKG_DIR" ]; then
+                echo "package.jsonが見つかりました: $PKG_DIR"
+                cd $PKG_DIR
+                npm install
+              fi
+            fi
+          fi
+
+      - name: ESLintの実行
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm run lint
+          else
+            if [ -f "package.json" ]; then
+              npm run lint
+            else
+              PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+              if [ ! -z "$PKG_DIR" ]; then
+                cd $PKG_DIR
+                npm run lint
+              else
+                echo "package.jsonが見つからないためESLintを実行できません"
+                exit 1
+              fi
+            fi
+          fi
+
+      - name: Prettierの実行
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm run format -- --check
+          else
+            if [ -f "package.json" ]; then
+              npm run format -- --check
+            else
+              PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+              if [ ! -z "$PKG_DIR" ]; then
+                cd $PKG_DIR
+                npm run format -- --check
+              else
+                echo "package.jsonが見つからないためPrettierを実行できません"
+                exit 1
+              fi
+            fi
+          fi
+
+      - name: 型チェックの実行
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm run type-check
+          else
+            if [ -f "package.json" ]; then
+              npm run type-check
+            else
+              PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+              if [ ! -z "$PKG_DIR" ]; then
+                cd $PKG_DIR
+                npm run type-check
+              else
+                echo "package.jsonが見つからないため型チェックを実行できません"
+                exit 1
+              fi
+            fi
+          fi
