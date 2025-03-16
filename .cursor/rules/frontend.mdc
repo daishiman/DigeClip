@@ -1,6 +1,6 @@
 ---
 description: フロントエンド実装上の注意事項
-globs: 
+globs:     "src/app/**/*.{tsx,jsx,ts,js}",     "!src/app/api/**/*",     "src/components/**/*.{tsx,jsx,ts,js}",     "src/hooks/**/*.{tsx,jsx,ts,js}",     "src/context/**/*.{tsx,jsx,ts,js}",     "src/config/**/*.{tsx,jsx,ts,js}",     "src/types/models/**/*.{ts,js}"
 alwaysApply: false
 ---
 # フロントエンド実装上の注意事項
@@ -160,22 +160,19 @@ alwaysApply: false
   │
   ├─ /lib                          # ユーティリティと共通関数
   │   ├─ /api                      # API関連ユーティリティ
-  │   │   ├─ client.ts             # APIクライアント
-  │   │   ├─ endpoints.ts          # APIエンドポイント定義
-  │   │   └─ /handlers             # API処理ハンドラー
-  │   │       ├─ /admin            # 管理者API処理
-  │   │       │   ├─ sources.ts    # ソース関連処理
-  │   │       │   └─ ...
-  │   │       ├─ /user             # ユーザーAPI処理
-  │   │       │   ├─ contents.ts   # コンテンツ関連処理
-  │   │       │   └─ ...
-  │   │       └─ /auth             # 認証API処理
-  │   │           ├─ auth.ts       # 認証処理
-  │   │           └─ ...
-  │   ├─ /db.ts                    # Supabase接続
-  │   └─ /utils                    # 汎用ユーティリティ
-  │       ├─ date.ts               # 日付操作関数
-  │       └─ ...
+  │   ├─ /db                       # データベース関連
+  │   │   ├─ client.ts             # Supabase接続
+  │   │   └─ /repositories         # リポジトリクラス
+  │   │       ├─ sourceRepository.ts
+  │   │       ├─ contentRepository.ts
+  │   │       └─ ...
+  │   ├─ /services                 # ビジネスロジック
+  │   │   ├─ /content              # コンテンツ関連サービス
+  │   │   ├─ /source               # ソース関連サービス
+  │   │   ├─ /ai                   # AI関連サービス
+  │   │   └─ /notification         # 通知関連サービス
+  │   ├─ /utils                    # 汎用ユーティリティ
+  │   └─ /middleware               # ミドルウェア
   │
   ├─ /types                        # 型定義
   │   ├─ /api                      # API関連の型
@@ -194,16 +191,6 @@ alwaysApply: false
   │       ├─ content.ts            # コンテンツモデル
   │       └─ ...
   │
-  ├─ /services                     # ビジネスロジック
-  │   ├─ /summarize                # 要約関連ロジック
-  │   │   ├─ index.ts              # エクスポート
-  │   │   ├─ processor.ts          # 要約処理
-  │   │   └─ ...
-  │   └─ /notification             # 通知関連ロジック
-  │       ├─ index.ts              # エクスポート
-  │       ├─ discord.ts            # Discord通知
-  │       └─ ...
-  │
   ├─ /context                      # Reactコンテキスト
   │   ├─ AuthContext.tsx           # 認証コンテキスト
   │   └─ ...
@@ -213,7 +200,6 @@ alwaysApply: false
       ├─ routes.ts                 # ルート定義
       └─ ...
 ```
-(*Next.js の最新推奨構成に従いつつ、初心者でも迷いにくいフォルダ数に留める*)
 
 ---
 
