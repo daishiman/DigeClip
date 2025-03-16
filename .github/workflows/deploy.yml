@@ -13,7 +13,7 @@ jobs:
       - name: Node.jsのセットアップ
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
       - name: 依存関係のインストール
         run: |
           echo "現在のディレクトリ構造を確認"

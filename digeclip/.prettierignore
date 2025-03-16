@@ -1,0 +1,31 @@
+# ビルド出力
+.next
+out
+build
+dist
+
+# 依存関係
+node_modules
+
+# ログ
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# キャッシュ
+.eslintcache
+
+# その他
+.DS_Store
+*.pem
+.env*
+!.env.example
+
+# パッケージマネージャーのロックファイル
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 自動生成ファイル
+public/sw.js
+public/workbox-*.js
