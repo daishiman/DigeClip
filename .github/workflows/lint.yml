@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
 
+# 権限設定を追加
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
