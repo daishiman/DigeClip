@@ -1,0 +1,50 @@
+name: PR説明チェック
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+  check-pr-description:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: PR説明チェック
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            const body = pullRequest.body || '';
+            const requiredSections = ['## 概要', '## 変更内容', '## 今後の作業', '## 関連課題', '## チェックリスト'];
+            const missingSections = requiredSections.filter(section => !body.includes(section));
+
+            if (missingSections.length > 0) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `⚠️ PRの説明に以下のセクションが不足しています：\n\n${missingSections.join('\n')}\n\nPRテンプレートに従って記入してください。`
+              });
+
+              core.setFailed('PRの説明が不完全です。必要なセクションを追加してください。');
+            }
+
+            // チェックリストの確認
+            if (body.includes('## チェックリスト')) {
+              const checklistItems = body.match(/- \[ \]/g) || [];
+              if (checklistItems.length > 0) {
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: `⚠️ チェックリストの項目が未チェックです。PRをマージする前に、すべての項目を確認してください。`
+                });
+              }
+            }
