@@ -5,12 +5,15 @@
 ```mermaid
 erDiagram
     sources ||--o{ contents : "1対多"
-    contents ||--o{ summaries : "1対多"
+    sources ||--o{ summaries : "1対多"
     contents ||--o{ content_tags : "1対多"
     tags ||--o{ content_tags : "1対多"
     ai_models ||--o{ summaries : "1対多"
     contents ||--o{ notifications : "1対多"
     users ||--o{ notifications : "1対多"
+    sources ||--o| youtube_sources : "1対0または1"
+    sources ||--o| rss_sources : "1対0または1"
+    sources ||--o| arxiv_sources : "1対0または1"
     app_settings
 ```
 
@@ -23,27 +26,59 @@ erDiagram
 - **contents** と **tags** は中間テーブル (**content_tags**) で多対多
 - **notifications** は各コンテンツの通知履歴（誰がいつ送ったか、成功/失敗など）
 - **users** と **notifications** が1対多 (通知操作を行ったユーザーを記録する等)
+- **sources** と **youtube_sources**/**rss_sources**/**arxiv_sources** は1対0または1
+  - ソースタイプごとに固有の情報を別テーブルで管理
 - **app_settings** はシステム全体の設定を単純なキー/バリュー形式で保存
 
 ---
 
 ### 2. テーブル定義例
 
-#### 1. **sources** (監視対象: YouTube / RSS / arXiv etc.)
+#### 1. **sources** (監視対象の基本情報)
 
 | カラム名        | 型            | 主キー | 備考                                        |
 |----------------|---------------|-------|---------------------------------------------|
 | `id`           | SERIAL        | ○     | ユニークID (AUTO INCREMENT)                 |
-| `name`         | VARCHAR(100)  | ×     | ソース名 (例: “TechYouTuber”, “BlogX”など)     |
-| `type`         | VARCHAR(50)   | ×     | ソース種別 (YouTube / RSS / arXiv など)       |
-| `url`          | TEXT          | ×     | RSSフィードURL or チャンネルURLなど           |
+| `name`         | VARCHAR(100)  | ×     | ソース名 (例: "TechYouTuber", "BlogX"など)     |
+| `type`         | VARCHAR(50)   | ×     | ソース種別 (youtube / rss / arxiv など)       |
 | `active`       | BOOLEAN       | ×     | 有効/無効フラグ                               |
-| `metadata`     | JSONB         | ×     | 追加メタ情報 (APIキー, サブフィード等)         |
 | `last_checked` | TIMESTAMP     | ×     | 最終チェック日時                              |
 | `created_at`   | TIMESTAMP     | ×     | 作成日時 (DEFAULT now())                     |
 | `updated_at`   | TIMESTAMP     | ×     | 更新日時 (トリガ/アプリで自動更新)            |
 
-#### 2. **contents** (動画/論文/記事など取得したコンテンツ)
+#### 2. **youtube_sources** (YouTube固有情報)
+
+| カラム名           | 型            | 主キー | 備考                                        |
+|-------------------|---------------|-------|---------------------------------------------|
+| `source_id`       | INT           | ○     | sources.id へのFK                           |
+| `channel_id`      | VARCHAR(100)  | ×     | YouTubeチャンネルID                         |
+| `channel_url`     | TEXT          | ×     | チャンネルURL                               |
+| `feed_url`        | TEXT          | ×     | RSSフィードURL                              |
+| `subscriber_count`| INT           | ×     | チャンネル登録者数                           |
+| `thumbnail_url`   | TEXT          | ×     | チャンネルサムネイルURL                      |
+| `metadata`        | JSONB         | ×     | その他のメタデータ                           |
+
+#### 3. **rss_sources** (RSS/ブログ固有情報)
+
+| カラム名           | 型            | 主キー | 備考                                        |
+|-------------------|---------------|-------|---------------------------------------------|
+| `source_id`       | INT           | ○     | sources.id へのFK                           |
+| `site_url`        | TEXT          | ×     | サイトURL                                   |
+| `feed_url`        | TEXT          | ×     | RSSフィードURL                              |
+| `language`        | VARCHAR(10)   | ×     | 言語コード (ja, en など)                     |
+| `favicon_url`     | TEXT          | ×     | ファビコンURL                               |
+| `metadata`        | JSONB         | ×     | その他のメタデータ                           |
+
+#### 4. **arxiv_sources** (arXiv固有情報)
+
+| カラム名           | 型            | 主キー | 備考                                        |
+|-------------------|---------------|-------|---------------------------------------------|
+| `source_id`       | INT           | ○     | sources.id へのFK                           |
+| `category`        | VARCHAR(50)   | ×     | カテゴリ (cs.AI, cs.CL など)                |
+| `query`           | TEXT          | ×     | 検索クエリ                                  |
+| `metadata`        | JSONB         | ×     | その他のメタデータ                           |
+
+#### 5. **contents** (動画/論文/記事など取得したコンテンツ)
 
 | カラム名        | 型           | 主キー | 備考                                        |
 |----------------|--------------|-------|---------------------------------------------|
@@ -62,7 +97,7 @@ erDiagram
 | `created_at`   | TIMESTAMP    | ×     | 作成日時                                     |
 | `updated_at`   | TIMESTAMP    | ×     | 更新日時                                     |
 
-#### 3. **ai_models** (AIモデル設定)
+#### 6. **ai_models** (AIモデル設定)
 
 | カラム名            | 型           | 主キー | 備考                                                      |
 |--------------------|--------------|-------|-----------------------------------------------------------|
@@ -77,7 +112,7 @@ erDiagram
 | `created_at`       | TIMESTAMP    | ×     | 作成日時                                                  |
 | `updated_at`       | TIMESTAMP    | ×     | 更新日時                                                  |
 
-#### 4. **summaries** (要約結果)
+#### 7. **summaries** (要約結果)
 
 | カラム名         | 型         | 主キー | 備考                                                                |
 |-----------------|------------|-------|---------------------------------------------------------------------|
@@ -96,7 +131,7 @@ erDiagram
 - **`stage`** カラムを追加し、複数段階の要約(概要→見出し→詳細 など)を柔軟に保存
 - 例えば同じ content_id に対して stage="overview", stage="heading", stage="detail" 等を追加可能
 
-#### 5. **notifications** (通知履歴)
+#### 8. **notifications** (通知履歴)
 
 | カラム名       | 型         | 主キー | 備考                                                                |
 |---------------|------------|-------|---------------------------------------------------------------------|
@@ -109,7 +144,7 @@ erDiagram
 | `sent_at`     | TIMESTAMP  | ×     | 送信完了日時                                                         |
 | `created_at`  | TIMESTAMP  | ×     | レコード作成日時                                                    |
 
-#### 6. **tags** (タグ管理)
+#### 9. **tags** (タグ管理)
 
 | カラム名     | 型           | 主キー | 備考                                      |
 |-------------|--------------|-------|-------------------------------------------|
@@ -118,7 +153,7 @@ erDiagram
 | `color`     | VARCHAR(20)  | ×     | カラーコード(hex等)                       |
 | `created_at`| TIMESTAMP    | ×     | 作成日時                                  |
 
-#### 7. **content_tags** (コンテンツとタグの中間テーブル)
+#### 10. **content_tags** (コンテンツとタグの中間テーブル)
 
 | カラム名      | 型       | 主キー | 備考                             |
 |--------------|----------|-------|----------------------------------|
@@ -126,7 +161,7 @@ erDiagram
 | `tag_id`     | INT      | ×     | tags.id へのFK                   |
 | `created_at` | TIMESTAMP| ×     | レコード作成日時                 |
 
-#### 8. **users** (管理者ユーザー)
+#### 11. **users** (管理者ユーザー)
 
 | カラム名       | 型           | 主キー | 備考                                                    |
 |---------------|--------------|-------|---------------------------------------------------------|
@@ -139,7 +174,7 @@ erDiagram
 | `created_at`  | TIMESTAMP    | ×     | 作成日時                                                |
 | `updated_at`  | TIMESTAMP    | ×     | 更新日時                                                |
 
-#### 9. **app_settings** (システム設定)
+#### 12. **app_settings** (システム設定)
 
 | カラム名   | 型           | 主キー | 備考                                      |
 |-----------|--------------|-------|-------------------------------------------|
@@ -153,6 +188,9 @@ erDiagram
 ### 3. 正規化・冗長化の方針
 
 - 基本的には **第3正規形** 付近を目標にしつつ、将来の柔軟性のために **JSONB (metadata)** を併用
+- **ソースタイプごとに別テーブル**を用意し、固有情報を適切に管理
+  - 各ソースタイプの特性に合わせたカラムを定義し、検索や管理を容易に
+  - 共通情報は **sources** テーブルに保持
 - 要約結果 (summaries) を **content_id** + **ai_model_id** + **stage** で差異を管理し、
   - 同一コンテンツに対して「概要」「見出し」「詳細」など複数段階の要約を保持
 - タグは多対多のため **content_tags** で管理
@@ -162,6 +200,9 @@ erDiagram
 
 ### 4. インデックス戦略
 
+- **sources (type)**: ソースタイプ別検索に対応
+- **youtube_sources (channel_id)**: YouTubeチャンネルIDでの検索を高速化
+- **rss_sources (feed_url)**: フィードURLでの検索を高速化
 - **contents (source_id)**: ソース別検索に対応
 - **contents (external_id)**: 一意制約 or ユニークインデックス (同じ外部IDを2重登録しないように)
 - **summaries (content_id, ai_model_id, stage)**: 同一コンテンツ+モデル+段階の組合せで取得高速化
@@ -184,7 +225,7 @@ Supabase(PostgreSQL)環境なら **JSONB** 用の GIN インデックスも検�
    - Supabase 有料プラン or PostgreSQL レプリケーション対応
    - 需要が増えたら シャーディング / テーブル分割
 4. **AI要約の段階的ステップ**
-   - “概要”(stage="overview") → “見出し”(stage="heading") → “詳細”(stage="detail") …
+   - "概要"(stage="overview") → "見出し"(stage="heading") → "詳細"(stage="detail") …
    - ステップ数は不定でも, `stage` 列があれば柔軟に対応可能
 5. **全文検索**
    - raw_text が増大し検索需要が高まれば PostgreSQLの全文検索 or Elasticsearchを追加
@@ -195,6 +236,7 @@ Supabase(PostgreSQL)環境なら **JSONB** 用の GIN インデックスも検�
 
 **まとめ**
 - スキーマ定義は**段階的なAI要約**に対応するため、**summaries** テーブルに**`stage`** カラムを追加
+- **ソースタイプごとに別テーブル**を用意し、固有情報を適切に管理することで重複コンテンツの防止や検索性を向上
 - **JSONB** カラムを活用し、柔軟かつ小さな変更で拡張が可能
 - 初期は Supabase (PostgreSQL) の無料枠で運用し、**データ量・負荷が増えれば有料プランやレプリケーション**に移行
 - これにより「**お金をかけずに**」「**容易に**」「**将来的な機能追加**」にも対応できるデータ構造を実現。
