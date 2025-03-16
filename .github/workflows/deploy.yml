@@ -1,0 +1,56 @@
+name: デプロイ
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: 依存関係のインストール
+        run: |
+          echo "現在のディレクトリ構造を確認"
+          ls -la
+
+          if [ -f "package.json" ]; then
+            npm install
+          else
+            echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
+            find . -name "package.json" -type f
+
+            # package.jsonが見つかった場所に移動
+            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+            if [ ! -z "$PKG_DIR" ]; then
+              echo "package.jsonが見つかりました: $PKG_DIR"
+              cd $PKG_DIR
+              npm install
+            fi
+          fi
+      - name: ビルド
+        run: |
+          if [ -f "package.json" ]; then
+            npm run build
+          else
+            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+            if [ ! -z "$PKG_DIR" ]; then
+              cd $PKG_DIR
+              npm run build
+            else
+              echo "package.jsonが見つからないためビルドを実行できません"
+              exit 1
+            fi
+          fi
+      - name: Vercelへデプロイ
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'

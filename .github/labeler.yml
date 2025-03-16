@@ -1,0 +1,62 @@
+frontend:
+  - 'src/**/*.ts'
+  - 'src/**/*.tsx'
+  - 'src/**/*.js'
+  - 'src/**/*.jsx'
+  - 'src/**/*.css'
+  - 'src/**/*.scss'
+  - 'pages/**/*'
+  - 'components/**/*'
+  - 'app/**/*.tsx'
+  - 'app/**/*.jsx'
+
+backend:
+  - 'src/lib/services/**/*'
+  - 'src/lib/db/**/*'
+  - 'src/lib/api/**/*'
+  - 'src/lib/middleware/**/*'
+  - 'app/api/**/*'
+
+ui:
+  - 'src/components/ui/**/*'
+  - 'app/**/*.css'
+  - 'app/**/*.scss'
+  - 'styles/**/*'
+
+feature:
+  - 'src/components/features/**/*'
+  - 'app/**/page.tsx'
+
+documentation:
+  - '**/*.md'
+  - 'docs/**/*'
+
+dependencies:
+  - 'package.json'
+  - 'package-lock.json'
+  - 'yarn.lock'
+  - 'next.config.js'
+
+configuration:
+  - '.github/**/*'
+  - '*.config.js'
+  - '*.config.ts'
+  - 'tsconfig.json'
+  - '.eslintrc*'
+  - '.prettierrc*'
+
+tests:
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/*.spec.ts'
+  - '**/*.spec.tsx'
+  - 'cypress/**/*'
+  - 'jest.config.js'
+
+performance:
+  - 'src/hooks/use*'
+  - 'src/lib/utils/performance/**/*'
+
+accessibility:
+  - 'src/components/ui/**/*.tsx'
+  - 'src/components/ui/**/*.jsx'

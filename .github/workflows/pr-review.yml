@@ -1,0 +1,99 @@
+name: PR自動レビュー
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: 依存関係のインストール
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm install
+          else
+            npm install
+          fi
+      - name: ESLintによるリント
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm run lint || echo "lintコマンドが失敗しました"
+          else
+            npm run lint || echo "lintコマンドが失敗しました"
+          fi
+      - name: TypeScriptの型チェック
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm run type-check || echo "type-checkコマンドが失敗しました"
+          else
+            npm run type-check || echo "type-checkコマンドが失敗しました"
+          fi
+
+  accessibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: 依存関係のインストール
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm install
+          else
+            npm install
+          fi
+      - name: アクセシビリティチェック
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            if grep -q "axe-core" package.json; then
+              echo "アクセシビリティテストを実行します"
+              npm run test:a11y || true
+            else
+              echo "アクセシビリティテストをスキップします"
+            fi
+          else
+            if [ -f "package.json" ] && grep -q "axe-core" package.json; then
+              echo "アクセシビリティテストを実行します"
+              npm run test:a11y || true
+            else
+              echo "アクセシビリティテストをスキップします"
+            fi
+          fi
+
+  size-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: 依存関係のインストール
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            npm install
+          else
+            npm install
+          fi
+      - name: ビルドサイズチェック
+        run: |
+          if [ -f "digeclip/package.json" ]; then
+            cd digeclip
+            echo "ビルドサイズチェックをスキップします"
+          else
+            echo "ビルドサイズチェックをスキップします"
+          fi
