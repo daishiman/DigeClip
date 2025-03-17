@@ -22,7 +22,6 @@ export interface ApiError {
 }
 
 // APIエラーコード
-/* eslint-disable @typescript-eslint/no-unused-vars, no-unused-vars */
 export enum ApiErrorCode {
   BAD_REQUEST = 'E400',
   UNAUTHORIZED = 'E401',
@@ -33,7 +32,6 @@ export enum ApiErrorCode {
   SERVER_ERROR = 'E500',
   SERVICE_UNAVAILABLE = 'E503',
 }
-/* eslint-enable @typescript-eslint/no-unused-vars, no-unused-vars */
 
 // APIクライアントクラス
 class ApiClient {

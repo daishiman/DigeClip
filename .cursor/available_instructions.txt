@@ -3,6 +3,10 @@ They may or may not be relevent to the task at hand. If they are, use the fetch_
 Some rules may be automatically attached to the conversation if the user attaches a file that matches the rule's glob, and wont need to be fetched.
 
 000_common_requirements: 共通要件
+000_common_tech_stack: 共通技術スタック
+000_common_directory_structure: ディレクトリ構造
+000_common_coding_conventions: コーディング規約
+000_common_test_strategy: テスト戦略
 001_business_requirements: ビジネス要件の定義
 002_backend_requirements: バックエンド機能要件
 003_frontend_requirements: フロントエンド機能要件
