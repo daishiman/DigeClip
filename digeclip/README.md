@@ -146,3 +146,60 @@ Next.jsについて詳しく学ぶには、以下のリソースを参照して�
 - [React Hook Form ドキュメント](https://react-hook-form.com) - フォーム管理の方法
 - [Zustand ドキュメント](https://github.com/pmndrs/zustand) - 状態管理の方法
 - [React Query ドキュメント](https://tanstack.com/query/latest) - データフェッチングの方法
+
+## テスト
+
+DigeClipでは、Jest と React Testing Library を使用してテストを実装しています。
+
+### テストの実行
+
+テストを実行するには、以下のコマンドを使用します：
+
+```bash
+# すべてのテストを実行
+npm test
+
+# 特定のテストファイルを実行
+npm test -- path/to/test/file.test.ts
+
+# ウォッチモードでテストを実行（ファイル変更時に自動的に再実行）
+npm test -- --watch
+
+# カバレッジレポートを生成
+npm test -- --coverage
+```
+
+### テスト設定
+
+テストの設定は以下のファイルで管理されています：
+
+- `jest.config.js`: Jestの基本設定
+- `jest.setup.js`: テスト実行前の共通セットアップ
+- `.babelrc`: Babel設定（JSX変換など）
+
+### テストファイルの構造
+
+テストファイルは、テスト対象のファイルと同じディレクトリ内の `__tests__` フォルダに配置されています。
+
+```
+src/
+  lib/
+    api/
+      __tests__/
+        client.test.ts
+        auth.test.ts
+        hooks.test.tsx
+      client.ts
+      auth.ts
+      hooks.ts
+```
+
+### テストカバレッジ
+
+テストカバレッジレポートは `npm test -- --coverage` コマンドで生成できます。レポートは `coverage/` ディレクトリに保存され、ブラウザで `coverage/lcov-report/index.html` を開くことで確認できます。
+
+カバレッジ目標：
+- APIクライアント: 90%以上
+- サービスレイヤー: 80%以上
+- React Queryフック: 80%以上
+- UIコンポーネント: 70%以上
