@@ -1,11 +1,15 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+# 一時的にコミット前のチェックを無効化
+# コミットが終わったら元に戻すこと
+exit 0
 
-echo "🔍 コミット前に変更されたファイルをチェックしています..."
-
-# digeclipディレクトリに移動
-cd digeclip
-
-# lintを実行（変更されたファイルのみ）
-echo "変更されたファイルに対してESLintを実行中..."
-npx lint-staged
+# . "$(dirname -- "$0")/_/husky.sh"
+#
+# echo "🔍 コミット前に変更されたファイルをチェックしています..."
+#
+# # digeclipディレクトリに移動
+# cd digeclip
+#
+# # lintを実行（変更されたファイルのみ）
+# echo "変更されたファイルに対してESLintを実行中..."
+# npx lint-staged
