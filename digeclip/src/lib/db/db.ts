@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 // PrismaClientのグローバル型拡張
 declare global {
-  var prisma: PrismaClient | undefined;
+  let prisma: PrismaClient | undefined;
 }
 
 // 開発環境でホットリロード時に複数のPrismaインスタンスが作成されるのを防ぐ
