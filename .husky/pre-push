@@ -3,6 +3,9 @@
 
 echo "🧪 プッシュ前にテストとリントを実行しています..."
 
+# digeclipディレクトリに移動
+cd digeclip
+
 # テストを実行
 echo "テストを実行中..."
 npm test
