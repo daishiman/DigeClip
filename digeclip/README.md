@@ -21,6 +21,7 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 ## 技術スタック
 
 ### フロントエンド
+
 - **Next.js**: Reactベースのフルスタックフレームワーク
 - **TypeScript**: 型安全なJavaScript
 - **Tailwind CSS**: ユーティリティファーストのCSSフレームワーク
@@ -33,6 +34,7 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 - **Next Intl**: 国際化
 
 ### バックエンド
+
 - **Next.js API Routes**: サーバーサイド機能
 - **Supabase**: PostgreSQLデータベース（無料枠）
 - **Vercel**: ホスティングとCronジョブ
@@ -40,6 +42,7 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 ## 始め方
 
 ### 必要条件
+
 - Node.js 18.18.0以上
 - npm 8.19.3以上
 
@@ -199,6 +202,7 @@ src/
 テストカバレッジレポートは `npm test -- --coverage` コマンドで生成できます。レポートは `coverage/` ディレクトリに保存され、ブラウザで `coverage/lcov-report/index.html` を開くことで確認できます。
 
 カバレッジ目標：
+
 - APIクライアント: 90%以上
 - サービスレイヤー: 80%以上
 - React Queryフック: 80%以上
