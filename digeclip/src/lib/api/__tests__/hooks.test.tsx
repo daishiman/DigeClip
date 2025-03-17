@@ -93,9 +93,7 @@ describe('API Hooks', () => {
         id: '1',
         title: 'コンテンツ1',
         content_text: 'コンテンツの本文',
-        summaries: [
-          { id: 's1', type: 'short', text: '短い要約' },
-        ],
+        summaries: [{ id: 's1', type: 'short', text: '短い要約' }],
       },
     };
 

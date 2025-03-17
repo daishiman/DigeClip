@@ -1,6 +1,12 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useContents, useContentDetail, useSources, useAuth, useCreateSource } from '../../api/hooks';
+import {
+  useContents,
+  useContentDetail,
+  useSources,
+  useAuth,
+  useCreateSource,
+} from '../../api/hooks';
 import { api } from '../../api/index';
 import { ReactNode } from 'react';
 
@@ -93,9 +99,7 @@ describe('API Hooks', () => {
         id: '1',
         title: 'コンテンツ1',
         content_text: 'コンテンツの本文',
-        summaries: [
-          { id: 's1', type: 'short', text: '短い要約' },
-        ],
+        summaries: [{ id: 's1', type: 'short', text: '短い要約' }],
       },
     };
 

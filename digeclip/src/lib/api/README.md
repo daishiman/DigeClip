@@ -55,13 +55,13 @@ const LoginForm = () => {
 
   const handleSubmit = async (data: { email: string; password: string }) => {
     login.mutate(data, {
-      onSuccess: (response) => {
+      onSuccess: response => {
         console.log('ログイン成功:', response.data);
         // ログイン後の処理
       },
-      onError: (error) => {
+      onError: error => {
         console.error('ログインエラー:', error);
-      }
+      },
     });
   };
 
@@ -87,7 +87,7 @@ const fetchContents = async () => {
     const response = await api.user.getContents({
       page: 1,
       limit: 10,
-      sort: 'published_at:desc'
+      sort: 'published_at:desc',
     });
     console.log('コンテンツ一覧:', response.data);
     console.log('メタ情報:', response.meta);
@@ -117,7 +117,7 @@ const ContentsList = () => {
   const { data, isLoading, error } = useContents({
     page: 1,
     limit: 10,
-    sort: 'published_at:desc'
+    sort: 'published_at:desc',
   });
 
   if (isLoading) return <div>読み込み中...</div>;
@@ -126,11 +126,7 @@ const ContentsList = () => {
   return (
     <div>
       <h1>コンテンツ一覧</h1>
-      <ul>
-        {data?.data.map(content => (
-          <li key={content.id}>{content.title}</li>
-        ))}
-      </ul>
+      <ul>{data?.data.map(content => <li key={content.id}>{content.title}</li>)}</ul>
       <div>
         全{data?.meta?.total}件中 {data?.meta?.page}/{data?.meta?.pages}ページ
       </div>
@@ -175,7 +171,7 @@ const fetchSources = async () => {
   try {
     const response = await api.admin.getSources({
       is_active: true,
-      sort: 'name:asc'
+      sort: 'name:asc',
     });
     console.log('ソース一覧:', response.data);
   } catch (error) {
@@ -192,7 +188,7 @@ const createSource = async () => {
       type: 'RSS',
       icon_url: 'https://example.com/icon.png',
       description: 'ソースの説明',
-      is_active: true
+      is_active: true,
     });
     console.log('ソース作成成功:', response.data);
   } catch (error) {
@@ -209,7 +205,7 @@ const updateSource = async (sourceId: string) => {
       type: 'RSS',
       icon_url: 'https://example.com/icon.png',
       description: '更新された説明',
-      is_active: true
+      is_active: true,
     });
     console.log('ソース更新成功:', response.data);
   } catch (error) {
@@ -247,7 +243,7 @@ const SourcesManager = () => {
       type: 'RSS',
       icon_url: 'https://example.com/icon.png',
       description: 'ソースの説明',
-      is_active: true
+      is_active: true,
     });
   };
 
@@ -258,7 +254,7 @@ const SourcesManager = () => {
       type: 'RSS',
       icon_url: 'https://example.com/icon.png',
       description: '更新された説明',
-      is_active: true
+      is_active: true,
     });
   };
 
