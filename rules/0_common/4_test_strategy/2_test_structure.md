@@ -1,13 +1,11 @@
 # テストディレクトリ構造
 
-このドキュメントでは、プロジェクトのテストに関するディレクトリ構造を定義します。適切なテストディレクトリ構造を持つことで、テストの管理と実行が容易になり、コードの品質を確保できます。
+このドキュメントでは、テストコードの構造と整理方法について詳細を説明します。
 
 ## テストディレクトリの基本構造
 
-テストコードは、以下のディレクトリ構造に従って配置します：
-
 ```
-/src
+/digeclip/src
   └─ /__tests__                    # テストコード
       ├─ /unit                     # 単体テスト
       │   ├─ /components           # コンポーネントの単体テスト
@@ -142,55 +140,117 @@ E2Eテストは、実際のユーザーシナリオに沿ってアプリケー�
 
 ### Jest設定（jest.config.js）
 
-```javascript
-module.exports = {
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-  },
-  transform: {
-    '^.+\\.(ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
-  },
-  collectCoverageFrom: [
-    'src/**/*.{js,jsx,ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/_*.{js,jsx,ts,tsx}',
-    '!src/**/index.{js,jsx,ts,tsx}',
+```js
+// jest.config.js
+import nextJest from 'next/jest.js';
+
+const createJestConfig = nextJest({
+  // テスト環境のNext.jsアプリのパスを指定
+  dir: './',
+});
+
+/** @type {import('jest').Config} */
+const config = {
+  // テストマッチングパターン
+  testMatch: [
+    '<rootDir>/digeclip/src/__tests__/unit/**/*.test.{ts,tsx}',
+    '<rootDir>/digeclip/src/__tests__/integration/**/*.test.{ts,tsx}',
   ],
+
+  // モジュール変換の設定
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+  },
+
+  // テスト環境
+  testEnvironment: 'jest-environment-jsdom',
+
+  // パスエイリアス
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/digeclip/src/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+  },
+
+  // カバレッジの設定
+  collectCoverageFrom: [
+    'digeclip/src/**/*.{ts,tsx}',
+    '!digeclip/src/**/*.d.ts',
+    '!digeclip/src/**/*.stories.{ts,tsx}',
+    '!digeclip/src/types/**/*',
+    '!digeclip/src/__tests__/**/*',
+  ],
+
+  // テスト前後の処理
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
 };
+
+export default createJestConfig(config);
 ```
 
 ### Jest設定（jest.setup.js）
 
-```javascript
+```js
+// jest.setup.js
 import '@testing-library/jest-dom';
-import { server } from './src/__tests__/mocks/server';
+import { TextEncoder, TextDecoder } from 'util';
+import { server } from './digeclip/src/__tests__/mocks/server';
 
-// MSWのセットアップ
+// MSWサーバーのセットアップ
 beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
+
+// グローバルなモックの設定
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 ```
 
 ### Playwright設定（playwright.config.ts）
 
-```typescript
-import { PlaywrightTestConfig } from '@playwright/test';
+```ts
+// playwright.config.ts
+import { defineConfig, devices } from '@playwright/test';
 
-const config: PlaywrightTestConfig = {
-  testDir: './src/__tests__/e2e',
+export default defineConfig({
+  testDir: './digeclip/src/__tests__/e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
   use: {
     baseURL: 'http://localhost:3000',
-    headless: true,
-    viewport: { width: 1280, height: 720 },
+    trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  reporter: [['html', { outputFolder: 'playwright-report' }]],
-};
-
-export default config;
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 12'] },
+    },
+  ],
+  webServer: {
+    command: 'npm run dev',
+    port: 3000,
+    reuseExistingServer: !process.env.CI,
+  },
+});
 ```
 
 ## テスト実行コマンド
@@ -201,8 +261,8 @@ export default config;
 {
   "scripts": {
     "test": "jest",
-    "test:unit": "jest --testPathPattern=src/__tests__/unit",
-    "test:integration": "jest --testPathPattern=src/__tests__/integration",
+    "test:unit": "jest --testPathPattern=digeclip/src/__tests__/unit",
+    "test:integration": "jest --testPathPattern=digeclip/src/__tests__/integration",
     "test:e2e": "playwright test",
     "test:coverage": "jest --coverage"
   }

@@ -142,7 +142,7 @@ function getUser(id) {
 テストコードは以下のディレクトリ構造に従って配置します：
 
 ```
-/src
+/digeclip/src
   ├─ /lib                          # ユーティリティと共通関数
   │   ├─ /openai.ts                # OpenAI関連機能
   │   ├─ /discord.ts               # Discord関連機能

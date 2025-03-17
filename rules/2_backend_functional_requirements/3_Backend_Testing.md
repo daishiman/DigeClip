@@ -548,10 +548,10 @@ module.exports = {
       database: process.env.TEST_DB_NAME || 'digeclip_test',
     },
     migrations: {
-      directory: './src/migrations',
+      directory: './digeclip/src/migrations',
     },
     seeds: {
-      directory: './src/seeds/test',
+      directory: './digeclip/src/seeds/test',
     },
   },
 };
