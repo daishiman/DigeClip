@@ -1,0 +1,150 @@
+# 共通ディレクトリ構造
+
+このドキュメントでは、プロジェクト全体で使用する標準的なディレクトリ構造を定義します。この構造に従うことで、コードの一貫性と可読性を確保し、新しいメンバーがプロジェクトに参加する際の学習コストを低減します。
+
+## Next.jsプロジェクトの標準ディレクトリ構造
+
+```
+/src
+  ├─ /app                          # Next.jsのApp Routerディレクトリ
+  │   ├─ /page.tsx                 # ダッシュボード画面
+  │   ├─ /sources/page.tsx         # ソース一覧
+  │   ├─ /contents/page.tsx        # コンテンツ一覧
+  │   ├─ /contents/[id]/page.tsx   # コンテンツ詳細
+  │   ├─ /settings/
+  │   │   ├─ /ai-models/page.tsx   # AIモデル設定
+  │   │   ├─ /notifications/page.tsx # 通知設定
+  │   │   └─ /...
+  │   └─ /api                      # APIルートディレクトリ
+  │       ├─ /auth/                # 認証関連API
+  │       │   ├─ /login/route.ts
+  │       │   ├─ /register/route.ts
+  │       │   └─ /...
+  │       ├─ /admin/               # 管理者用API
+  │       │   ├─ /sources/route.ts
+  │       │   ├─ /contents/route.ts
+  │       │   └─ /...
+  │       └─ /user/                # 一般ユーザー用API
+  │           ├─ /contents/route.ts
+  │           └─ /...
+  │
+  ├─ /components                   # 再利用可能なコンポーネント
+  │   ├─ /ui                       # 基本UIコンポーネント
+  │   │   ├─ /Button               # ボタンコンポーネント
+  │   │   │   ├─ Button.tsx        # 基本ボタン
+  │   │   │   ├─ IconButton.tsx    # アイコン付きボタン
+  │   │   │   ├─ ButtonGroup.tsx   # ボタングループ
+  │   │   │   └─ index.ts          # エクスポート
+  │   │   ├─ /Card                 # カードコンポーネント
+  │   │   │   ├─ Card.tsx          # 基本カード
+  │   │   │   ├─ CardHeader.tsx    # カードヘッダー
+  │   │   │   ├─ CardContent.tsx   # カードコンテンツ
+  │   │   │   ├─ CardFooter.tsx    # カードフッター
+  │   │   │   └─ index.ts          # エクスポート
+  │   │   └─ /...
+  │   │
+  │   ├─ /layout                   # レイアウト関連コンポーネント
+  │   │   ├─ /Header               # ヘッダーコンポーネント
+  │   │   │   ├─ Header.tsx        # 基本ヘッダー
+  │   │   │   ├─ HeaderNav.tsx     # ヘッダーナビゲーション
+  │   │   │   └─ index.ts          # エクスポート
+  │   │   └─ /...
+  │   │
+  │   ├─ /features                 # 機能別コンポーネント
+  │   │   ├─ /sources              # ソース関連コンポーネント
+  │   │   │   ├─ SourceList.tsx    # ソース一覧
+  │   │   │   ├─ SourceCard.tsx    # ソースカード
+  │   │   │   ├─ SourceForm.tsx    # ソース追加/編集フォーム
+  │   │   │   └─ index.ts          # エクスポート
+  │   │   └─ /...
+  │   │
+  │   └─ /patterns                 # 再利用可能なパターン
+  │       ├─ /DataTable            # データテーブルパターン
+  │       │   ├─ DataTable.tsx     # 基本テーブル
+  │       │   ├─ TableHeader.tsx   # テーブルヘッダー
+  │       │   └─ index.ts          # エクスポート
+  │       └─ /...
+  │
+  ├─ /hooks                        # カスタムフック
+  │   ├─ /api                      # API関連フック
+  │   │   ├─ /admin                # 管理者API用フック
+  │   │   │   ├─ useSources.ts     # ソース管理フック
+  │   │   │   ├─ useContents.ts    # コンテンツ管理フック
+  │   │   │   └─ ...
+  │   │   ├─ /user                 # ユーザーAPI用フック
+  │   │   │   ├─ useContents.ts    # コンテンツ取得フック
+  │   │   │   └─ ...
+  │   │   └─ /auth                 # 認証API用フック
+  │   │       ├─ useAuth.ts        # 認証フック
+  │   │       └─ ...
+  │   └─ /ui                       # UI関連フック
+  │       ├─ useModal.ts           # モーダル制御フック
+  │       └─ ...
+  │
+  ├─ /lib                          # ユーティリティと共通関数
+  │   ├─ /api                      # API関連ユーティリティ
+  │   ├─ /db                       # データベース関連
+  │   │   ├─ client.ts             # Supabase接続
+  │   │   └─ /repositories         # リポジトリクラス
+  │   │       ├─ sourceRepository.ts
+  │   │       ├─ contentRepository.ts
+  │   │       └─ ...
+  │   ├─ /services                 # ビジネスロジック
+  │   │   ├─ /content              # コンテンツ関連サービス
+  │   │   ├─ /source               # ソース関連サービス
+  │   │   ├─ /ai                   # AI関連サービス
+  │   │   └─ /notification         # 通知関連サービス
+  │   ├─ /utils                    # 汎用ユーティリティ
+  │   └─ /middleware               # ミドルウェア
+  │
+  ├─ /types                        # 型定義
+  │   ├─ /api                      # API関連の型
+  │   │   ├─ /admin                # 管理者API型
+  │   │   │   ├─ sources.ts        # ソース関連型
+  │   │   │   ├─ contents.ts       # コンテンツ関連型
+  │   │   │   └─ ...
+  │   │   ├─ /user                 # ユーザーAPI型
+  │   │   │   ├─ contents.ts       # コンテンツ関連型
+  │   │   │   └─ ...
+  │   │   └─ /auth                 # 認証API型
+  │   │       ├─ auth.ts           # 認証関連型
+  │   │       └─ ...
+  │   └─ /models                   # モデル関連の型
+  │       ├─ source.ts             # ソースモデル
+  │       ├─ content.ts            # コンテンツモデル
+  │       └─ ...
+  │
+  ├─ /context                      # Reactコンテキスト
+  │   ├─ AuthContext.tsx           # 認証コンテキスト
+  │   └─ ...
+  │
+  └─ /config                       # 設定ファイル
+      ├─ constants.ts              # 定数定義
+      ├─ routes.ts                 # ルート定義
+      └─ ...
+```
+
+## ディレクトリ構造の原則
+
+1. **関心の分離**
+   - 機能ごとに明確に分離されたディレクトリ構造
+   - コンポーネント、ロジック、データアクセスの分離
+
+2. **階層的な整理**
+   - 関連するファイルは同じディレクトリにグループ化
+   - 深すぎる階層は避け、必要に応じて平坦化
+
+3. **命名規則**
+   - ディレクトリ名は機能や目的を明確に表す
+   - コンポーネントファイルはパスカルケース（例：`Button.tsx`）
+   - ユーティリティやフックはキャメルケース（例：`useAuth.ts`）
+
+4. **モジュール化**
+   - 各ディレクトリには `index.ts` ファイルを配置して、外部からのインポートを簡素化
+   - 関連するファイルをまとめてエクスポート
+
+## 特記事項
+
+- この構造は初心者でも理解しやすいように設計されています
+- Next.js の最新推奨構成に従いつつ、初心者でも迷いにくいフォルダ数に留めています
+- プロジェクトの成長に合わせて、必要に応じて構造を拡張できます
