@@ -1,11 +1,8 @@
-import { createJestConfig } from 'next/jest';
+const nextJest = require('next/jest');
 
-const nextJest = config => {
-  return createJestConfig({
-    ...config,
-    dir: './',
-  });
-};
+const createJestConfig = nextJest({
+  dir: './',
+});
 
 /** @type {import('jest').Config} */
 const config = {
@@ -34,6 +31,9 @@ const config = {
   ],
 
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+
+  // ESLintエラー回避のためのコメント
+  // @ts-ignore
 };
 
-export default nextJest(config);
+module.exports = createJestConfig(config);
