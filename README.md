@@ -21,8 +21,8 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 ## 技術スタック
 
 ### フロントエンド
-- **Next.js**: Reactベースのフルスタックフレームワーク
-- **TypeScript**: 型安全なJavaScript
+- **Next.js 14**: Reactベースのフルスタックフレームワーク（App Router採用）
+- **TypeScript 5.x**: 型安全なJavaScript
 - **Tailwind CSS**: ユーティリティファーストのCSSフレームワーク
 - **Shadcn UI**: Tailwind CSSベースのコンポーネントライブラリ
 - **React Hook Form**: フォーム管理
@@ -89,8 +89,9 @@ GEMINI_API_KEY=your_gemini_api_key
 /src
   ├─ /app                          # Next.jsのApp Routerディレクトリ
   │   ├─ /page.tsx                 # ダッシュボード画面
-  │   ├─ /sources/                 # ソース一覧
-  │   ├─ /contents/                # コンテンツ一覧・詳細
+  │   ├─ /sources/page.tsx         # ソース一覧
+  │   ├─ /contents/page.tsx        # コンテンツ一覧
+  │   ├─ /contents/[id]/page.tsx   # コンテンツ詳細
   │   ├─ /settings/                # 各種設定画面
   │   └─ /api                      # APIルートディレクトリ
   │       ├─ /auth/                # 認証関連API
@@ -128,11 +129,73 @@ GEMINI_API_KEY=your_gemini_api_key
 - **定数**: 大文字スネークケース（例: `API_BASE_URL`）
 - **コンポーネント**: 関数コンポーネントとTypeScriptの型定義を使用
 
+詳細なコーディング規約は `.cursor/rules/000_common_requirements.mdc` ファイルに定義されています。
+
+## MDCファイルの生成
+
+プロジェクトでは、Cursor AIアシスタントのためのルールファイル（.mdcファイル）を使用しています。これらのファイルは、`rules/` ディレクトリ内のMarkdownファイルから自動生成されます。
+
+### MDCファイルの生成手順
+
+```bash
+# MDCファイルを生成
+npm run build:mdc
+```
+
+このコマンドは以下の処理を行います：
+1. `.cursor/rules/` ディレクトリ内の既存のMDCファイルをクリア
+2. `rules/` ディレクトリ内のMarkdownファイルを読み込み
+3. カテゴリごとにMDCファイルを生成
+4. `.cursor/available_instructions.txt` ファイルを生成
+
+生成されるMDCファイル：
+- `000_common_requirements.mdc`: 共通要件
+- `001_business_requirements.mdc`: ビジネス要件
+- `002_backend_requirements.mdc`: バックエンド機能要件
+- `003_frontend_requirements.mdc`: フロントエンド機能要件
+- `004_nonFunctional_requirements.mdc`: 非機能要件
+- `005_development_process.mdc`: 開発プロセス
+- `006_risk_and_release_plan.mdc`: リスクとリリース計画
+
+## テスト実行
+
+プロジェクトでは、Jest、React Testing Library、Cypressを使用してテストを実施しています。
+
+### テスト実行手順
+
+```bash
+# 単体テストと統合テストを実行
+npm run test
+
+# テストをウォッチモードで実行（開発時に便利）
+npm run test:watch
+
+# テストカバレッジレポートを生成
+npm run test:coverage
+
+# E2Eテストを実行
+npm run test:e2e
+
+# すべてのテストを実行
+npm run test:all
+```
+
+### テスト戦略
+
+プロジェクトでは以下のテストレベルを採用しています：
+
+1. **単体テスト**: 個々の関数、メソッド、コンポーネントをテスト
+2. **統合テスト**: 複数のモジュール間の連携をテスト
+3. **E2Eテスト**: アプリケーション全体のフローをテスト
+
+詳細なテスト戦略は `.cursor/rules/000_common_requirements.mdc` ファイルに定義されています。
+
 ## デプロイ
 
 Vercelを使用して簡単にデプロイできます：
 
 ```bash
+# ビルド
 npm run build
 
 # Vercelにデプロイ
