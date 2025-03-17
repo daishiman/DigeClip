@@ -9,7 +9,39 @@ const mdcConfigurations = [
     sourceDir: "rules/0_common",
     header:
       '---\ndescription: 共通要件\nglobs: "src/**/*.{tsx,jsx,ts,js,md}"\nalwaysApply: true\n---\n# 共通要件\n\n',
+    filePattern: "**/*.md",
+    sortBy: "name",
+  },
+  {
+    output: ".cursor/rules/000_common_tech_stack.mdc",
+    sourceDir: "rules/0_common/1_common_requirements",
+    header:
+      '---\ndescription: 共通技術スタック\nglobs: "src/**/*.{tsx,jsx,ts,js,md}"\nalwaysApply: true\n---\n# 共通技術スタック\n\n',
+    filePattern: "1_technology_stack.md",
+    sortBy: "name",
+  },
+  {
+    output: ".cursor/rules/000_common_directory_structure.mdc",
+    sourceDir: "rules/0_common/3_directory_structure",
+    header:
+      '---\ndescription: ディレクトリ構造\nglobs: "src/**/*.{tsx,jsx,ts,js,md}"\nalwaysApply: true\n---\n# ディレクトリ構造\n\n',
     filePattern: "*.md",
+    sortBy: "name",
+  },
+  {
+    output: ".cursor/rules/000_common_coding_conventions.mdc",
+    sourceDir: "rules/0_common/2_coding_conventions",
+    header:
+      '---\ndescription: コーディング規約\nglobs: "src/**/*.{tsx,jsx,ts,js,md}"\nalwaysApply: true\n---\n# コーディング規約\n\n',
+    filePattern: "*.md",
+    sortBy: "name",
+  },
+  {
+    output: ".cursor/rules/000_common_test_strategy.mdc",
+    sourceDir: "rules/0_common/4_test_strategy",
+    header:
+      '---\ndescription: テスト戦略\nglobs: "src/**/*.{tsx,jsx,ts,js,md}"\nalwaysApply: true\n---\n# テスト戦略\n\n',
+    filePattern: "**/*.md",
     sortBy: "name",
   },
   {
@@ -196,6 +228,10 @@ async function generateAvailableInstructions() {
     "Some rules may be automatically attached to the conversation if the user attaches a file that matches the rule's glob, and wont need to be fetched.\n\n";
 
   content += "000_common_requirements: 共通要件\n";
+  content += "000_common_tech_stack: 共通技術スタック\n";
+  content += "000_common_directory_structure: ディレクトリ構造\n";
+  content += "000_common_coding_conventions: コーディング規約\n";
+  content += "000_common_test_strategy: テスト戦略\n";
   content += "001_business_requirements: ビジネス要件の定義\n";
   content += "002_backend_requirements: バックエンド機能要件\n";
   content += "003_frontend_requirements: フロントエンド機能要件\n";
