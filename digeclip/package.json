@@ -16,7 +16,9 @@
     "test:coverage": "jest --coverage",
     "prepare": "husky",
     "format": "prettier --write .",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "local-ci": "npm run lint && npm run type-check && npm test && npm run format -- --check",
+    "verify": "npm run local-ci"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
