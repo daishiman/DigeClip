@@ -1,4 +1,5 @@
-import axios from 'axios';
+// axiosのインポートを削除
+// import axios from 'axios';
 // 未使用の変数を削除
 // import { API_BASE_URL } from '../../constants';
 
