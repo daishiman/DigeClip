@@ -9,30 +9,22 @@ Jestは、JavaScriptのテストフレームワークで、単体テストと統
 ```javascript
 // jest.config.js
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
   },
-  setupFiles: ['<rootDir>/jest.setup.js'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.afterEnv.js'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/**/__tests__/**',
+    '!src/**/_*.{js,jsx,ts,tsx}',
+    '!src/**/index.{js,jsx,ts,tsx}',
   ],
-  coverageThreshold: {
-    global: {
-      branches: 70,
-      functions: 80,
-      lines: 75,
-      statements: 75,
-    },
-  },
+  testMatch: ['**/__tests__/**/*.test.ts?(x)', '**/?(*.)+(test).ts?(x)'],
 };
 ```
 

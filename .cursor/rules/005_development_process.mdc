@@ -1,9 +1,11 @@
 ---
 description: 開発プロセス
-globs: "src/tests/**/*.{tsx,jsx,ts,js}", "src/utils/**/*.{tsx,jsx,ts,js}", "scripts/**/*.{ts,js}"
-alwaysApply: true
+globs: ["**/__tests__/**/*.{tsx,ts}", "**/lib/utils/**/*.ts", "**/scripts/**/*.ts"]
+alwaysApply: false
 ---
 # 開発プロセス
+
+## 5_development_process/1_Agile_Approach.md
 
 ```markdown
 # アジャイル開発の進め方 (最新版)
@@ -110,6 +112,8 @@ alwaysApply: true
 
 以上のアジャイル開発の進め方により、**経験の浅いエンジニア**でも **短いスプリント**で徐々に成長しながら**システムを拡張**していくことが可能となります。必要に応じて**スプリント期間やツール**を調整し、**段階的に開発プロセスを強化**してください。
 ```
+
+## 5_development_process/2_Priority_Management.md
 
 ```markdown
 # 要件の優先度管理（MoSCoW方式）
@@ -220,6 +224,8 @@ alwaysApply: true
 
 経験の浅いエンジニアでも、**Mustの範囲**を最優先に取り組むことで**短期間**でリリースが可能。後から **Should/ Could** の要件を徐々に追加するアジャイル的手法が望ましいです。
 ```
+
+## 5_development_process/3_Documentation_and_Communication.md
 
 ```markdown
 # ドキュメント管理・コミュニケーション
@@ -343,6 +349,8 @@ alwaysApply: true
 こうすることで、**低コストかつ短期間**でプロジェクトを進めながらも、必要な情報共有とドキュメント整備が無理なく実現でき、後々の**拡張**や**メンバー増**にも対応しやすくなります。
 ```
 
+## 5_development_process/4_Automation.md
+
 ```markdown
 # 自動化 (CI/CD, IaC)
 
@@ -463,6 +471,8 @@ alwaysApply: true
 
 このようにして、**低コスト & シンプル** に **CI/CD + 運用自動化** を導入し、後から段階的に拡張できる体制を整えます。
 ```
+
+## 5_development_process/5_Test_Strategy.md
 
 ```markdown
 # テスト戦略

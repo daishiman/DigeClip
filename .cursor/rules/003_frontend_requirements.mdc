@@ -1,9 +1,11 @@
 ---
 description: フロントエンド機能要件
-globs: "src/app/**/*.{tsx,jsx,ts,js}", "!src/app/api/**/*", "src/components/**/*.{tsx,jsx,ts,js}", "src/hooks/**/*.{tsx,jsx,ts,js}", "src/context/**/*.{tsx,jsx,ts,js}"
-alwaysApply: true
+globs: ["**/app/**/*.tsx", "!**/app/api/**/*", "**/components/**/*.tsx", "**/hooks/**/*.ts", "**/context/**/*.tsx"]
+alwaysApply: false
 ---
 # フロントエンド機能要件
+
+## 3_frontend_functional_requirements/0_Common_Requirements.md
 
 # フロントエンド共通要件
 
@@ -71,6 +73,8 @@ alwaysApply: true
 - ビジュアルリグレッションテストの実施
   - Storybookと連携したビジュアルテスト
   - 画面サイズごとのレイアウト検証
+
+## 3_frontend_functional_requirements/1_Screen_List_and_Transitions.md
 
 # 画面一覧・画面遷移図
 
@@ -225,6 +229,8 @@ flowchart LR
 - エラーハンドリングやモバイル対応は **最低限レベル** にとどめ、 **段階的に品質を高める** 方針。
 
 この画面一覧・遷移図に沿って、**必要なUI/UXを最小限で**短期間に実装し、運用開始後の改善サイクルで徐々に機能拡充していくのが理想です。
+
+## 3_frontend_functional_requirements/2_Feature_Details.md
 
 # 機能詳細仕様
 
@@ -642,6 +648,8 @@ Discordへの通知方法を管理する画面です。Webhook URLを登録し�
 - 編集操作の直感的なUI
 
 
+## 3_frontend_functional_requirements/3_Frontend_Technology_Stack.md
+
 # フロントエンド技術スタック
 
 > **注意:** このドキュメントでは、フロントエンド固有の技術スタックと実装方針を定義します。共通技術スタックについては [../../0_common/1_Common_Technology_Stack.md](../../0_common/1_Common_Technology_Stack.md) を参照してください。共通要件（レスポンシブデザイン、エラーハンドリング、アクセシビリティなど）については [0_Common_Requirements.md](0_Common_Requirements.md) を参照してください。ディレクトリ構造については [../../0_common/3_Directory_Structure.md](../../0_common/3_Directory_Structure.md) を参照してください。コーディング規約については [../../0_common/4_Coding_Conventions.md](../../0_common/4_Coding_Conventions.md) を参照してください。
@@ -847,6 +855,8 @@ Discordへの通知方法を管理する画面です。Webhook URLを登録し�
 以上のフロントエンド技術スタック設計により、**Next.js + Tailwind** を中心に、**無料かつ初心者に優しい**構成で短期間開発が可能になります。
 **Vercel** でデプロイすれば、**GitHub 連携→プッシュ→自動ビルド** という手軽なワークフローを実現でき、追加コストや手間を最小限に抑えられます。
 
+
+## 3_frontend_functional_requirements/4_Frontend_Testing.md
 
 # フロントエンドテスト仕様
 
