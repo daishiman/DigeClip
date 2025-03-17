@@ -33,12 +33,16 @@ export interface LogoutResponse {
 export const authService = {
   // ユーザー登録
   async register(data: RegisterRequest): Promise<ApiResponse<User>> {
-    return apiClient.post<User>(AUTH_ENDPOINTS.REGISTER, data);
+    // 安全な型変換
+    const requestData = { ...data } as unknown as Record<string, unknown>;
+    return apiClient.post<User>(AUTH_ENDPOINTS.REGISTER, requestData);
   },
 
   // ログイン
   async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const response = await apiClient.post<LoginResponse>(AUTH_ENDPOINTS.LOGIN, data);
+    // 安全な型変換
+    const requestData = { ...data } as unknown as Record<string, unknown>;
+    const response = await apiClient.post<LoginResponse>(AUTH_ENDPOINTS.LOGIN, requestData);
 
     // トークンをローカルストレージに保存
     if (response.data.token && typeof window !== 'undefined') {

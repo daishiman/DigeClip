@@ -51,12 +51,16 @@ export const adminService = {
 
   // ソースを作成
   async createSource(data: CreateSourceRequest): Promise<ApiResponse<SourceDetail>> {
-    return apiClient.post<SourceDetail>(ADMIN_ENDPOINTS.SOURCES, data);
+    // 安全な型変換
+    const requestData = { ...data } as unknown as Record<string, unknown>;
+    return apiClient.post<SourceDetail>(ADMIN_ENDPOINTS.SOURCES, requestData);
   },
 
   // ソースを更新
   async updateSource(id: string, data: UpdateSourceRequest): Promise<ApiResponse<SourceDetail>> {
-    return apiClient.put<SourceDetail>(ADMIN_ENDPOINTS.SOURCE_DETAIL(id), data);
+    // 安全な型変換
+    const requestData = { ...data } as unknown as Record<string, unknown>;
+    return apiClient.put<SourceDetail>(ADMIN_ENDPOINTS.SOURCE_DETAIL(id), requestData);
   },
 
   // ソースを削除
