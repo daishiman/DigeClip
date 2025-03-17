@@ -1,60 +1,56 @@
-// jest-dom adds custom jest matchers for asserting on DOM nodes.
-// allows you to do things like:
-// expect(element).toHaveTextContent(/react/i)
-// learn more: https://github.com/testing-library/jest-dom
-import '@testing-library/jest-dom';
-
-// Mock localStorage
-Object.defineProperty(window, 'localStorage', {
-  value: {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
-  },
-  writable: true,
-});
-
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
-
 // テスト環境のセットアップ
 
 // 環境変数の設定
 process.env.NODE_ENV = 'test';
 process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000/api';
 
+// 環境変数のモック設定
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'mock-anon-key';
+process.env.OPENAI_API_KEY = 'mock-openai-key';
+process.env.DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/mock';
+process.env.DATABASE_URL = 'postgresql://postgres:password@localhost:5432/postgres';
+
 // グローバルなモックの設定
 global.fetch = jest.fn();
 
-// ローカルストレージのモック
-if (typeof window !== 'undefined') {
-  Object.defineProperty(window, 'localStorage', {
-    value: {
-      getItem: jest.fn(),
-      setItem: jest.fn(),
-      removeItem: jest.fn(),
-    },
-    writable: true,
+// コンソールのモック（テスト中のエラーログを抑制）
+global.console = {
+  ...console,
+  error: jest.fn(),
+  warn: jest.fn(),
+  // log: jest.fn(), // 必要に応じてコメントアウト解除
+};
+
+// OpenAIモジュールのモック
+jest.mock('openai', () => {
+  // モックの実装
+  const mockCreate = jest.fn().mockResolvedValue({
+    choices: [
+      {
+        message: {
+          content: 'Mocked response',
+        },
+      },
+    ],
   });
-}
 
-// コンソールのエラーメッセージを抑制（必要に応じて）
-// console.error = jest.fn();
+  // OpenAIクラスのモック
+  function MockOpenAI() {
+    return {
+      chat: {
+        completions: {
+          create: mockCreate,
+        },
+      },
+    };
+  }
 
-// テスト後のクリーンアップ
-afterEach(() => {
-  jest.clearAllMocks();
+  return MockOpenAI;
 });
+
+// axiosモジュールのモック
+jest.mock('axios', () => ({
+  post: jest.fn().mockResolvedValue({ status: 204 }),
+  get: jest.fn().mockResolvedValue({ status: 200, data: {} }),
+}));

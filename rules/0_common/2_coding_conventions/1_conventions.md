@@ -137,6 +137,82 @@ function getUser(id) {
 }
 ```
 
+## テストコードのディレクトリ構造
+
+テストコードは以下のディレクトリ構造に従って配置します：
+
+```
+/src
+  ├─ /lib                          # ユーティリティと共通関数
+  │   ├─ /openai.ts                # OpenAI関連機能
+  │   ├─ /discord.ts               # Discord関連機能
+  │   ├─ /supabase.ts              # Supabase関連機能
+  │   └─ /__tests__                # libディレクトリのテスト
+  │       ├─ /openai.test.ts       # OpenAIのテスト
+  │       ├─ /discord.test.ts      # Discordのテスト
+  │       └─ /supabase.test.ts     # Supabaseのテスト
+  │
+  ├─ /components                   # コンポーネント
+  │   ├─ /ui                       # UIコンポーネント
+  │   └─ /__tests__                # コンポーネントのテスト
+  │       └─ /ui                   # UIコンポーネントのテスト
+  │
+  ├─ /app                          # Next.jsのApp Router
+  │   └─ /__tests__                # アプリケーションのテスト
+  │
+  └─ /__tests__                    # 全体的なテスト
+      ├─ /utils                    # テスト用ユーティリティ
+      ├─ /e2e                      # E2Eテスト
+      └─ /integration              # 統合テスト
+```
+
+### テストファイルの命名規則
+
+- 単体テスト: `*.test.ts` または `*.test.tsx`
+- 統合テスト: `*.test.ts` または `*.integration.test.ts`
+- E2Eテスト: `*.spec.ts` または `*.e2e.spec.ts`
+
+### テストコードの構造
+
+テストコードは以下の構造に従って記述します：
+
+```typescript
+// 1. インポート
+import { functionToTest } from '../path/to/function';
+import { mockData } from '../../__tests__/utils/test-utils';
+
+// 2. モックの設定（必要な場合）
+jest.mock('../path/to/dependency', () => ({
+  dependencyFunction: jest.fn(),
+}));
+
+// 3. テストスイート
+describe('functionToTest', () => {
+  // 4. 前処理
+  beforeEach(() => {
+    // テスト前の準備
+  });
+
+  // 5. 後処理
+  afterEach(() => {
+    // テスト後のクリーンアップ
+    jest.clearAllMocks();
+  });
+
+  // 6. テストケース
+  it('正常系: 期待通りの結果を返すこと', () => {
+    // テストコード
+    const result = functionToTest(mockData);
+    expect(result).toEqual(expectedResult);
+  });
+
+  it('異常系: エラーがスローされること', () => {
+    // テストコード
+    expect(() => functionToTest(invalidData)).toThrow();
+  });
+});
+```
+
 ## まとめ
 
 これらの規約は、コードの品質を維持しながらも、初心者が参加しやすい環境を作るために設計されています。プロジェクトの進行に合わせて、必要に応じて規約を更新していきます。
