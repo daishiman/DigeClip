@@ -23,7 +23,9 @@ export interface CreateSourceRequest {
   is_active: boolean;
 }
 
-export interface UpdateSourceRequest extends CreateSourceRequest {}
+// 空のインターフェースを修正
+// 型エイリアスを使用して、CreateSourceRequestと同じ型を参照する
+export type UpdateSourceRequest = CreateSourceRequest;
 
 // ソース検索パラメータ
 export interface SourceSearchParams {
