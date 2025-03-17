@@ -59,28 +59,56 @@
 
 ```
 /src
-  ├─ /lib                          # ユーティリティと共通関数
-  │   ├─ /openai.ts                # OpenAI関連機能
-  │   ├─ /discord.ts               # Discord関連機能
-  │   ├─ /supabase.ts              # Supabase関連機能
-  │   └─ /__tests__                # libディレクトリのテスト
-  │       ├─ /openai.test.ts       # OpenAIのテスト
-  │       ├─ /discord.test.ts      # Discordのテスト
-  │       └─ /supabase.test.ts     # Supabaseのテスト
-  │
-  ├─ /components                   # コンポーネント
-  │   ├─ /ui                       # UIコンポーネント
-  │   └─ /__tests__                # コンポーネントのテスト
-  │       └─ /ui                   # UIコンポーネントのテスト
-  │
-  ├─ /app                          # Next.jsのApp Router
-  │   └─ /__tests__                # アプリケーションのテスト
-  │
-  └─ /__tests__                    # 全体的なテスト
-      ├─ /utils                    # テスト用ユーティリティ
+  └─ /__tests__                    # テストコード
+      ├─ /unit                     # 単体テスト
+      │   ├─ /components           # コンポーネントの単体テスト
+      │   │   ├─ /ui               # UIコンポーネント
+      │   │   │   ├─ Button.test.tsx
+      │   │   │   └─ ...
+      │   │   ├─ /layout           # レイアウトコンポーネント
+      │   │   └─ /features         # 機能別コンポーネント
+      │   ├─ /hooks                # カスタムフックのテスト
+      │   │   ├─ useAuth.test.ts
+      │   │   └─ ...
+      │   ├─ /lib                  # ユーティリティのテスト
+      │   │   ├─ /services         # サービスのテスト
+      │   │   ├─ /utils            # ユーティリティのテスト
+      │   │   └─ ...
+      │   └─ /context              # コンテキストのテスト
+      │
+      ├─ /integration              # 統合テスト
+      │   ├─ /api                  # API統合テスト
+      │   │   ├─ auth.test.ts
+      │   │   └─ ...
+      │   ├─ /services             # サービス統合テスト
+      │   └─ /features             # 機能結合テスト
+      │
       ├─ /e2e                      # E2Eテスト
-      └─ /integration              # 統合テスト
+      │   ├─ /auth                 # 認証関連E2Eテスト
+      │   │   ├─ login.test.ts
+      │   │   └─ ...
+      │   ├─ /contents             # コンテンツ関連E2Eテスト
+      │   │   ├─ contentList.test.ts
+      │   │   └─ ...
+      │   └─ /settings             # 設定関連E2Eテスト
+      │
+      ├─ /utils                    # テスト用ユーティリティ
+      │   ├─ test-utils.ts         # テスト共通ユーティリティ
+      │   ├─ renderWithProviders.tsx # プロバイダ付きのレンダリングヘルパー
+      │   └─ ...
+      │
+      └─ /mocks                    # モックデータとハンドラー
+          ├─ /data                 # モックデータ
+          │   ├─ sources.ts
+          │   ├─ contents.ts
+          │   └─ ...
+          ├─ /handlers             # MSWリクエストハンドラー
+          │   ├─ auth.ts
+          │   └─ ...
+          └─ /server.ts            # MSWサーバー設定
 ```
+
+詳細なテストディレクトリ構造については、[テストディレクトリ構造](./2_test_structure.md)を参照してください。
 
 ## テスト実行
 

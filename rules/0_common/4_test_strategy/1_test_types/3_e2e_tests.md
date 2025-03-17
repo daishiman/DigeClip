@@ -22,15 +22,17 @@ E2Eテストは、`src/__tests__/e2e` ディレクトリに配置します。
 ```
 /src
   └─ /__tests__
-      └─ /e2e
-          ├─ /flows           # ユーザーフロー別のテスト
-          │   ├─ login.spec.ts
-          │   ├─ content.spec.ts
+      └─ /e2e                      # E2Eテスト
+          ├─ /auth                 # 認証関連E2Eテスト
+          │   ├─ login.test.ts
           │   └─ ...
-          ├─ /fixtures        # テストデータ
-          ├─ /support         # ヘルパー関数
-          └─ /utils           # ユーティリティ
+          ├─ /contents             # コンテンツ関連E2Eテスト
+          │   ├─ contentList.test.ts
+          │   └─ ...
+          └─ /settings             # 設定関連E2Eテスト
 ```
+
+詳細なテストディレクトリ構造については、[テストディレクトリ構造](../2_test_structure.md)を参照してください。
 
 ## テスト命名規則
 

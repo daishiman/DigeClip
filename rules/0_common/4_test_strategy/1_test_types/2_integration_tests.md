@@ -21,17 +21,15 @@
 ```
 /src
   └─ /__tests__
-      └─ /integration
-          ├─ /api                # API統合テスト
-          │   ├─ auth.test.ts    # 認証API統合テスト
-          │   └─ content.test.ts # コンテンツAPI統合テスト
-          │
-          ├─ /services           # サービス統合テスト
-          │   └─ content.test.ts # コンテンツサービス統合テスト
-          │
-          └─ /db                 # データベース統合テスト
-              └─ content.test.ts # コンテンツDB統合テスト
+      └─ /integration              # 統合テスト
+          ├─ /api                  # API統合テスト
+          │   ├─ auth.test.ts
+          │   └─ ...
+          ├─ /services             # サービス統合テスト
+          └─ /features             # 機能結合テスト
 ```
+
+詳細なテストディレクトリ構造については、[テストディレクトリ構造](../2_test_structure.md)を参照してください。
 
 ## テスト命名規則
 

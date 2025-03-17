@@ -1,13 +1,15 @@
 ---
 description: 共通技術スタック
-globs: "src/**/*.{tsx,jsx,ts,js,md}"
-alwaysApply: true
+globs: ["**/*.{tsx,jsx,ts,js}"]
+alwaysApply: false
 ---
 # 共通技術スタック
 
+## 1_common_requirements/1_technology_stack.md
+
 # 共通技術スタック
 
-> **注意:** コーディング規約については [4_Coding_Conventions.md](4_Coding_Conventions.md) を参照してください。ディレクトリ構造については [3_Directory_Structure.md](3_Directory_Structure.md) を参照してください。
+> **注意:** コーディング規約については [4_Coding_Conventions.md](mdc:4_Coding_Conventions.md) を参照してください。ディレクトリ構造については [3_Directory_Structure.md](mdc:3_Directory_Structure.md) を参照してください。
 
 ## 前提条件
 
@@ -35,7 +37,7 @@ alwaysApply: true
 - **Next.js 14 (React)**
   - **採用理由**:
     1. **SSR, SSG, ISR** など柔軟なレンダリング方式を公式サポートし、ベストプラクティスに沿った開発がしやすい
-    2. [Vercel](https://vercel.com/) との組み合わせが非常にスムーズで、無料枠でのデプロイおよびプレビュー機能が充実
+    2. [Vercel](mdc:https:/vercel.com) との組み合わせが非常にスムーズで、無料枠でのデプロイおよびプレビュー機能が充実
     3. TypeScript との相性が良く、公式テンプレート (`create-next-app`) で初期セットアップが簡単
     4. 大規模コミュニティがあり、学習リソースやプラグインが豊富
     5. App Router を採用（実装済み: Next.js 15.2.2）

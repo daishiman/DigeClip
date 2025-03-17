@@ -1,17 +1,5 @@
 [
   {
-    "body": "## 概要\n\nバックエンド開発に必要な環境設定と基本的なライブラリの導入を行います。\n\n- [ ] Node.js と npm (または yarn) のインストール\n- [ ] TypeScript 開発環境の構築 (tsconfig.json 設定)\n- [ ] Git リポジトリの初期化とクローン\n- [ ] .env.local ファイルを作成し、環境変数を設定\n    - [ ] DATABASE_URL (Supabase PostgreSQL 接続文字列)\n    - [ ] NEXT_PUBLIC_SUPABASE_URL と NEXT_PUBLIC_SUPABASE_ANON_KEY (Supabase クライアントキー)\n    - [ ] OPENAI_API_KEY など AI モデルの API キー\n    - [ ] DISCORD_WEBHOOK_URL (Discord 通知用 Webhook URL)\n- [ ] 依存パッケージのインストール (npm install または yarn install)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/backend/2_Language_and_Framework.md](./2_Functional_Requirements/backend/2_Language_and_Framework.md)",
-    "number": 14,
-    "title": "0001.Backend: 環境設定とライブラリ導入",
-    "branch": "chore/14-setup-backend-environment"
-  },
-  {
-    "body": "## データベース (Supabase) のセットアップ\n\n- [ ] Supabase プロジェクトの作成 (supabase.com)\n- [ ] プロジェクト設定からデータベース接続情報を取得 (DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)\n- [ ] Prisma スキーマファイル (prisma/schema.prisma) を定義 (テーブル定義を記述)\n    - [ ] sources テーブル (基本情報)\n    - [ ] youtube_sources テーブル (YouTube固有情報)\n    - [ ] rss_sources テーブル (RSS/ブログ固有情報)\n    - [ ] arxiv_sources テーブル (arXiv固有情報)\n    - [ ] contents テーブル\n    - [ ] ai_models テーブル\n    - [ ] summaries テーブル (stageカラムを含む)\n    - [ ] notifications テーブル\n    - [ ] tags テーブル\n    - [ ] content_tags テーブル\n    - [ ] users テーブル\n    - [ ] app_settings テーブル\n- [ ] Prisma マイグレーションを実行し、DB スキーマを初期化 (npx prisma migrate dev --name init)\n- [ ] Supabase Studio (GUI) でテーブルが作成されたことを確認\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/1_Database_Selection.md](./2_Functional_Requirements/data/1_Database_Selection.md)\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
-    "number": 15,
-    "title": "0002.データベース (Supabase) のセットアップ",
-    "branch": "chore/15-setup-supabase-database"
-  },
-  {
     "body": "## データアクセス層 (lib/db) の実装 - Prismaクライアント初期化\n\n- [ ] src/lib/db ディレクトリを作成\n- [ ] Prisma クライアントの初期化 (src/lib/db/db.ts)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/data/2_Schema_Design.md](./2_Functional_Requirements/data/2_Schema_Design.md)",
     "number": 30,
     "title": "0003.データアクセス層 (lib/db) の実装 - Prismaクライアント初期化",
@@ -178,24 +166,6 @@
     "number": 7,
     "title": "0030.テスト実装 - 結合テスト",
     "branch": "chore/7-implement-integration-tests"
-  },
-  {
-    "body": "## 概要\n\nNext.jsプロジェクトを初期化し、UI構築に必要なライブラリを導入します。\n\n- [ ] Next.jsプロジェクトを `create-next-app` で初期化する\n- [ ] Tailwind CSSをインストールし、基本設定を行う\n- [ ] その他UIライブラリ (例: Heroicons) をインストールする\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)",
-    "number": 9,
-    "title": "0031.Frontend: Next.jsプロジェクトの初期化と基本UIライブラリ導入",
-    "branch": "chore/9-initialize-nextjs-project-and-install-ui-libraries"
-  },
-  {
-    "body": "## 概要\n\n ESLintとPrettierを設定し、コードの品質を維持します。\n\n- [ ] ESLintのルールを設定する\n    - [ ]  extends: next/core-web-vitalsを設定する\n- [ ] Prettierを設定する\n    - [ ]  コミット時に自動整形 (husky + lint-staged など追加可)\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)",
-    "number": 13,
-    "title": "0032.Frontend: ESLintとPrettierの設定",
-    "branch": "chore/13-configure-eslint-and-prettier"
-  },
-  {
-    "body": "## 概要\n\nAPIとの通信を行うためのクライアントライブラリを導入します。\n\n- [ ] `axios` または `fetch` を使用してAPIクライアントを実装する\n- [ ] APIのエンドポイントを定義する (constants.tsなど)\n- [ ] API呼び出し用の共通関数 (client.ts) を作成する\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)\n- [2_Functional_Requirements/backend/3_API_Design.md](./2_Functional_Requirements/backend/3_API_Design.md)",
-    "number": 10,
-    "title": "0033.Frontend: APIクライアントライブラリ導入",
-    "branch": "chore/10-introduce-api-client-library"
   },
   {
     "body": "## 概要\n\n小〜中規模ならReact Hooks で完結できるが、 Redux, Zustand, Jotai 等の導入を検討する。\n\n- [ ] 状態管理ライブラリ導入するか検討。\n- [ ] 各自で選定した場合は比較検討を実施する。\n- [ ] ReduxToolkit などの Redux 関連ライブラリのインストール\n\n**関連ドキュメント:**\n- [2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md](./2_Functional_Requirements/frontend/3_Frontend_Technology_Stack.md)",

@@ -15,7 +15,7 @@ const { defineConfig } = require('cypress');
 module.exports = defineConfig({
   e2e: {
     baseUrl: 'http://localhost:3000',
-    specPattern: 'src/__tests__/e2e/**/*.spec.{js,jsx,ts,tsx}',
+    specPattern: 'src/__tests__/e2e/**/*.test.{js,jsx,ts,tsx}',
     supportFile: 'src/__tests__/e2e/support/e2e.ts',
     setupNodeEvents(on, config) {
       // イベントリスナーの設定

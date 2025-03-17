@@ -1,9 +1,11 @@
 ---
 description: ビジネス要件の定義
-globs: "src/**/*.{tsx,jsx,ts,js,md}"
-alwaysApply: true
+globs: ["**/*.{tsx,jsx,ts,js}"]
+alwaysApply: false
 ---
 # ビジネス要件
+
+## 1_business_requirements/1_Business_Goal_and_Objectives.md
 
 # ビジネスゴール・目的の明確化
 
@@ -105,6 +107,8 @@ alwaysApply: true
   - [プロジェクト担当PM/POの連絡先]
 
 
+
+## 1_business_requirements/2_User_Definition.md
 
 # 対象ユーザの定義
 
@@ -293,6 +297,8 @@ alwaysApply: true
 以上のように、ペルソナ・ユーザーロール・ニーズ・ジャーニーを定義することで、**「お金をかけずに、容易に実装・導入できる」**本システムの使い方や導入効果を明確化し、開発と運用の指針を共有しやすくなります。
 
 
+## 1_business_requirements/3_Scope_Definition.md
+
 # 開発スコープ定義
 
 > **前提:**
@@ -411,6 +417,8 @@ alwaysApply: true
 
 これらを踏まえ、**最小リリース**(MVP)を早期に完成させ、**実際の効果**(手動作業の削減率や要約精度)を検証しつつ、段階的に改良を重ねるのが理想です。
 
+
+## 1_business_requirements/4_Project_Organization.md
 
 # プロジェクトの進め方・体制
 

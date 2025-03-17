@@ -1,9 +1,11 @@
 ---
 description: リスクとリリース計画
-globs: "src/config/constants.{ts,js}", "src/config/feature-flags.{ts,js}", "src/lib/monitoring/**/*.{ts,js}"
-alwaysApply: true
+globs: ["**/config/constants.ts", "**/config/routes.ts", "**/lib/middleware/**/*.ts"]
+alwaysApply: false
 ---
 # リスクとリリース計画
+
+## 6_risk_and_release_plan/1_Risk_Management.md
 
 ```markdown
 # リスク管理
@@ -56,6 +58,8 @@ alwaysApply: true
 
 このサイクルを回すことで、初心者エンジニアでも**大きな問題になる前に**リスクを把握・対応しやすくする。将来的に機能・ユーザー数が増えた際も、リスク管理の仕組みが整っていればスムーズに運用を拡張できる。
 ```
+
+## 6_risk_and_release_plan/2_Release_Schedule.md
 
 ```markdown
 # リリース計画
@@ -148,6 +152,8 @@ alwaysApply: true
 > - 将来的にユーザーや機能が増えても、**段階的にプラン移行・手順拡張**すれば柔軟に対応できる
 ```
 
+
+## 6_risk_and_release_plan/3_Post_Release_Improvement.md
 
 # 運用開始後の課題管理・改善計画
 
