@@ -1,4 +1,5 @@
 import { supabase, fetchData, insertData, updateData, deleteData } from '../../lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 // Supabaseクライアントのモック
 jest.mock('@supabase/supabase-js', () => {
@@ -36,7 +37,7 @@ describe('Supabase Client', () => {
         ({
           select: jest.fn().mockReturnThis(),
           match: jest.fn().mockResolvedValue({ data: mockData, error: null }),
-        }) as any
+        }) as unknown as ReturnType<SupabaseClient['from']>
     );
 
     const result = await fetchData('test_table', { id: '1' });
@@ -52,7 +53,7 @@ describe('Supabase Client', () => {
         ({
           select: jest.fn().mockReturnThis(),
           match: jest.fn().mockResolvedValue({ data: null, error: mockError }),
-        }) as any
+        }) as unknown as ReturnType<SupabaseClient['from']>
     );
 
     await expect(fetchData('test_table', { id: '1' })).rejects.toThrow('Database error');
@@ -66,7 +67,7 @@ describe('Supabase Client', () => {
         ({
           insert: jest.fn().mockReturnThis(),
           select: jest.fn().mockResolvedValue({ data: mockResult, error: null }),
-        }) as any
+        }) as unknown as ReturnType<SupabaseClient['from']>
     );
 
     const result = await insertData('test_table', mockData);
@@ -83,7 +84,7 @@ describe('Supabase Client', () => {
           update: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           select: jest.fn().mockResolvedValue({ data: mockResult, error: null }),
-        }) as any
+        }) as unknown as ReturnType<SupabaseClient['from']>
     );
 
     const result = await updateData('test_table', '1', mockData);
@@ -97,7 +98,7 @@ describe('Supabase Client', () => {
         ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockResolvedValue({ error: null }),
-        }) as any
+        }) as unknown as ReturnType<SupabaseClient['from']>
     );
 
     const result = await deleteData('test_table', '1');
@@ -112,7 +113,7 @@ describe('Supabase Client', () => {
         ({
           delete: jest.fn().mockReturnThis(),
           eq: jest.fn().mockResolvedValue({ error: mockError }),
-        }) as any
+        }) as unknown as ReturnType<SupabaseClient['from']>
     );
 
     await expect(deleteData('test_table', '1')).rejects.toThrow('Delete error');
