@@ -2,7 +2,6 @@ import { Prisma } from '@prisma/client';
 
 // 複雑なPrisma型定義のエクスポート
 export type {
-  Prisma,
   PrismaPromise,
   User,
   Bookmark,
