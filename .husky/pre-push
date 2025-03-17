@@ -1,32 +1,14 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo "🧪 プッシュ前にテストとリントを実行しています..."
+echo "🧪 プッシュ前にすべてのテストとチェックを実行しています..."
 
-# digeclipディレクトリに移動
-cd digeclip
+# ルートディレクトリのローカルCIスクリプトを実行
+./scripts/local-ci.sh
 
-# テストを実行
-echo "テストを実行中..."
-npm test
+# 終了コードをチェック
 if [ $? -ne 0 ]; then
-  echo "❌ テストに失敗しました。問題を修正してから再度プッシュしてください。"
-  exit 1
-fi
-
-# リントを実行
-echo "ESLintを実行中..."
-npm run lint
-if [ $? -ne 0 ]; then
-  echo "❌ リントに失敗しました。問題を修正してから再度プッシュしてください。"
-  exit 1
-fi
-
-# 型チェックを実行
-echo "TypeScriptの型チェックを実行中..."
-npm run type-check
-if [ $? -ne 0 ]; then
-  echo "❌ 型チェックに失敗しました。問題を修正してから再度プッシュしてください。"
+  echo "❌ CIチェックに失敗しました。問題を修正してから再度プッシュしてください。"
   exit 1
 fi
 
