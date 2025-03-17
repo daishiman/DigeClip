@@ -1,5 +1,5 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { API_BASE_URL } from '../constants';
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
+import { API_BASE_URL, isTestEnvironment } from '../constants';
 
 // レスポンスの型定義
 export interface ApiResponse<T> {
@@ -38,6 +38,14 @@ class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
+    // テスト環境ではモックを使用するため、実際のAPIクライアントは初期化しない
+    if (isTestEnvironment()) {
+      this.client = axios.create({
+        baseURL: 'http://mock-api',
+      });
+      return;
+    }
+
     this.client = axios.create({
       baseURL: API_BASE_URL,
       headers: {
@@ -124,19 +132,31 @@ class ApiClient {
   }
 
   // POSTリクエスト
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async post<T>(
+    url: string,
+    data?: Record<string, unknown>,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.client.post<ApiResponse<T>>(url, data, config);
     return response.data;
   }
 
   // PUTリクエスト
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async put<T>(
+    url: string,
+    data?: Record<string, unknown>,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.client.put<ApiResponse<T>>(url, data, config);
     return response.data;
   }
 
   // PATCHリクエスト
-  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async patch<T>(
+    url: string,
+    data?: Record<string, unknown>,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.client.patch<ApiResponse<T>>(url, data, config);
     return response.data;
   }

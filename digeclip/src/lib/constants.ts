@@ -6,8 +6,13 @@
 // 要件に合わせて、本番環境と開発環境のURLを設定
 export const API_BASE_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://api.digeclip.com/api'
+    ? process.env.NEXT_PUBLIC_API_URL || 'https://api.digeclip.com/api'
     : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+// テスト環境かどうかを判定する関数
+export const isTestEnvironment = () => {
+  return process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+};
 
 // 認証関連のエンドポイント
 export const AUTH_ENDPOINTS = {
