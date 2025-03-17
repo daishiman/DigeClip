@@ -5,7 +5,7 @@
 ## Next.jsプロジェクトの標準ディレクトリ構造
 
 ```
-/src
+/digeclip/src
   ├─ /app                          # Next.jsのApp Routerディレクトリ
   │   ├─ /page.tsx                 # ダッシュボード画面
   │   ├─ /sources/page.tsx         # ソース一覧

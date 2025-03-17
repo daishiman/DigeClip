@@ -1,285 +1,221 @@
-# Cypress と Playwright
+# Cypress/Playwright
 
-E2Eテストには、CypressとPlaywrightを使用します。どちらも強力なE2Eテストツールですが、用途に応じて使い分けます。
+## 概要
 
-## Cypress
-
-Cypressは、モダンなWebアプリケーションのE2Eテストに特化したツールです。
-
-### 設定
-
-```javascript
-// cypress.config.js
-const { defineConfig } = require('cypress');
-
-module.exports = defineConfig({
-  e2e: {
-    baseUrl: 'http://localhost:3000',
-    specPattern: 'src/__tests__/e2e/**/*.test.{js,jsx,ts,tsx}',
-    supportFile: 'src/__tests__/e2e/support/e2e.ts',
-    setupNodeEvents(on, config) {
-      // イベントリスナーの設定
-    },
-  },
-  env: {
-    // 環境変数
-    apiUrl: 'http://localhost:3000/api',
-  },
-  viewportWidth: 1280,
-  viewportHeight: 720,
-});
-```
-
-### ディレクトリ構造
-
-```
-/src
-  └─ /__tests__
-      └─ /e2e
-          ├─ /flows           # ユーザーフロー別のテスト
-          │   ├─ login.spec.ts
-          │   └─ content.spec.ts
-          ├─ /fixtures        # テストデータ
-          │   └─ users.json
-          ├─ /support         # ヘルパー関数
-          │   ├─ commands.ts
-          │   └─ e2e.ts
-          └─ /utils           # ユーティリティ
-              └─ selectors.ts
-```
-
-### テスト例
-
-```typescript
-// src/__tests__/e2e/flows/login.spec.ts
-describe('ログインフロー', () => {
-  beforeEach(() => {
-    // テスト前の準備
-    cy.visit('/login');
-  });
-
-  it('有効な認証情報でログインできること', () => {
-    // ログインフォームに入力
-    cy.get('input[name="email"]').type('test@example.com');
-    cy.get('input[name="password"]').type('password123');
-
-    // ログインボタンをクリック
-    cy.get('button[type="submit"]').click();
-
-    // ダッシュボードにリダイレクトされることを確認
-    cy.url().should('include', '/dashboard');
-
-    // ログイン成功メッセージが表示されることを確認
-    cy.contains('ログインに成功しました').should('be.visible');
-  });
-});
-```
-
-### カスタムコマンド
-
-```typescript
-// src/__tests__/e2e/support/commands.ts
-Cypress.Commands.add('login', (email, password) => {
-  cy.visit('/login');
-  cy.get('input[name="email"]').type(email);
-  cy.get('input[name="password"]').type(password);
-  cy.get('button[type="submit"]').click();
-  cy.url().should('include', '/dashboard');
-});
-
-// 使用例
-it('ログイン後にコンテンツを作成できること', () => {
-  cy.login('test@example.com', 'password123');
-  // 以降のテストコード
-});
-```
-
-### テスト実行
-
-```bash
-# Cypressを開く
-npx cypress open
-
-# ヘッドレスモードでテストを実行
-npx cypress run
-
-# 特定のテストファイルを実行
-npx cypress run --spec "src/__tests__/e2e/flows/login.spec.ts"
-```
+Cypress と Playwright は、ブラウザ上でのインタラクションをシミュレートしてWebアプリケーションをテストするためのE2E（エンドツーエンド）テストツールです。ユーザーの操作を自動化し、実際のブラウザ環境での動作を検証します。
 
 ## Playwright
 
-Playwrightは、複数のブラウザをサポートするE2Eテストツールです。
+PlaywrightはMicrosoftが開発したモダンなE2Eテストツールで、複数のブラウザエンジン（Chromium、Firefox、WebKit）をサポートしています。
 
-### 設定
+### インストール
+
+```bash
+npm install --save-dev @playwright/test
+npx playwright install
+```
+
+### 設定（playwright.config.ts）
 
 ```typescript
-// playwright.config.ts
-import { PlaywrightTestConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
-const config: PlaywrightTestConfig = {
-  testDir: './src/__tests__/e2e',
-  testMatch: '**/*.spec.ts',
+export default defineConfig({
+  testDir: './digeclip/src/__tests__/e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
   use: {
     baseURL: 'http://localhost:3000',
-    headless: true,
-    viewport: { width: 1280, height: 720 },
+    trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
   },
   projects: [
     {
-      name: 'Chrome',
-      use: { browserName: 'chromium' },
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'Firefox',
-      use: { browserName: 'firefox' },
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
     },
     {
-      name: 'Safari',
-      use: { browserName: 'webkit' },
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'mobile chrome',
+      use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'mobile safari',
+      use: { ...devices['iPhone 12'] },
     },
   ],
-};
-
-export default config;
+  webServer: {
+    command: 'npm run dev',
+    port: 3000,
+    reuseExistingServer: !process.env.CI,
+  },
+});
 ```
 
-### ディレクトリ構造
-
-```
-/src
-  └─ /__tests__
-      └─ /e2e
-          ├─ /flows           # ユーザーフロー別のテスト
-          │   ├─ login.spec.ts
-          │   └─ content.spec.ts
-          ├─ /fixtures        # テストデータ
-          │   └─ users.json
-          ├─ /utils           # ユーティリティ
-          │   └─ selectors.ts
-          └─ /pages           # ページオブジェクト
-              ├─ login.page.ts
-              └─ dashboard.page.ts
-```
-
-### テスト例
+### Playwrightを使用したテスト例
 
 ```typescript
-// src/__tests__/e2e/flows/content.spec.ts
+// login.test.ts
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/login.page';
-import { DashboardPage } from '../pages/dashboard.page';
 
-test.describe('コンテンツ作成フロー', () => {
-  let loginPage;
-  let dashboardPage;
-
+test.describe('ログイン機能', () => {
   test.beforeEach(async ({ page }) => {
-    loginPage = new LoginPage(page);
-    dashboardPage = new DashboardPage(page);
-
-    // ログイン
-    await loginPage.goto();
-    await loginPage.login('test@example.com', 'password123');
-    await expect(page).toHaveURL(/.*dashboard/);
+    // 各テスト前にホームページにアクセス
+    await page.goto('/');
   });
 
-  test('新しいコンテンツを作成できること', async ({ page }) => {
-    // 新規作成ページに移動
-    await dashboardPage.clickNewContent();
-    await expect(page).toHaveURL(/.*create/);
+  test('有効な認証情報でログインできること', async ({ page }) => {
+    // ログインページに移動
+    await page.click('[data-testid="login-button"]');
 
-    // フォームに入力
-    await page.fill('input[name="title"]', 'テスト用コンテンツ');
-    await page.fill('textarea[name="body"]', 'これはテスト用のコンテンツです。');
+    // 認証情報を入力
+    await page.fill('[data-testid="email-input"]', 'test@example.com');
+    await page.fill('[data-testid="password-input"]', 'password123');
 
-    // 保存ボタンをクリック
-    await page.click('button:has-text("保存")');
+    // ログインボタンをクリック
+    await page.click('[data-testid="submit-button"]');
 
-    // 保存成功メッセージが表示されることを確認
-    await expect(page.locator('text=コンテンツが保存されました')).toBeVisible();
+    // ダッシュボードにリダイレクトされることを確認
+    await expect(page).toHaveURL(/.*dashboard/);
+
+    // ユーザー名が表示されることを確認
+    await expect(page.locator('[data-testid="user-greeting"]')).toContainText('テストユーザー');
+  });
+
+  test('無効な認証情報でログインするとエラーが表示されること', async ({ page }) => {
+    // ログインページに移動
+    await page.click('[data-testid="login-button"]');
+
+    // 無効な認証情報を入力
+    await page.fill('[data-testid="email-input"]', 'invalid@example.com');
+    await page.fill('[data-testid="password-input"]', 'wrongpassword');
+
+    // ログインボタンをクリック
+    await page.click('[data-testid="submit-button"]');
+
+    // エラーメッセージが表示されることを確認
+    await expect(page.locator('[data-testid="error-message"]')).toBeVisible();
+    await expect(page.locator('[data-testid="error-message"]')).toContainText('メールアドレスまたはパスワードが正しくありません');
+
+    // URLがログインページのままであることを確認
+    await expect(page).toHaveURL(/.*login/);
   });
 });
 ```
 
-### ページオブジェクトパターン
+## Cypress
 
-```typescript
-// src/__tests__/e2e/pages/login.page.ts
-import { Page } from '@playwright/test';
+Cypressは、モダンなWebアプリケーションのためのE2Eテストツールで、開発者向けの優れたデバッグ体験を提供します。
 
-export class LoginPage {
-  private page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
-  }
-
-  async goto() {
-    await this.page.goto('/login');
-  }
-
-  async login(email: string, password: string) {
-    await this.page.fill('input[name="email"]', email);
-    await this.page.fill('input[name="password"]', password);
-    await this.page.click('button[type="submit"]');
-  }
-}
-```
-
-### テスト実行
+### インストール
 
 ```bash
-# すべてのテストを実行
-npx playwright test
-
-# 特定のテストファイルを実行
-npx playwright test src/__tests__/e2e/flows/login.spec.ts
-
-# UIモードでテストを実行
-npx playwright test --ui
-
-# 特定のブラウザでテストを実行
-npx playwright test --project=Chrome
+npm install --save-dev cypress
 ```
 
-## Cypress と Playwright の使い分け
+### 設定（cypress.config.ts）
 
-### Cypressの利点
+```typescript
+import { defineConfig } from 'cypress';
 
-- 直感的なUIとデバッグ機能
-- 自動リトライ機能
-- 豊富なプラグインエコシステム
-- 優れたドキュメント
+export default defineConfig({
+  e2e: {
+    baseUrl: 'http://localhost:3000',
+    specPattern: 'digeclip/src/__tests__/e2e/**/*.cy.{js,jsx,ts,tsx}',
+    supportFile: 'digeclip/src/__tests__/e2e/support/e2e.ts',
+    videosFolder: 'cypress/videos',
+    screenshotsFolder: 'cypress/screenshots',
+    viewportWidth: 1280,
+    viewportHeight: 720,
+  },
+});
+```
 
-### Playwrightの利点
+### Cypressを使用したテスト例
 
-- 複数のブラウザをサポート（Chrome, Firefox, Safari）
-- モバイルエミュレーション
-- 高速な実行
-- 並列実行のサポート
+```typescript
+// login.cy.ts
+describe('ログイン機能', () => {
+  beforeEach(() => {
+    // 各テスト前にホームページにアクセス
+    cy.visit('/');
+  });
 
-### 使い分けの指針
+  it('有効な認証情報でログインできること', () => {
+    // ログインページに移動
+    cy.get('[data-testid="login-button"]').click();
 
-- **Cypress**: 単一ブラウザでのテストや、チーム内にCypressの経験者がいる場合
-- **Playwright**: 複数ブラウザでのテストや、パフォーマンスが重要な場合
+    // 認証情報を入力
+    cy.get('[data-testid="email-input"]').type('test@example.com');
+    cy.get('[data-testid="password-input"]').type('password123');
 
-## 共通のベストプラクティス
+    // ログインボタンをクリック
+    cy.get('[data-testid="submit-button"]').click();
 
-1. **ページオブジェクトパターンを使用する**
-   - テストコードとページの詳細を分離する
-   - 再利用性と保守性を向上させる
+    // ダッシュボードにリダイレクトされることを確認
+    cy.url().should('include', '/dashboard');
 
-2. **データ駆動テストを活用する**
-   - 同じテストを異なるデータセットで実行する
-   - テストケースの網羅性を向上させる
+    // ユーザー名が表示されることを確認
+    cy.get('[data-testid="user-greeting"]').should('contain', 'テストユーザー');
+  });
 
-3. **安定したセレクタを使用する**
-   - データ属性（`data-testid`など）を使用する
-   - CSSクラスやIDに依存しない
+  it('無効な認証情報でログインするとエラーが表示されること', () => {
+    // ログインページに移動
+    cy.get('[data-testid="login-button"]').click();
 
-4. **テスト環境を適切に設定する**
-   - テスト用データベースを使用する
-   - テスト前後にデータをクリーンアップする
+    // 無効な認証情報を入力
+    cy.get('[data-testid="email-input"]').type('invalid@example.com');
+    cy.get('[data-testid="password-input"]').type('wrongpassword');
+
+    // ログインボタンをクリック
+    cy.get('[data-testid="submit-button"]').click();
+
+    // エラーメッセージが表示されることを確認
+    cy.get('[data-testid="error-message"]').should('be.visible');
+    cy.get('[data-testid="error-message"]').should('contain', 'メールアドレスまたはパスワードが正しくありません');
+
+    // URLがログインページのままであることを確認
+    cy.url().should('include', '/login');
+  });
+});
+```
+
+## ベストプラクティス
+
+1. **データ属性の使用**
+   - テスト用のデータ属性（例：`data-testid="login-button"`）を使用して要素を選択
+   - CSSやクラス名の変更に影響されないロバストなテストを作成
+
+2. **テストの独立性確保**
+   - 各テストは完全に独立して実行できるようにする
+   - テスト間で状態が共有されないようにする
+
+3. **テスト環境の分離**
+   - テスト用のデータベースやAPIモックを使用
+   - テスト用の環境変数を設定
+
+4. **テストの安定性向上**
+   - 非同期処理の待機を適切に行う
+   - 再試行メカニズムを活用（特にCI環境で）
+
+5. **視覚的リグレッションテスト**
+   - スクリーンショットを使った視覚的な変更検出
+   - コンポーネントのレイアウト崩れなどを検出
+
+## 注意点
+
+- E2Eテストは単体テストや統合テストよりも実行時間が長い
+- すべての機能をE2Eテストでカバーするのではなく、重要なユーザーフローに焦点を当てる
+- CIパイプラインに組み込む場合は、実行時間とリソース消費を考慮
+- ヘッドレスモードでの実行をサポートして、CI環境での実行を効率化

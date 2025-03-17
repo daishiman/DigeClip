@@ -1,219 +1,183 @@
 # Jest
 
-Jestは、JavaScriptのテストフレームワークで、単体テストと統合テストに使用します。
+## 概要
+
+Jestは、JavaScriptとTypeScriptのテストフレームワークであり、特にReactアプリケーションのテストに適しています。シンプルな設定と強力な機能を持ち、単体テストと統合テストに使用します。
 
 ## 設定
 
-プロジェクトでは、以下の設定でJestを使用します：
-
-```javascript
-// jest.config.js
-module.exports = {
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-  },
-  transform: {
-    '^.+\\.(ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
-  },
-  collectCoverageFrom: [
-    'src/**/*.{js,jsx,ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/_*.{js,jsx,ts,tsx}',
-    '!src/**/index.{js,jsx,ts,tsx}',
-  ],
-  testMatch: ['**/__tests__/**/*.test.ts?(x)', '**/?(*.)+(test).ts?(x)'],
-};
-```
-
-## セットアップファイル
-
-```javascript
-// jest.setup.js
-// テスト実行前の環境設定
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
-process.env.OPENAI_API_KEY = 'test-api-key';
-```
-
-```javascript
-// jest.setup.afterEnv.js
-// テスト実行後の環境設定
-import '@testing-library/jest-dom';
-
-// グローバルなモックのセットアップ
-jest.mock('next/router', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    prefetch: jest.fn(),
-    query: {},
-  }),
-}));
-```
-
-## テスト実行
+### パッケージのインストール
 
 ```bash
-# すべてのテストを実行
-npm test
-
-# 特定のテストファイルを実行
-npm test -- path/to/test.test.ts
-
-# 単体テストのみ実行
-npm run test:unit
-
-# 統合テストのみ実行
-npm run test:integration
-
-# E2Eテストのみ実行
-npm run test:e2e
-
-# テストカバレッジを計測
-npm run test:coverage
+npm install --save-dev jest @testing-library/react @testing-library/jest-dom jest-environment-jsdom
 ```
 
-## マッチャー
+### 基本設定（jest.config.js）
 
-Jestでは、以下のマッチャーを使用してアサーションを行います：
+```javascript
+/** @type {import('jest').Config} */
+const config = {
+  testEnvironment: 'jest-environment-jsdom',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/digeclip/src/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+  },
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+  },
+  collectCoverageFrom: [
+    'digeclip/src/**/*.{ts,tsx}',
+    '!digeclip/src/**/*.d.ts',
+    '!digeclip/src/**/*.stories.{ts,tsx}',
+    '!digeclip/src/types/**/*',
+    '!digeclip/src/__tests__/**/*',
+  ],
+};
 
-```typescript
-// 値の検証
-expect(value).toBe(expected);        // 厳密等価性（===）
-expect(value).toEqual(expected);     // 深い等価性
-expect(value).toBeDefined();         // undefined でないこと
-expect(value).toBeNull();            // null であること
-expect(value).toBeTruthy();          // truthy であること
-expect(value).toBeFalsy();           // falsy であること
-
-// 数値の検証
-expect(value).toBeGreaterThan(expected);
-expect(value).toBeLessThan(expected);
-expect(value).toBeCloseTo(expected, numDigits);
-
-// 文字列の検証
-expect(string).toMatch(/pattern/);
-expect(string).toContain(substring);
-
-// 配列の検証
-expect(array).toContain(item);
-expect(array).toHaveLength(length);
-
-// オブジェクトの検証
-expect(object).toHaveProperty(keyPath, value);
-
-// 例外の検証
-expect(() => { throw new Error() }).toThrow();
-expect(() => { throw new Error('message') }).toThrow('message');
-
-// 非同期コードの検証
-await expect(promise).resolves.toBe(value);
-await expect(promise).rejects.toThrow();
+export default config;
 ```
 
-## モック
+### セットアップファイル（jest.setup.js）
 
-Jestでは、以下の方法でモックを作成します：
+```javascript
+import '@testing-library/jest-dom';
+import { server } from './digeclip/src/__tests__/mocks/server';
 
-```typescript
-// 関数のモック
-const mockFn = jest.fn();
-mockFn.mockReturnValue(value);
-mockFn.mockResolvedValue(value);
-mockFn.mockRejectedValue(error);
-
-// モジュールのモック
-jest.mock('./path/to/module', () => ({
-  functionName: jest.fn(),
-}));
-
-// スパイ
-const spy = jest.spyOn(object, 'method');
+// MSWサーバーのセットアップ
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 ```
 
-## テストの構造
+## 使用例
+
+### コンポーネントのテスト
 
 ```typescript
-// グループ化
-describe('グループ名', () => {
-  // 前処理
-  beforeAll(() => {
-    // テスト前の準備（1回のみ）
+// Button.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import Button from '@/components/ui/Button/Button';
+
+describe('Button Component', () => {
+  it('renders correctly', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByRole('button')).toHaveTextContent('Click me');
   });
 
-  beforeEach(() => {
-    // 各テスト前の準備
-  });
-
-  // テストケース
-  it('テスト名', () => {
-    // テストコード
-  });
-
-  test('テスト名', () => {
-    // テストコード
-  });
-
-  // 後処理
-  afterEach(() => {
-    // 各テスト後のクリーンアップ
-  });
-
-  afterAll(() => {
-    // テスト後のクリーンアップ（1回のみ）
-  });
-});
-```
-
-## React Testing Library
-
-Reactコンポーネントのテストには、React Testing Libraryを使用します：
-
-```typescript
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { Button } from '../Button';
-
-describe('Button', () => {
-  it('ボタンがレンダリングされること', () => {
-    render(<Button>テスト</Button>);
-
-    // テキストでの要素取得
-    const button = screen.getByText('テスト');
-    expect(button).toBeInTheDocument();
-
-    // ロールでの要素取得
-    const buttonByRole = screen.getByRole('button', { name: 'テスト' });
-    expect(buttonByRole).toBeInTheDocument();
-  });
-
-  it('クリックイベントが発火すること', () => {
+  it('calls onClick handler when clicked', () => {
     const handleClick = jest.fn();
-    render(<Button onClick={handleClick}>テスト</Button>);
-
-    // fireEventを使用したイベント発火
-    const button = screen.getByText('テスト');
-    fireEvent.click(button);
+    render(<Button onClick={handleClick}>Click me</Button>);
+    fireEvent.click(screen.getByRole('button'));
     expect(handleClick).toHaveBeenCalledTimes(1);
-
-    // userEventを使用したイベント発火（より実際のユーザー操作に近い）
-    userEvent.click(button);
-    expect(handleClick).toHaveBeenCalledTimes(2);
   });
 
-  it('非同期処理の結果が表示されること', async () => {
-    render(<AsyncComponent />);
+  it('applies the correct variant class', () => {
+    render(<Button variant="primary">Primary Button</Button>);
+    expect(screen.getByRole('button')).toHaveClass('btn-primary');
+  });
 
-    // ボタンをクリック
-    userEvent.click(screen.getByText('データを取得'));
-
-    // 非同期処理の完了を待機
-    await waitFor(() => {
-      expect(screen.getByText('データ取得完了')).toBeInTheDocument();
-    });
+  it('is disabled when disabled prop is true', () => {
+    render(<Button disabled>Disabled Button</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
   });
 });
 ```
+
+### ユーティリティ関数のテスト
+
+```typescript
+// formatDate.test.ts
+import { formatDate } from '@/lib/utils/formatDate';
+
+describe('formatDate', () => {
+  it('formats dates correctly', () => {
+    const date = new Date('2023-01-15T12:30:45');
+    expect(formatDate(date)).toBe('2023/01/15');
+  });
+
+  it('formats dates with custom format', () => {
+    const date = new Date('2023-01-15T12:30:45');
+    expect(formatDate(date, 'YYYY-MM-DD')).toBe('2023-01-15');
+  });
+
+  it('returns empty string for invalid date', () => {
+    const date = new Date('invalid date');
+    expect(formatDate(date)).toBe('');
+  });
+});
+```
+
+### カスタムフックのテスト
+
+```typescript
+// useCounter.test.ts
+import { renderHook, act } from '@testing-library/react';
+import useCounter from '@/hooks/useCounter';
+
+describe('useCounter', () => {
+  it('should initialize counter with default value', () => {
+    const { result } = renderHook(() => useCounter());
+    expect(result.current.count).toBe(0);
+  });
+
+  it('should initialize counter with provided value', () => {
+    const { result } = renderHook(() => useCounter(10));
+    expect(result.current.count).toBe(10);
+  });
+
+  it('should increment counter', () => {
+    const { result } = renderHook(() => useCounter());
+    act(() => {
+      result.current.increment();
+    });
+    expect(result.current.count).toBe(1);
+  });
+
+  it('should decrement counter', () => {
+    const { result } = renderHook(() => useCounter(5));
+    act(() => {
+      result.current.decrement();
+    });
+    expect(result.current.count).toBe(4);
+  });
+
+  it('should reset counter to provided value', () => {
+    const { result } = renderHook(() => useCounter(5));
+    act(() => {
+      result.current.reset();
+    });
+    expect(result.current.count).toBe(0);
+  });
+});
+```
+
+## ベストプラクティス
+
+1. **テストファイルの命名規則**
+   - テスト対象のファイルと同じ名前に `.test.ts(x)` を付ける
+   - 例：`Button.tsx` → `Button.test.tsx`
+
+2. **テスト構造**
+   - `describe` ブロックでテストスイートをグループ化
+   - `it` または `test` ブロックで個々のテストケースを記述
+   - テスト名は「何をテストするか」が明確になるように記述
+
+3. **テストカバレッジ**
+   - 重要なロジックやコンポーネントは高いカバレッジを目指す
+   - `npm test -- --coverage` でカバレッジレポートを生成
+
+4. **モックの活用**
+   - 外部依存（API、データベースなど）はモック化
+   - `jest.mock()` や MSW を使用してAPIリクエストをモック
+
+5. **スナップショットテスト**
+   - UIコンポーネントの変更を検出するためにスナップショットテストを活用
+   - `expect(component).toMatchSnapshot()`
+
+## 注意点
+
+- テストは独立していて、他のテストに依存しないようにする
+- グローバルな状態を変更するテストはリセットを忘れずに
+- 非同期コードをテストする場合は、適切に待機処理を行う
+- テストパフォーマンスを考慮し、必要以上に複雑なテストを避ける
