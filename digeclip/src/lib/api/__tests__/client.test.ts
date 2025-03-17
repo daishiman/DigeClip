@@ -1,9 +1,11 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../../constants';
+// 未使用の変数を削除
+// import { API_BASE_URL } from '../../constants';
 
 // axiosのモック
 jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+// 未使用の変数を削除
+// const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 // APIクライアントのモック
 jest.mock('../client', () => {
