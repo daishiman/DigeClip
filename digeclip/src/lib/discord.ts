@@ -14,7 +14,7 @@ export async function sendDiscordNotification(
   options: {
     username?: string;
     avatar_url?: string;
-    embeds?: any[];
+    embeds?: Record<string, unknown>[];
   } = {}
 ) {
   const webhookUrl = getWebhookUrl();
@@ -53,7 +53,7 @@ export async function sendDiscordNotification(
  */
 export async function sendErrorNotification(
   error: Error | string,
-  context: Record<string, any> = {}
+  context: Record<string, unknown> = {}
 ) {
   const errorMessage = error instanceof Error ? error.message : error;
   const errorStack = error instanceof Error ? error.stack : '';
