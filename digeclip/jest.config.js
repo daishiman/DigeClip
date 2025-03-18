@@ -12,7 +12,7 @@ const config = {
   // テストを実行するためにtestMatchを元に戻す
   testMatch: ['<rootDir>/src/__tests__/unit/**/*.test.{ts,tsx}'],
   // テスト環境のセットアップファイルを追加
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.test.ts'],
 };
 
 module.exports = config;
