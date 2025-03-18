@@ -3,7 +3,7 @@
 
 // 一時的なPrismaClientのモック
 class PrismaClientMock {
-  constructor(options?: any) {
+  constructor(_options?: Record<string, unknown>) {
     // モック初期化
   }
 }
