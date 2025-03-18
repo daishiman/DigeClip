@@ -21,11 +21,23 @@ jobs:
         with:
           node-version: '20'
 
+      - name: package-lock.jsonの更新
+        run: |
+          if [ -f "package.json" ]; then
+            npm install --package-lock-only --no-audit --no-fund
+          else
+            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+            if [ ! -z "$PKG_DIR" ]; then
+              cd $PKG_DIR
+              npm install --package-lock-only --no-audit --no-fund
+            fi
+          fi
+
       - name: 依存関係のインストール
         run: |
           echo "PR プレビュー用にビルドします"
           if [ -f "package.json" ]; then
-            npm ci
+            npm ci --no-audit --no-fund || npm install --no-audit --no-fund
           else
             echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
             find . -name "package.json" -type f
@@ -35,14 +47,21 @@ jobs:
             if [ ! -z "$PKG_DIR" ]; then
               echo "package.jsonが見つかりました: $PKG_DIR"
               cd $PKG_DIR
-              npm ci
+              npm ci --no-audit --no-fund || npm install --no-audit --no-fund
             fi
           fi
 
       - name: ビルド
         run: |
           if [ -f "package.json" ]; then
-            npm run build
+            # ルートのpackage.jsonがあるが、おそらくdigeclipディレクトリでビルドする必要がある
+            if [ -d "digeclip" ]; then
+              cd digeclip
+              npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+              npm run build
+            else
+              npm run build
+            fi
           else
             PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
             if [ ! -z "$PKG_DIR" ]; then
@@ -52,6 +71,15 @@ jobs:
               echo "package.jsonが見つからないためビルドを実行できません"
               exit 1
             fi
+          fi
+
+      - name: 出力ディレクトリの確認
+        run: |
+          echo "出力ディレクトリの検索："
+          find . -type d -name "out" | cat
+          if [ ! -d "./out" ] && [ -d "./digeclip/out" ]; then
+            echo "digeclip/outディレクトリが見つかりました。これを使用します。"
+            cp -r ./digeclip/out ./out
           fi
 
       - name: Cloudflare Pagesへプレビューデプロイ
