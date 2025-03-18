@@ -1,20 +1,21 @@
 import { PrismaClient } from '@prisma/client';
 
-// PrismaClientのグローバル型拡張
+// PrismaClientをグローバルに定義して、開発環境でのホットリロード時に複数のインスタンスが作成されるのを防ぐ
 declare global {
-  let prisma: PrismaClient | undefined;
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
 }
 
-// 開発環境でホットリロード時に複数のPrismaインスタンスが作成されるのを防ぐ
-// グローバルスコープに保存されたクライアントを再利用（開発環境用）
-// 本番環境では常に新しいインスタンスを作成
-export const prisma =
+// プロダクション環境では新しいPrismaClientを作成し、開発環境ではグローバル変数を再利用
+const prisma =
   global.prisma ||
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
-// 開発環境時のみグローバルに保存
+// 開発環境でならグローバル変数にPrismaClientを格納しない
 if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma;
 }
+
+export { prisma };
