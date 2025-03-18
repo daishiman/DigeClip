@@ -1,15 +1,23 @@
-import { PrismaClient } from '@prisma/client';
+// import { PrismaClient } from '@prisma/client';
+// TODO: Prismaスキーマを生成後に実際のPrismaClientをインポートする
+
+// 一時的なPrismaClientのモック
+class PrismaClientMock {
+  constructor(options?: any) {
+    // モック初期化
+  }
+}
 
 // PrismaClientをグローバルに定義して、開発環境でのホットリロード時に複数のインスタンスが作成されるのを防ぐ
 declare global {
   // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
+  var prisma: PrismaClientMock | undefined;
 }
 
 // プロダクション環境では新しいPrismaClientを作成し、開発環境ではグローバル変数を再利用
 const prisma =
   global.prisma ||
-  new PrismaClient({
+  new PrismaClientMock({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 

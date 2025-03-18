@@ -1,12 +1,13 @@
 // 複雑なPrisma型定義のエクスポート
+// TODO: Prismaスキーマを生成後に実際の型をインポートする
 export type {
-  PrismaPromise,
+  // PrismaPromise,
   User,
-  Bookmark,
+  // Bookmark,
   Tag,
-  Collection,
-  BookmarkTag,
-  BookmarkCollection,
+  // Collection,
+  // BookmarkTag,
+  // BookmarkCollection,
 } from '@prisma/client';
 
 // Prismaクエリ用のヘルパー関数
