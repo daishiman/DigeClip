@@ -36,8 +36,9 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 ### バックエンド
 
 - **Next.js API Routes**: サーバーサイド機能
-- **Supabase**: PostgreSQLデータベース（無料枠）
-- **Vercel**: ホスティングとCronジョブ
+- **Supabase**: PostgreSQLデータベース（無料枠）、認証（メール・Googleアカウント）
+- **Cloudflare Pages**: ホスティングとEdge Functions
+- **ngrok**: ローカル開発環境の外部公開
 
 ## 始め方
 
@@ -45,6 +46,7 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 
 - Node.js 18.18.0以上
 - npm 8.19.3以上
+- ngrok（認証コールバックテスト用）
 
 ### インストール
 
@@ -166,26 +168,64 @@ npm run verify
 
 Gitフックはhuskyを使用して設定されており、自動的に利用できます。
 
-## CI/CD
+## ブランチ戦略とデプロイフロー
 
-GitHub Actionsでは以下のワークフローが設定されています：
+プロジェクトでは以下のブランチ戦略を採用しています：
 
-- **Lint & Format**: コードの品質チェック
-- **テスト**: ユニットテストとインテグレーションテストの実行
-- **デプロイ**: 本番環境へのデプロイ（mainブランチのみ）
+- **development**: 開発環境用のデフォルトブランチ
+- **production**: 本番環境用のブランチ
+- **feature/\***、**fix/\***: 各機能開発、バグ修正用のブランチ
 
-PRを作成すると、自動的にこれらのチェックが実行されます。すべてのチェックが成功した場合のみマージが可能になります。
+### デプロイプロセス
 
-## デプロイ
+1. **開発サイクル**:
 
-Vercelを使用して簡単にデプロイできます：
+   - `feature/*` や `fix/*` ブランチで機能開発
+   - `development` ブランチにPRを作成
+   - コードレビュー後、`development` にマージ
+   - 自動的に開発環境にデプロイ
+
+2. **リリースプロセス**:
+
+   - `development` から `production` へのPR作成（毎週月曜日に自動作成、または手動で作成可）
+   - QAと最終チェック
+   - `production` へマージで本番環境に自動デプロイ
+
+3. **ホットフィックス**:
+   - 緊急修正が必要な場合は `hotfix/*` ブランチを使用
+   - 修正後、`development` と `production` 両方にマージ
+
+### ローカル開発とngrok
+
+認証機能やWebhookのテストなど、ローカル環境を外部から接続する必要がある場合：
 
 ```bash
-npm run build
+# 開発サーバーを起動
+npm run dev
 
-# Vercelにデプロイ
-vercel
+# 別のターミナルでngrokを実行
+../scripts/start-ngrok.sh
 ```
+
+表示されるngrokのURLを使用して外部サービス（Supabase、OAuth、Webhook）などのコールバックURLに設定できます。
+
+## CI/CD (GitHub Actions)
+
+GitHub Actionsにより、以下のワークフローが自動化されています：
+
+- **PR検証**: PR作成時にLint、型チェック、テストを実行
+- **プレビューデプロイ**: PR作成時にプレビュー環境にデプロイ（URLがPRにコメントされます）
+- **開発環境デプロイ**: `development` へのマージで開発環境に自動デプロイ
+- **本番環境デプロイ**: `production` へのマージで本番環境に自動デプロイ
+- **リリースPR作成**: 毎週月曜日に開発→本番へのリリースPRを自動作成
+
+詳細なワークフロー設定は、リポジトリのルートディレクトリにある `.github/workflows` フォルダをご確認ください。
+
+## デプロイ環境
+
+- **開発環境**: `dev-digeclip.pages.dev`（`development` ブランチ）
+- **本番環境**: `digeclip.com`（`production` ブランチ）
+- **プレビュー環境**: PR毎に自動生成（PR内にURLが表示されます）
 
 ## 学習リソース
 
@@ -198,6 +238,8 @@ Next.jsについて詳しく学ぶには、以下のリソースを参照して�
 - [React Hook Form ドキュメント](https://react-hook-form.com) - フォーム管理の方法
 - [Zustand ドキュメント](https://github.com/pmndrs/zustand) - 状態管理の方法
 - [React Query ドキュメント](https://tanstack.com/query/latest) - データフェッチングの方法
+- [Cloudflare Pages ドキュメント](https://developers.cloudflare.com/pages/) - Cloudflare Pagesの使い方
+- [Supabase ドキュメント](https://supabase.com/docs) - Supabaseの使い方
 
 ## テスト
 

@@ -34,14 +34,16 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 
 ### バックエンド
 - **Next.js API Routes**: サーバーサイド機能
-- **Supabase**: PostgreSQLデータベース（無料枠）
-- **Vercel**: ホスティングとCronジョブ
+- **Supabase**: PostgreSQLデータベース（無料枠）、認証（メール・Google）
+- **Cloudflare Pages**: ホスティングとEdge Functions
+- **ngrok**: ローカル開発環境の外部公開
 
 ## 始め方
 
 ### 必要条件
 - Node.js 18.18.0以上
 - npm 8.19.3以上
+- ngrok（認証コールバックテスト用）
 
 ### インストール
 
@@ -103,6 +105,13 @@ GEMINI_API_KEY=your_gemini_api_key
 │   ├─ /api               # API仕様書
 │   ├─ /architecture      # アーキテクチャ図
 │   └─ /guides            # 開発ガイド
+│
+├─ /.github               # GitHub設定
+│   ├─ /workflows         # GitHub Actionsワークフロー
+│   └─ SETUP.md           # 環境セットアップガイド
+│
+├─ /scripts               # ユーティリティスクリプト
+│   └─ start-ngrok.sh     # ngrok起動スクリプト
 │
 ├─ docker-compose.yml     # Docker設定
 ├─ package.json           # ルート依存関係
@@ -177,17 +186,76 @@ npm run test:all
 
 詳細なテスト戦略は `.cursor/rules/000_common_requirements.mdc` ファイルに定義されています。
 
-## デプロイ
+## デプロイとCI/CD
 
-Vercelを使用して簡単にデプロイできます：
+プロジェクトではCloudflare Pagesを使用して、開発環境と本番環境を分離した自動デプロイを実装しています。
+
+### ブランチとデプロイ環境
+
+- **development**ブランチ: 開発環境（デフォルトブランチ）
+- **production**ブランチ: 本番環境
+- 機能開発ブランチ: 各機能開発用（feature/xxなど）
+
+### 自動デプロイワークフロー
+
+GitHub Actionsで以下のワークフローを自動化しています：
+
+1. **PR作成時**: プレビュー環境にデプロイ（PRにURLがコメントされます）
+2. **developmentへのマージ**: 開発環境に自動デプロイ
+3. **productionへのマージ**: 本番環境に自動デプロイ
+4. **定期リリース**: 毎週月曜日に開発→本番へのリリースPRを自動作成
+
+### 環境別URL
+
+- 開発環境: `dev-digeclip.pages.dev`
+- 本番環境: `digeclip.com` または `www.digeclip.com`
+- プレビュー環境: PR作成時に自動生成されたURL
+
+### 初期環境セットアップ
+
+新しいリポジトリをセットアップする場合：
+
+1. ローカルで`development`と`production`ブランチを作成
+   ```bash
+   git checkout -b development
+   git push -u origin development
+
+   git checkout -b production
+   git push -u origin production
+   ```
+
+2. GitHubの設定
+   - リポジトリの設定でデフォルトブランチを`development`に変更
+   - 必要なシークレット（`CLOUDFLARE_API_TOKEN`など）を追加
+
+3. Cloudflare Pagesの設定
+   - GitHubリポジトリと連携したプロジェクトを作成
+   - ビルド設定と環境変数を設定
+
+詳細なセットアップ手順は `.github/SETUP.md` ファイルを参照してください。
+
+### ローカル開発とngrok
+
+認証コールバックなどをテストするためにngrokでローカル環境を外部公開できます：
 
 ```bash
-# ビルド
-npm run build
+# スクリプトを実行可能にする
+chmod +x scripts/start-ngrok.sh
 
-# Vercelにデプロイ
-vercel
+# ngrokを起動（デフォルトは3000ポート）
+./scripts/start-ngrok.sh
 ```
+
+表示されたURLをコールバックURLやOAuth設定に使用できます。
+
+### 手動リリース方法
+
+通常の週次リリース以外でリリースが必要な場合：
+
+1. GitHubリポジトリのActionsタブを開く
+2. 「リリースPR作成」ワークフローを選択
+3. 「Run workflow」からリリースタイトルを入力して実行
+4. 作成されたPRをレビューしてマージ
 
 ## 貢献
 
@@ -195,7 +263,7 @@ vercel
 2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
 3. 変更をコミット (`git commit -m 'Add some amazing feature'`)
 4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
+5. developmentブランチに対するプルリクエストを作成
 
 ## ライセンス
 
@@ -264,13 +332,3 @@ npm run verify
 - **pre-push**: プッシュ前にすべてのテスト、リント、型チェックを実行します
 
 Gitフックはhuskyを使用して設定されており、自動的に利用できます。
-
-## CI/CD
-
-GitHub Actionsでは以下のワークフローが設定されています：
-
-- **Lint & Format**: コードの品質チェック
-- **テスト**: ユニットテストとインテグレーションテストの実行
-- **デプロイ**: 本番環境へのデプロイ（mainブランチのみ）
-
-PRを作成すると、自動的にこれらのチェックが実行されます。すべてのチェックが成功した場合のみマージが可能になります。
