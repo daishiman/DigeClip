@@ -12,6 +12,7 @@
     "local-ci": "bash scripts/local-ci.sh",
     "type-check": "cd digeclip && npm run type-check",
     "format": "cd digeclip && npm run format",
+    "build:mdc": "ts-node build-mdc.ts",
     "prepare": "husky"
   },
   "dependencies": {
