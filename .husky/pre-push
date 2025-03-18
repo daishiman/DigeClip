@@ -1,15 +1,52 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo "🧪 プッシュ前にすべてのテストとチェックを実行しています..."
+echo "🔍 プッシュ前に型チェックとテストを実行しています..."
 
-# ルートディレクトリのローカルCIスクリプトを実行
-./scripts/local-ci.sh
+# プロジェクトのルートディレクトリに移動
+cd "$(git rev-parse --show-toplevel)"
 
-# 終了コードをチェック
-if [ $? -ne 0 ]; then
-  echo "❌ CIチェックに失敗しました。問題を修正してから再度プッシュしてください。"
-  exit 1
+# digeclipディレクトリに移動
+cd digeclip
+
+# 実行開始時間を記録
+start_time=$(date +%s)
+
+# 型チェックの実行
+echo "TypeScriptの型チェックを実行中..."
+npm run typecheck
+typecheck_result=$?
+
+# Jestテストの実行
+echo "Jestテストを実行中..."
+npm run test
+test_result=$?
+
+# Prettierフォーマットチェックの実行
+echo "Prettierフォーマットチェックを実行中..."
+npm run format
+format_result=$?
+
+# 実行終了時間を記録
+end_time=$(date +%s)
+execution_time=$((end_time - start_time))
+
+# 結果の表示
+echo "============================="
+echo "実行結果"
+
+# エラーが発生したかどうかを判定
+if [ $typecheck_result -ne 0 ] || [ $test_result -ne 0 ] || [ $format_result -ne 0 ]; then
+  echo "✗ 以下のチェックが失敗しました:"
+  [ $typecheck_result -ne 0 ] && echo "  - 型チェック"
+  [ $test_result -ne 0 ] && echo "  - テスト"
+  [ $format_result -ne 0 ] && echo "  - フォーマットチェック"
+  exit_code=1
+else
+  echo "✓ すべてのチェックが成功しました"
+  exit_code=0
 fi
 
-echo "✅ すべてのチェックが成功しました！プッシュを続行します。"
+echo "合計実行時間: ${execution_time}秒"
+
+exit $exit_code
