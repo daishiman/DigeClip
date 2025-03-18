@@ -1,9 +1,11 @@
 ---
 description: バックエンド機能要件
-globs: "src/app/api/**/*.{tsx,jsx,ts,js}", "src/lib/**/*.{tsx,jsx,ts,js}", "src/types/api/**/*.{ts,js}"
-alwaysApply: true
+globs: ["**/app/api/**/*.ts", "**/lib/**/*.ts", "**/types/api/**/*.ts", "**/prisma/**/*.ts"]
+alwaysApply: false
 ---
 # バックエンド機能要件
+
+## 2_backend_functional_requirements/1_Common_Requirements.md
 
 # バックエンド共通要件
 
@@ -56,772 +58,7 @@ alwaysApply: true
   - APIエンドポイントの結合テスト
   - データベース操作を含むテスト
 
-# バックエンド技術スタック
-
-> **注意:** このドキュメントでは、バックエンド固有の技術スタックと実装方針を定義します。共通技術スタックについては [../../0_common/1_Common_Technology_Stack.md](../../0_common/1_Common_Technology_Stack.md) を参照してください。共通要件（エラーハンドリング、セキュリティ、パフォーマンスなど）については [../../0_common/2_Common_Requirements.md](../../0_common/2_Common_Requirements.md) を参照してください。バックエンド固有の共通要件については [1_Common_Requirements.md](1_Common_Requirements.md) を参照してください。ディレクトリ構造については [../../0_common/3_Directory_Structure.md](../../0_common/3_Directory_Structure.md) を参照してください。コーディング規約については [../../0_common/4_Coding_Conventions.md](../../0_common/4_Coding_Conventions.md) を参照してください。
-
-## 1. バックエンド固有の技術選定
-
-### サーバーフレームワーク
-
-1. **Next.js API Routes / App Router API**
-   - フロントエンドと同じリポジトリで管理可能
-   - TypeScriptとの相性が良い
-   - Vercelでのデプロイが容易
-   - サーバーレス関数として実行
-
-2. **Express.js**（必要に応じて）
-   - 軽量で柔軟なNode.jsフレームワーク
-   - 豊富なミドルウェア
-   - ルーティング機能
-   - エラーハンドリング
-
----
-
-### データベース
-
-1. **Supabase**
-   - PostgreSQLベースのBaaS（Backend as a Service）
-   - 認証機能内蔵
-   - リアルタイム機能
-   - RESTおよびGraphQL API
-   - 無料枠あり
-
-2. **Prisma ORM**
-   - TypeScriptファーストのORM
-   - 型安全なデータベースアクセス
-   - マイグレーション管理
-   - データモデリングが簡単
-
----
-
-### 認証
-
-1. **NextAuth.js / Auth.js**
-   - 複数の認証プロバイダーをサポート
-   - セッション管理
-   - JWTサポート
-   - Next.jsとの統合が容易
-
-2. **Supabase Auth**
-   - メール/パスワード認証
-   - ソーシャルログイン
-   - MFA（多要素認証）
-   - RLS（Row Level Security）
-
----
-
-### API開発
-
-1. **tRPC**（オプション）
-   - エンドツーエンドの型安全なAPI
-   - クライアント-サーバー間の型共有
-   - 自動補完サポート
-   - Next.jsとの統合が容易
-
-2. **OpenAPI / Swagger**
-   - API仕様の標準化
-   - ドキュメント自動生成
-   - クライアントコード生成
-   - API検証
-
----
-
-### ファイルストレージ
-
-1. **Supabase Storage**
-   - オブジェクトストレージ
-   - アクセス制御
-   - 画像変換
-   - CDN配信
-
-2. **Vercel Blob**
-   - 簡単な統合
-   - CDN配信
-   - 無料枠あり
-
----
-
-### バックエンドテスト
-
-1. **Jest**
-   - ユニットテスト
-   - モック機能
-   - カバレッジレポート
-   - スナップショットテスト
-
-2. **Supertest**
-   - APIエンドポイントテスト
-   - HTTPリクエスト/レスポンステスト
-   - 統合テスト
-
-# バックエンドテスト仕様
-
-## 概要
-
-このドキュメントでは、DigeClipプロジェクトのバックエンド部分に特化したテスト仕様を定義します。共通のテスト戦略については[共通テスト戦略](../../0_common/5_Testing_Strategy.md)を参照してください。
-
-## 1. バックエンド特有のテスト目標
-
-- APIエンドポイントの正確性と信頼性の確保
-- データベース操作の整合性検証
-- 認証・認可メカニズムの安全性確認
-- パフォーマンスとスケーラビリティの検証
-- エラーハンドリングの適切な実装確認
-
-## 2. APIテスト
-
-### 2.1 エンドポイントテスト
-
-- **対象**: 個別のAPIエンドポイント
-- **ツール**: Supertest、Jest
-- **検証項目**:
-  - ステータスコードの正確性
-  - レスポンス形式の一貫性
-  - エラーハンドリング
-  - 認証・認可の適切な実装
-
-### 2.2 テスト例
-
-```typescript
-// articles.test.ts
-import request from 'supertest';
-import { app } from '../app';
-import { createTestToken } from '../utils/test-helpers';
-
-describe('GET /api/articles', () => {
-  it('should return 200 and articles list', async () => {
-    const response = await request(app)
-      .get('/api/articles')
-      .expect('Content-Type', /json/)
-      .expect(200);
-
-    expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body[0]).toHaveProperty('id');
-    expect(response.body[0]).toHaveProperty('title');
-  });
-
-  it('should return 401 when not authenticated', async () => {
-    await request(app)
-      .post('/api/articles')
-      .send({ title: 'New Article', content: 'Content' })
-      .expect(401);
-  });
-
-  it('should create article when authenticated', async () => {
-    const token = createTestToken({ id: 1, role: 'user' });
-
-    const response = await request(app)
-      .post('/api/articles')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ title: 'New Article', content: 'Content' })
-      .expect(201);
-
-    expect(response.body).toHaveProperty('id');
-    expect(response.body.title).toBe('New Article');
-  });
-});
-```
-
-## 3. データベーステスト
-
-### 3.1 リポジトリレイヤーテスト
-
-- **対象**: データベースアクセスロジック
-- **ツール**: Jest、テスト用DBクライアント
-- **検証項目**:
-  - CRUD操作の正確性
-  - トランザクション処理
-  - エラー処理
-  - クエリパフォーマンス
-
-### 3.2 テスト例
-
-```typescript
-// articleRepository.test.ts
-import { ArticleRepository } from './articleRepository';
-import { db } from '../db';
-
-// テスト前にテストデータベースをセットアップ
-beforeAll(async () => {
-  await db.migrate.latest();
-  await db.seed.run();
-});
-
-// テスト後にクリーンアップ
-afterAll(async () => {
-  await db.destroy();
-});
-
-describe('ArticleRepository', () => {
-  const repo = new ArticleRepository(db);
-
-  it('should find all articles', async () => {
-    const articles = await repo.findAll();
-    expect(articles.length).toBeGreaterThan(0);
-    expect(articles[0]).toHaveProperty('id');
-    expect(articles[0]).toHaveProperty('title');
-  });
-
-  it('should create a new article', async () => {
-    const newArticle = {
-      title: 'Test Article',
-      content: 'Test Content',
-      userId: 1
-    };
-
-    const created = await repo.create(newArticle);
-    expect(created).toHaveProperty('id');
-    expect(created.title).toBe(newArticle.title);
-
-    // 作成したデータが取得できることを確認
-    const found = await repo.findById(created.id);
-    expect(found).toMatchObject(newArticle);
-  });
-
-  it('should update an article', async () => {
-    const article = await repo.findAll().then(articles => articles[0]);
-    const updated = await repo.update(article.id, { title: 'Updated Title' });
-
-    expect(updated.title).toBe('Updated Title');
-    expect(updated.id).toBe(article.id);
-  });
-
-  it('should delete an article', async () => {
-    const article = await repo.create({
-      title: 'To Be Deleted',
-      content: 'Content',
-      userId: 1
-    });
-
-    await repo.delete(article.id);
-    const found = await repo.findById(article.id);
-    expect(found).toBeNull();
-  });
-});
-```
-
-## 4. サービスレイヤーテスト
-
-### 4.1 ビジネスロジックテスト
-
-- **対象**: サービスクラス/関数
-- **ツール**: Jest
-- **検証項目**:
-  - ビジネスルールの適用
-  - 例外処理
-  - 依存サービスとの連携
-  - 認可ロジック
-
-### 4.2 テスト例
-
-```typescript
-// articleService.test.ts
-import { ArticleService } from './articleService';
-import { mockArticleRepository } from '../__mocks__/articleRepository';
-import { mockUserService } from '../__mocks__/userService';
-import { NotFoundError, UnauthorizedError } from '../errors';
-
-describe('ArticleService', () => {
-  const articleRepo = mockArticleRepository();
-  const userService = mockUserService();
-  const service = new ArticleService(articleRepo, userService);
-
-  it('should get articles with author information', async () => {
-    const articles = await service.getArticles();
-
-    expect(articles[0]).toHaveProperty('author');
-    expect(articles[0].author).toHaveProperty('name');
-  });
-
-  it('should throw NotFoundError when article not found', async () => {
-    articleRepo.findById.mockResolvedValue(null);
-
-    await expect(service.getArticleById(999)).rejects.toThrow(NotFoundError);
-  });
-
-  it('should check permissions before updating article', async () => {
-    const article = { id: 1, userId: 2, title: 'Test' };
-    articleRepo.findById.mockResolvedValue(article);
-
-    // 別のユーザーIDでアクセス
-    await expect(
-      service.updateArticle(1, { title: 'Updated' }, { id: 3, role: 'user' })
-    ).rejects.toThrow(UnauthorizedError);
-
-    // 管理者は更新可能
-    articleRepo.update.mockResolvedValue({ ...article, title: 'Updated' });
-    const result = await service.updateArticle(
-      1,
-      { title: 'Updated' },
-      { id: 3, role: 'admin' }
-    );
-
-    expect(result.title).toBe('Updated');
-  });
-});
-```
-
-## 5. 認証・認可テスト
-
-### 5.1 認証テスト
-
-- **対象**: 認証ミドルウェア、認証サービス
-- **ツール**: Jest、Supertest
-- **検証項目**:
-  - トークン検証
-  - 認証失敗時の適切なエラー
-  - セッション管理
-  - パスワードハッシュ化
-
-### 5.2 テスト例
-
-```typescript
-// auth.test.ts
-import request from 'supertest';
-import { app } from '../app';
-import { createUser, deleteUser } from '../utils/test-helpers';
-
-describe('Authentication', () => {
-  const testUser = {
-    email: 'test@example.com',
-    password: 'Password123!'
-  };
-
-  beforeAll(async () => {
-    await createUser(testUser);
-  });
-
-  afterAll(async () => {
-    await deleteUser(testUser.email);
-  });
-
-  it('should login with valid credentials', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send(testUser)
-      .expect(200);
-
-    expect(response.body).toHaveProperty('token');
-    expect(response.body).toHaveProperty('user');
-    expect(response.body.user.email).toBe(testUser.email);
-  });
-
-  it('should reject invalid credentials', async () => {
-    await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: testUser.email,
-        password: 'wrongpassword'
-      })
-      .expect(401);
-  });
-
-  it('should verify token and return user data', async () => {
-    // まずログイン
-    const loginResponse = await request(app)
-      .post('/api/auth/login')
-      .send(testUser);
-
-    const token = loginResponse.body.token;
-
-    // トークンを使用して保護されたエンドポイントにアクセス
-    const response = await request(app)
-      .get('/api/auth/me')
-      .set('Authorization', `Bearer ${token}`)
-      .expect(200);
-
-    expect(response.body).toHaveProperty('id');
-    expect(response.body.email).toBe(testUser.email);
-  });
-});
-```
-
-## 6. 統合テスト
-
-### 6.1 APIフローテスト
-
-- **対象**: 複数のAPIエンドポイントを組み合わせたフロー
-- **ツール**: Supertest、Jest
-- **検証項目**:
-  - エンドツーエンドのユーザーフロー
-  - データの整合性
-  - エラー状態からの回復
-
-### 6.2 テスト例
-
-```typescript
-// article-workflow.test.ts
-import request from 'supertest';
-import { app } from '../app';
-import { createTestToken, createUser, deleteUser } from '../utils/test-helpers';
-
-describe('Article Workflow', () => {
-  let token;
-  let userId;
-  let articleId;
-
-  beforeAll(async () => {
-    // テストユーザー作成
-    const user = await createUser({
-      email: 'workflow@example.com',
-      password: 'Password123!'
-    });
-    userId = user.id;
-    token = createTestToken({ id: userId, role: 'user' });
-  });
-
-  afterAll(async () => {
-    await deleteUser('workflow@example.com');
-  });
-
-  it('should create a new article', async () => {
-    const response = await request(app)
-      .post('/api/articles')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        title: 'Workflow Test',
-        content: 'This is a test article'
-      })
-      .expect(201);
-
-    articleId = response.body.id;
-    expect(response.body.title).toBe('Workflow Test');
-  });
-
-  it('should update the article', async () => {
-    await request(app)
-      .put(`/api/articles/${articleId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        title: 'Updated Workflow Test'
-      })
-      .expect(200);
-
-    // 更新されたことを確認
-    const response = await request(app)
-      .get(`/api/articles/${articleId}`)
-      .expect(200);
-
-    expect(response.body.title).toBe('Updated Workflow Test');
-  });
-
-  it('should add a comment to the article', async () => {
-    const response = await request(app)
-      .post(`/api/articles/${articleId}/comments`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        content: 'This is a test comment'
-      })
-      .expect(201);
-
-    expect(response.body).toHaveProperty('id');
-    expect(response.body.content).toBe('This is a test comment');
-
-    // コメントが記事に関連付けられていることを確認
-    const articleResponse = await request(app)
-      .get(`/api/articles/${articleId}?include=comments`)
-      .expect(200);
-
-    expect(articleResponse.body.comments).toBeDefined();
-    expect(articleResponse.body.comments.length).toBeGreaterThan(0);
-    expect(articleResponse.body.comments[0].content).toBe('This is a test comment');
-  });
-
-  it('should delete the article', async () => {
-    await request(app)
-      .delete(`/api/articles/${articleId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .expect(204);
-
-    // 削除されたことを確認
-    await request(app)
-      .get(`/api/articles/${articleId}`)
-      .expect(404);
-  });
-});
-```
-
-## 7. パフォーマンステスト
-
-### 7.1 負荷テスト
-
-- **対象**: 主要APIエンドポイント
-- **ツール**: k6、Artillery
-- **検証項目**:
-  - レスポンスタイム
-  - スループット
-  - エラー率
-  - リソース使用率
-
-### 7.2 テスト例
-
-```javascript
-// k6-load-test.js
-import http from 'k6/http';
-import { check, sleep } from 'k6';
-
-export const options = {
-  stages: [
-    { duration: '30s', target: 20 }, // 20ユーザーまでランプアップ
-    { duration: '1m', target: 20 },  // 1分間負荷を維持
-    { duration: '30s', target: 0 },  // ランプダウン
-  ],
-  thresholds: {
-    http_req_duration: ['p(95)<500'], // 95%のリクエストが500ms以内に完了すること
-    http_req_failed: ['rate<0.01'],   // エラー率1%未満
-  },
-};
-
-export default function() {
-  const BASE_URL = 'http://localhost:3000/api';
-
-  // 記事一覧の取得
-  const articlesResponse = http.get(`${BASE_URL}/articles`);
-  check(articlesResponse, {
-    'articles status is 200': (r) => r.status === 200,
-    'articles response time < 200ms': (r) => r.timings.duration < 200,
-  });
-
-  // 個別記事の取得（IDは1〜10からランダム）
-  const articleId = Math.floor(Math.random() * 10) + 1;
-  const articleResponse = http.get(`${BASE_URL}/articles/${articleId}`);
-  check(articleResponse, {
-    'article status is 200': (r) => r.status === 200,
-    'article response time < 150ms': (r) => r.timings.duration < 150,
-  });
-
-  sleep(1);
-}
-```
-
-## 8. セキュリティテスト
-
-### 8.1 脆弱性テスト
-
-- **対象**: APIエンドポイント、認証システム
-- **ツール**: OWASP ZAP、Jest
-- **検証項目**:
-  - SQLインジェクション対策
-  - XSS対策
-  - CSRF対策
-  - 認証バイパス対策
-
-### 8.2 テスト例
-
-```typescript
-// security.test.ts
-import request from 'supertest';
-import { app } from '../app';
-
-describe('Security Tests', () => {
-  it('should prevent SQL injection in query parameters', async () => {
-    const maliciousQuery = "1'; DROP TABLE users; --";
-
-    // SQLインジェクションが防止されていれば、エラーは発生するが
-    // サーバーはクラッシュせず、適切なエラーレスポンスを返す
-    const response = await request(app)
-      .get(`/api/articles/${maliciousQuery}`)
-      .expect(400); // または404、どちらにせよ500ではない
-
-    expect(response.body).toHaveProperty('error');
-  });
-
-  it('should set secure headers', async () => {
-    const response = await request(app)
-      .get('/api/articles')
-      .expect(200);
-
-    // セキュリティヘッダーの確認
-    expect(response.headers).toHaveProperty('x-content-type-options', 'nosniff');
-    expect(response.headers).toHaveProperty('x-xss-protection', '1; mode=block');
-    expect(response.headers).toHaveProperty('x-frame-options', 'DENY');
-  });
-
-  it('should require CSRF token for state-changing operations', async () => {
-    // ログイン
-    const loginResponse = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'test@example.com',
-        password: 'Password123!'
-      });
-
-    const token = loginResponse.body.token;
-
-    // CSRFトークンなしでPOSTリクエスト
-    await request(app)
-      .post('/api/articles')
-      .set('Authorization', `Bearer ${token}`)
-      .set('Cookie', loginResponse.headers['set-cookie'])
-      .send({
-        title: 'Test Article',
-        content: 'Content'
-      })
-      .expect(403); // CSRFトークンがないため拒否される
-  });
-});
-```
-
-## 9. バックエンド特有のテスト環境設定
-
-### 9.1 Jest設定
-
-```javascript
-// jest.config.js
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/'],
-  collectCoverageFrom: [
-    'src/**/*.{js,ts}',
-    '!src/**/*.d.ts',
-    '!src/migrations/**',
-    '!src/seeds/**',
-  ],
-  coverageThreshold: {
-    global: {
-      branches: 70,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-  },
-};
-```
-
-### 9.2 テストデータベース設定
-
-```javascript
-// knexfile.js
-module.exports = {
-  test: {
-    client: 'pg',
-    connection: {
-      host: process.env.TEST_DB_HOST || 'localhost',
-      user: process.env.TEST_DB_USER || 'postgres',
-      password: process.env.TEST_DB_PASSWORD || 'postgres',
-      database: process.env.TEST_DB_NAME || 'digeclip_test',
-    },
-    migrations: {
-      directory: './src/migrations',
-    },
-    seeds: {
-      directory: './src/seeds/test',
-    },
-  },
-};
-```
-
-## 10. CI/CDパイプラインでのバックエンドテスト
-
-### 10.1 GitHub Actions設定例
-
-```yaml
-# .github/workflows/backend-tests.yml
-name: Backend Tests
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'jest.config.js'
-      - 'knexfile.js'
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: digeclip_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run migrations
-        run: npm run migrate:test
-        env:
-          TEST_DB_HOST: localhost
-          TEST_DB_USER: postgres
-          TEST_DB_PASSWORD: postgres
-          TEST_DB_NAME: digeclip_test
-
-      - name: Run tests
-        run: npm test
-        env:
-          TEST_DB_HOST: localhost
-          TEST_DB_USER: postgres
-          TEST_DB_PASSWORD: postgres
-          TEST_DB_NAME: digeclip_test
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
-```
-
-## 11. バックエンドテストの優先順位
-
-1. **最優先**: 認証・認可システム、データ整合性に関わるAPI
-2. **高優先度**: 主要なビジネスロジック、データアクセスレイヤー
-3. **中優先度**: 二次的なAPIエンドポイント、ユーティリティ関数
-4. **低優先度**: エラーメッセージ、ログ機能
-
-## 12. バックエンド特有のテストデータ
-
-### 12.1 シードデータ
-
-- ユーザーアカウント
-- 記事データ
-- タグ・カテゴリ
-- 設定データ
-
-### 12.2 データ管理
-
-- マイグレーションとシードスクリプトの活用
-- テスト用ファクトリー関数
-- テスト間のデータ分離
-
-## 13. バックエンドテストのトラブルシューティング
-
-### 13.1 よくある問題と解決策
-
-- **テストデータベース接続エラー**: 環境変数とコネクション設定を確認
-- **非同期テストのタイムアウト**: テストタイムアウト設定の調整
-- **テスト間の依存関係**: 各テストでデータをクリーンアップ
-- **モックの不整合**: モックの戻り値と実際の実装の一致を確認
-
-### 13.2 デバッグ方法
-
-- `console.log` を使用したデバッグ出力
-- Jest の `--verbose` フラグでより詳細な出力
-- データベースクエリのログ記録
-- トランザクションを使用したテストデータの分離
-
-## 1_data
+## 1_data/1_Database_Selection.md
 
 ```markdown
 ---
@@ -902,6 +139,8 @@ jobs:
 - 将来的に大規模化した際もアップグレードやレプリケーションで対応できるため、**拡張性**にも優れる。
 - 別の DBaaS への移行も PostgreSQL ならある程度容易なため、**リスク低減**にもつながる。
 ```
+
+## 1_data/2_Schema_Design.md
 
 ## テーブル・コレクション設計
 
@@ -1146,6 +385,8 @@ Supabase(PostgreSQL)環境なら **JSONB** 用の GIN インデックスも検�
 - 初期は Supabase (PostgreSQL) の無料枠で運用し、**データ量・負荷が増えれば有料プランやレプリケーション**に移行
 - これにより「**お金をかけずに**」「**容易に**」「**将来的な機能追加**」にも対応できるデータ構造を実現。
 
+## 1_data/3_Data_Lifecycle.md
+
 ## データライフサイクル (保存期間・バックアップ)
 
 ### 1. データ保存期間
@@ -1236,6 +477,8 @@ Supabase(PostgreSQL)環境なら **JSONB** 用の GIN インデックスも検�
 - バックアップは**Supabaseの自動バックアップ**と**手動ダンプ**を組み合わせ、**簡易リカバリ**ができる体制
 - 大規模/高可用性要件が出たら**有料プラン**や**別リージョンレプリケーション**を視野に入れる
 - **初心者にも分かりやすい**運用フローで、段階的に拡張できる方針とする。
+
+## 1_data/4_Privacy_Compliance.md
 
 ```markdown
 ---
@@ -1336,7 +579,108 @@ Supabase(PostgreSQL)環境なら **JSONB** 用の GIN インデックスも検�
 - お金をかけず、初心者が扱いやすいように**無料プラン + 簡易運用**でスタートし、必要に応じて追加対策していく。
 ```
 
-## 2_api
+## 2_backend_functional_requirements/2_Backend_Technology_Stack.md
+
+# バックエンド技術スタック
+
+> **注意:** このドキュメントでは、バックエンド固有の技術スタックと実装方針を定義します。共通技術スタックについては [../../0_common/1_Common_Technology_Stack.md](../../0_common/1_Common_Technology_Stack.md) を参照してください。共通要件（エラーハンドリング、セキュリティ、パフォーマンスなど）については [../../0_common/2_Common_Requirements.md](../../0_common/2_Common_Requirements.md) を参照してください。バックエンド固有の共通要件については [1_Common_Requirements.md](1_Common_Requirements.md) を参照してください。ディレクトリ構造については [../../0_common/3_Directory_Structure.md](../../0_common/3_Directory_Structure.md) を参照してください。コーディング規約については [../../0_common/4_Coding_Conventions.md](../../0_common/4_Coding_Conventions.md) を参照してください。
+
+## 1. バックエンド固有の技術選定
+
+### サーバーフレームワーク
+
+1. **Next.js API Routes / App Router API**
+   - フロントエンドと同じリポジトリで管理可能
+   - TypeScriptとの相性が良い
+   - Vercelでのデプロイが容易
+   - サーバーレス関数として実行
+
+2. **Express.js**（必要に応じて）
+   - 軽量で柔軟なNode.jsフレームワーク
+   - 豊富なミドルウェア
+   - ルーティング機能
+   - エラーハンドリング
+
+---
+
+### データベース
+
+1. **Supabase**
+   - PostgreSQLベースのBaaS（Backend as a Service）
+   - 認証機能内蔵
+   - リアルタイム機能
+   - RESTおよびGraphQL API
+   - 無料枠あり
+
+2. **Prisma ORM**
+   - TypeScriptファーストのORM
+   - 型安全なデータベースアクセス
+   - マイグレーション管理
+   - データモデリングが簡単
+
+---
+
+### 認証
+
+1. **NextAuth.js / Auth.js**
+   - 複数の認証プロバイダーをサポート
+   - セッション管理
+   - JWTサポート
+   - Next.jsとの統合が容易
+
+2. **Supabase Auth**
+   - メール/パスワード認証
+   - ソーシャルログイン
+   - MFA（多要素認証）
+   - RLS（Row Level Security）
+
+---
+
+### API開発
+
+1. **tRPC**（オプション）
+   - エンドツーエンドの型安全なAPI
+   - クライアント-サーバー間の型共有
+   - 自動補完サポート
+   - Next.jsとの統合が容易
+
+2. **OpenAPI / Swagger**
+   - API仕様の標準化
+   - ドキュメント自動生成
+   - クライアントコード生成
+   - API検証
+
+---
+
+### ファイルストレージ
+
+1. **Supabase Storage**
+   - オブジェクトストレージ
+   - アクセス制御
+   - 画像変換
+   - CDN配信
+
+2. **Vercel Blob**
+   - 簡単な統合
+   - CDN配信
+   - 無料枠あり
+
+---
+
+### バックエンドテスト
+
+1. **Jest**
+   - ユニットテスト
+   - モック機能
+   - カバレッジレポート
+   - スナップショットテスト
+
+2. **Supertest**
+   - APIエンドポイントテスト
+   - HTTPリクエスト/レスポンステスト
+   - 統合テスト
+
+## 2_api/0_Common_Requirements.md
 
 # バックエンド共通要件
 
@@ -1421,6 +765,8 @@ Supabase(PostgreSQL)環境なら **JSONB** 用の GIN インデックスも検�
 
 - 重要な操作は監査ログを記録
 - ログは改ざん防止措置を講じる
+
+## 2_api/1_Architecture_Overview.md
 
 # アーキテクチャ概要
 
@@ -1597,6 +943,8 @@ Supabase(PostgreSQL)環境なら **JSONB** 用の GIN インデックスも検�
 - **キューイングシステムの導入**
   - 非同期処理の実装
   - ジョブの分散処理
+
+## 2_api/2_Technology_Stack.md
 
 # 技術スタック
 
@@ -1792,6 +1140,8 @@ Supabase(PostgreSQL)環境なら **JSONB** 用の GIN インデックスも検�
 - **将来的拡張**: Supabase有料プラン、複数AIモデル切替、複雑なバックエンド(NestJS化)など柔軟に追加可能
 
 この構成なら、初心者エンジニアでも比較的容易に実装開始でき、**お金をかけずに**、**短期間(1週間程度)**で MVP リリースが可能となります。その後のスケール・機能拡張にも耐えやすいため、保守性と拡張性を兼ね備えた技術スタックと言えます。
+
+## 2_api/3_API_Design.md
 
 # API設計
 
@@ -2255,6 +1605,8 @@ async function handler(req: NextRequest) {
 export const GET = withApiHandler(handler, { role: 'user' });
 ```
 
+## 2_api/4_External_Integration.md
+
 # 外部サービス連携
 
 ## 前提条件
@@ -2415,6 +1767,8 @@ export const GET = withApiHandler(handler, { role: 'user' });
 - **Mastra.ai**とのエージェント連携は後期フェーズ → 要約(overview→heading→detail)や外部API統合に応用可能
 
 以上の方針で、外部サービス連携を**低コストかつ短期間**で実装しつつ、**将来的な機能追加**（複数サービス/OAuth, 決済, メール拡張, Mastra.aiエージェントなど）にも柔軟に対応できる構成を目指します。
+
+## 2_api/5_Implementation_Patterns.md
 
 # 実装パターン
 
@@ -3838,6 +3192,8 @@ export const mastraAgentService = {
 
 これらのパターンは、DigeClipの要件に合わせて適宜カスタマイズして使用してください。
 
+## 2_api/README.md
+
 # API 一覧・設計 (Roles 別 + 認証周り含む)
 
 > **前提**
@@ -3897,7 +3253,7 @@ export const mastraAgentService = {
 | `/api/admin/tags/...` | タグ管理 |
 | `/api/admin/system/...` | システム設定管理 |
 
-## 2_api/admin
+## admin/README.md
 
 # 管理者ロール API ( `/api/admin/...` )
 
@@ -3959,7 +3315,7 @@ export const mastraAgentService = {
 | [/api/admin/system/settings](./system/get-settings.md) | GET | アプリケーション設定取得 | 要(admin) |
 | [/api/admin/system/settings](./system/update-settings.md) | PUT | アプリケーション設定更新 | 要(admin) |
 
-## 2_api/admin/ai_models
+## ai_models/create.md
 
 # AIモデル作成 API
 
@@ -4131,6 +3487,8 @@ export interface IAdminCreateAIModelResponse {
     - 可能であれば、新しいモデルを作成する際に簡単な接続テストを実行し、設定が有効であることを確認することを検討してください。
     - テスト結果を応答に含めるか、別のエンドポイント（`/api/admin/ai_models/[id]/test`）でテストを実行できるようにしてください。
 
+## ai_models/delete.md
+
 # AIモデル削除 API
 
 - **HTTPメソッド**: `DELETE`
@@ -4238,6 +3596,8 @@ export interface IAdminDeleteAIModelResponse {
 12. **エラー処理**:
     - 削除中に発生する可能性のある様々なエラーケースを考慮し、適切なエラーメッセージを返してください。
     - データベースエラーなどの内部エラーは `500 Internal Server Error` として処理し、詳細なエラーログを記録してください。
+
+## ai_models/detail.md
 
 # AIモデル詳細取得 API
 
@@ -4369,6 +3729,8 @@ export interface IAdminGetAIModelDetailResponse {
     - 詳細情報は頻繁に変更されない可能性があるため、適切なキャッシュ戦略を検討してください。
     - ただし、usage_stats は定期的に更新される可能性があるため、部分的なキャッシュ更新または短いTTLの設定を検討してください。
 
+## ai_models/list.md
+
 # AIモデル一覧取得 API
 
 - **HTTPメソッド**: `GET`
@@ -4481,6 +3843,8 @@ export interface IAdminAIModel {
 9. **セキュリティ考慮事項**:
    - レスポンスにはAPIキーや機密設定情報を含めないでください。
    - 詳細な設定情報は個別のエンドポイント（`/api/admin/ai_models/[id]`）で取得するようにしてください。
+
+## ai_models/test.md
 
 # AIモデルテスト API
 
@@ -4619,6 +3983,8 @@ export interface IAdminTestAIModelResponse {
 12. **セキュリティ考慮事項**:
     - `test_input` に機密情報や有害なコンテンツが含まれないよう、基本的な検証を実装してください。
     - AIモデルの応答にも同様の検証を適用し、安全でない内容が返されないようにしてください。
+
+## ai_models/update.md
 
 # AIモデル更新 API
 
@@ -4811,7 +4177,7 @@ export interface IAdminUpdateAIModelResponse {
     - `active` を `false` に変更する場合、そのモデルが現在使用中でないことを確認することを検討してください。
     - 特に `default_for` に設定されている場合は、代替のデフォルトモデルを設定するか、警告を表示してください。
 
-## 2_api/admin/contents
+## contents/delete.md
 
 # コンテンツ削除 API
 
@@ -4891,6 +4257,8 @@ export interface IAdminDeleteContentResponse {
 
 9. **関連リソースの処理**:
    - コンテンツに関連する添付ファイルやメディアがある場合、それらのストレージリソースも適切に処理（削除または保持）してください。
+
+## contents/detail.md
 
 # コンテンツ詳細取得 API
 
@@ -5055,6 +4423,8 @@ export interface IAdminGetContentDetailResponse {
    - 大量のデータを返す可能性があるため、必要に応じてレスポンスの圧縮を検討してください。
    - summaries や notifications が多数ある場合は、ページネーションの実装を検討してください。
 
+## contents/list.md
+
 # コンテンツ一覧取得 API
 
 - **HTTPメソッド**: `GET`
@@ -5174,6 +4544,8 @@ export interface IAdminGetContentsResponse {
 }
 ```
 
+## contents/reprocess.md
+
 # コンテンツ再処理 API
 
 - **HTTPメソッド**: `POST`
@@ -5281,7 +4653,7 @@ export interface IAdminReprocessContentResponse {
     - 同時に多数の再処理ジョブが実行されないよう、キューの同時実行数を制限することを検討してください。
     - 長時間実行されるジョブのタイムアウト処理を実装してください。
 
-## 2_api/admin/notifications
+## notifications/history.md
 
 # 通知履歴取得 API
 
@@ -5425,6 +4797,8 @@ export interface IAdminNotification {
 }
 ```
 
+## notifications/list.md
+
 # 通知履歴一覧取得 API
 
 - **HTTPメソッド**: `GET`
@@ -5523,6 +4897,8 @@ export interface IAdminGetNotificationsResponse {
   }
 }
 ```
+
+## notifications/test.md
 
 # 通知テスト送信 API
 
@@ -5647,7 +5023,7 @@ export interface IAdminTestNotificationResponse {
 }
 ```
 
-## 2_api/admin/sources
+## sources/bulk.md
 
 # ソース一括操作 API
 
@@ -5729,6 +5105,8 @@ export interface IAdminBulkSourceOperationResponse {
   }
 }
 ```
+
+## sources/create.md
 
 # ソース作成 API
 
@@ -5878,6 +5256,8 @@ export interface IAdminCreateSourceResponse {
 }
 ```
 
+## sources/delete.md
+
 # ソース削除 API
 
 - **HTTPメソッド**: `DELETE`
@@ -5918,6 +5298,8 @@ export interface IAdminDeleteSourceResponse {
   }
 }
 ```
+
+## sources/detail.md
 
 # ソース詳細取得 API
 
@@ -6038,6 +5420,8 @@ export interface IAdminGetSourceDetailResponse {
 }
 ```
 
+## sources/export.md
+
 # ソースエクスポート API
 
 - **HTTPメソッド**: `GET`
@@ -6125,6 +5509,8 @@ id,name,type,url,feed_url,active,created_at,updated_at
   }
 }
 ```
+
+## sources/import.md
 
 # ソースインポート API
 
@@ -6239,6 +5625,8 @@ export interface IAdminSourceImportResponse {
   }
 }
 ```
+
+## sources/list.md
 
 # ソース一覧取得 API
 
@@ -6363,6 +5751,8 @@ export interface IAdminGetSourcesResponse {
 }
 ```
 
+## sources/stats.md
+
 # ソース統計情報取得 API
 
 - **HTTPメソッド**: `GET`
@@ -6470,6 +5860,8 @@ export interface IAdminSourceStatsResponse {
 }
 ```
 
+## sources/sync.md
+
 # ソース同期 API
 
 - **HTTPメソッド**: `POST`
@@ -6552,6 +5944,8 @@ export interface IAdminSyncSourceResponse {
   }
 }
 ```
+
+## sources/update.md
 
 # ソース更新 API
 
@@ -6699,6 +6093,8 @@ export interface IAdminUpdateSourceResponse {
 }
 ```
 
+## sources/validate.md
+
 # ソース検証 API
 
 - **HTTPメソッド**: `POST`
@@ -6800,7 +6196,7 @@ export interface IAdminValidateSourceResponse {
 }
 ```
 
-## 2_api/admin/system
+## system/logs.md
 
 # システムログ取得 API
 
@@ -6974,6 +6370,8 @@ export interface IAdminGetSystemLogsResponse {
     - オプションとして、特定の `request_id` に関連するすべてのログを取得する機能を検討してください。
     - これにより、特定のリクエストに関連する問題のトラブルシューティングが容易になります。
 
+## system/monitor.md
+
 # システムモニター実行 API
 
 - **HTTPメソッド**: `POST`
@@ -7138,6 +6536,8 @@ export interface IAdminRunSystemMonitorResponse {
 }
 ```
 
+## system/run-monitor.md
+
 # 監視処理手動実行 API
 
 - **HTTPメソッド**: `POST`
@@ -7196,6 +6596,8 @@ export interface IAdminRunMonitorResponse {
   }
 }
 ```
+
+## system/settings.md
 
 # アプリケーション設定取得 API
 
@@ -7360,6 +6762,8 @@ export interface IAdminGetSystemSettingsResponse {
   }
 }
 ```
+
+## system/status.md
 
 # システムステータス取得 API
 
@@ -7610,6 +7014,71 @@ export interface IAdminGetSystemStatusResponse {
     - このAPIは管理者向けの機密情報を含むため、適切な認証と認可を徹底してください。
     - レスポンスには機密情報（APIキー、パスワードなど）を含めないでください。
 
+## system/update-settings.md
+
+# アプリケーション設定更新 API
+
+- **HTTPメソッド**: `PUT`
+- **エンドポイント**: `/api/admin/system/settings`
+- **機能概要**: アプリケーション設定を更新
+- **認証要否**: **要**(admin)
+
+## リクエスト
+
+**Request**: `IAdminUpdateSettingsRequest`
+```ts
+export interface IAdminUpdateSettingsRequest {
+  settings: Record<string, any>;
+}
+```
+
+**例 (リクエストJSON)**
+```jsonc
+{
+  "settings": {
+    "monitor_interval": 1800,
+    "default_summary_length": 600,
+    "log_level": "debug"
+  }
+}
+```
+
+## レスポンス
+
+**Response**: `IAdminUpdateSettingsResponse`
+```ts
+export interface IAdminUpdateSettingsResponse {
+  message: string;
+  updated_settings: string[];
+}
+```
+
+**例 (レスポンスJSON)**
+```jsonc
+{
+  "message": "Settings updated successfully",
+  "updated_settings": [
+    "monitor_interval",
+    "default_summary_length",
+    "log_level"
+  ]
+}
+```
+
+## エラー
+
+**Error**: e.g. `400 Bad Request` (無効な設定値)
+```jsonc
+{
+  "error": {
+    "code": "E4004",
+    "message": "Invalid setting value: monitor_interval must be >= 300"
+  }
+}
+```
+
+## system/update_settings.md
+
 # アプリケーション設定更新 API
 
 - **HTTPメソッド**: `PUT`
@@ -7805,68 +7274,7 @@ export interface IAdminUpdateSystemSettingsResponse {
   }
 }
 
-# アプリケーション設定更新 API
-
-- **HTTPメソッド**: `PUT`
-- **エンドポイント**: `/api/admin/system/settings`
-- **機能概要**: アプリケーション設定を更新
-- **認証要否**: **要**(admin)
-
-## リクエスト
-
-**Request**: `IAdminUpdateSettingsRequest`
-```ts
-export interface IAdminUpdateSettingsRequest {
-  settings: Record<string, any>;
-}
-```
-
-**例 (リクエストJSON)**
-```jsonc
-{
-  "settings": {
-    "monitor_interval": 1800,
-    "default_summary_length": 600,
-    "log_level": "debug"
-  }
-}
-```
-
-## レスポンス
-
-**Response**: `IAdminUpdateSettingsResponse`
-```ts
-export interface IAdminUpdateSettingsResponse {
-  message: string;
-  updated_settings: string[];
-}
-```
-
-**例 (レスポンスJSON)**
-```jsonc
-{
-  "message": "Settings updated successfully",
-  "updated_settings": [
-    "monitor_interval",
-    "default_summary_length",
-    "log_level"
-  ]
-}
-```
-
-## エラー
-
-**Error**: e.g. `400 Bad Request` (無効な設定値)
-```jsonc
-{
-  "error": {
-    "code": "E4004",
-    "message": "Invalid setting value: monitor_interval must be >= 300"
-  }
-}
-```
-
-## 2_api/admin/tags
+## tags/batch.md
 
 # タグ一括操作 API
 
@@ -8090,6 +7498,8 @@ export interface IAdminBatchTagsResponse {
     - 作成・更新時の日時フィールド（created_at, updated_at）は ISO 8601 形式（YYYY-MM-DDThh:mm:ssZ）で設定してください。
     - タイムゾーンは UTC を使用してください。
 
+## tags/create.md
+
 # タグ作成 API
 
 - **HTTPメソッド**: `POST`
@@ -8222,6 +7632,8 @@ export interface IAdminCreateTagResponse {
     - `auto_tag` が `true` に設定された場合、将来的に自動タグ付けルールの設定が必要になる可能性があります。
     - 現時点では基本的なフラグとして実装し、拡張性を考慮した設計にしてください。
 
+## tags/delete.md
+
 # タグ削除 API
 
 - **HTTPメソッド**: `DELETE`
@@ -8312,6 +7724,8 @@ export interface IAdminDeleteTagResponse {
 11. **自動タグ付け機能への影響**:
     - 削除するタグが自動タグ付け機能で使用されている場合、その影響を考慮してください。
     - 必要に応じて、自動タグ付けルールの更新や関連設定の調整を行ってください。
+
+## tags/detail.md
 
 # タグ詳細取得 API
 
@@ -8429,6 +7843,8 @@ export interface IAdminGetTagDetailResponse {
 10. **セキュリティ考慮事項**:
     - `description` フィールドにユーザー入力が含まれる場合、XSS攻撃を防ぐために適切にエスケープ処理を行ってください。
     - `color` フィールドが有効なカラーコード形式（例：`#RRGGBB`）であることを確認してください。
+
+## tags/list.md
 
 # タグ一覧取得 API
 
@@ -8566,6 +7982,8 @@ export interface IAdminTag {
     - `usage_count` の計算は重い操作になる可能性があるため、定期的に更新される別のカラムに保存することを検討してください。
     - レスポンスサイズが大きくなる場合は、圧縮を検討してください。
 
+
+## tags/update.md
 
 # タグ更新 API
 
@@ -8730,7 +8148,24 @@ export interface IAdminUpdateTagResponse {
     - `auto_tag` の値を変更する場合、既存のコンテンツに対する再処理が必要かどうかを検討してください。
     - 特に `true` から `false` に変更する場合、既存の自動タグ付けを維持するか削除するかの方針を決定してください。
 
-## 2_api/auth
+## auth/README.md
+
+# 認証系 API ( `/api/auth/...` )
+
+認証関連のエンドポイントを提供します。ユーザー登録、ログイン、ログアウト、パスワード管理などの機能を含みます。
+
+## API一覧
+
+| エンドポイント | メソッド | 説明 | 認証要否 |
+|--------------|---------|------|---------|
+| [/api/auth/register](./register.md) | POST | ユーザー登録 | 不要(guest) |
+| [/api/auth/login](./login.md) | POST | メール&パスワードログイン | 不要(guest) |
+| [/api/auth/google-callback](./google-callback.md) | GET | Google OAuth ログイン | 不要(guest) |
+| [/api/auth/logout](./logout.md) | POST | ログアウト | 要(user/admin) |
+| [/api/auth/reset-password](./reset-password.md) | POST | パスワードリセットリクエスト | 不要(guest) |
+| [/api/auth/change-password](./change-password.md) | POST | パスワード変更 | 要(user/admin) |
+
+## auth/change-password.md
 
 # パスワード変更 API
 
@@ -8847,6 +8282,8 @@ export interface IAuthChangePasswordResponse {
       - `Cache-Control: no-store`
       - `Pragma: no-cache`
       - `X-Content-Type-Options: nosniff`
+
+## auth/google-callback.md
 
 # Google OAuth ログイン API
 
@@ -8973,6 +8410,8 @@ export interface IAuthGoogleCallbackResponse {
     - 技術的な詳細はログに記録し、ユーザーには一般的なメッセージを表示してください。
     - 特に、Google APIからのエラーレスポンスをそのまま転送しないでください。
 
+## auth/login.md
+
 # メール&パスワード ログイン API
 
 - **HTTPメソッド**: `POST`
@@ -9085,6 +8524,8 @@ export interface IAuthLoginResponse {
     - データベース接続エラーなどの内部エラーは `500 Internal Server Error` として処理し、詳細なエラーログを記録してください。
     - エラーメッセージにはセキュリティ上の機密情報を含めないよう注意してください。
 
+## auth/logout.md
+
 # ログアウト API
 
 - **HTTPメソッド**: `POST`
@@ -9182,20 +8623,7 @@ export interface IAuthLogoutResponse {
     - 短時間に多数のログアウトリクエストを送信する攻撃を防ぐため、レート制限の実装を検討してください。
     - 制限に達した場合は、`429 Too Many Requests` エラーを返してください。
 
-# 認証系 API ( `/api/auth/...` )
-
-認証関連のエンドポイントを提供します。ユーザー登録、ログイン、ログアウト、パスワード管理などの機能を含みます。
-
-## API一覧
-
-| エンドポイント | メソッド | 説明 | 認証要否 |
-|--------------|---------|------|---------|
-| [/api/auth/register](./register.md) | POST | ユーザー登録 | 不要(guest) |
-| [/api/auth/login](./login.md) | POST | メール&パスワードログイン | 不要(guest) |
-| [/api/auth/google-callback](./google-callback.md) | GET | Google OAuth ログイン | 不要(guest) |
-| [/api/auth/logout](./logout.md) | POST | ログアウト | 要(user/admin) |
-| [/api/auth/reset-password](./reset-password.md) | POST | パスワードリセットリクエスト | 不要(guest) |
-| [/api/auth/change-password](./change-password.md) | POST | パスワード変更 | 要(user/admin) |
+## auth/register.md
 
 # ユーザー登録 API
 
@@ -9326,6 +8754,8 @@ export interface IAuthRegisterResponse {
     - ユーザーの同意を得て、プライバシーポリシーへの同意記録を保存してください。
     - データ処理の目的と保持期間を明確にしてください。
 
+## auth/reset-password.md
+
 # パスワードリセットリクエスト API
 
 - **HTTPメソッド**: `POST`
@@ -9440,7 +8870,89 @@ export interface IAuthResetPasswordResponse {
     - パスワードが正常に変更された後、確認メールをユーザーに送信することを検討してください。
     - これにより、ユーザーは不正なパスワード変更に気付くことができます。
 
-## 2_api/common
+## common/README.md
+
+# API 共通仕様
+
+## 1. ディレクトリ構成 (Next.js 例)
+
+```
+/api
+  ├─ /auth
+  │    ├─ google-callback.ts
+  │    ├─ login.ts
+  │    ├─ logout.ts
+  │    ├─ register.ts
+  │    ├─ reset-password.ts
+  │    └─ change-password.ts
+  ├─ /user
+  │    ├─ contents
+  │    ├─ tags
+  │    ├─ system
+  │    └─ ...
+  └─ /admin
+       ├─ sources
+       ├─ contents
+       ├─ ai-models
+       ├─ notifications
+       ├─ tags
+       ├─ system
+       └─ ...
+```
+
+1. **`/api/auth`** : 認証関連 (JWT/Google OAuth 用のエンドポイント)
+2. **`/api/user`** : 一般ユーザーが利用する機能
+3. **`/api/admin`** : 管理者のみが操作する機能
+
+## 2. 認証・認可 概要
+
+- **JWT** : メール & パスワードで登録/login するユーザー向け
+  - ログイン成功時に JWT を発行し、Cookie もしくは `Authorization: Bearer <token>` で利用
+  - ログインフロー:
+    1. **Googleログイン** or **email+pwログイン**
+    2. APIが認証成功 → JWT発行 → Cookie/LocalStorage 保存
+    3. 以後 `/api/user/...` など呼び出し時、JWTを付与 → ミドルウェア検証 → `role=user` ならOK
+    4. `/api/admin/...` は `role=admin` のみ可
+- **Googleアカウント OAuth** : ボタン押下 → `/api/auth/google-callback` にコールバック → 成功時にログインセッション確立
+  - 同様に JWT を発行し、内部的に userId & googleId を紐づける
+- **未ログイン(guest)** : コンテンツの一部閲覧のみ可能(必要なら)
+
+**ログインフロー**:
+1. **Googleログイン** or **email+pwログイン**
+2. APIが認証成功 → JWT発行 → Cookie/LocalStorage 保存
+3. 以後 `/api/user/...` など呼び出し時、JWTを付与 → ミドルウェア検証 → `role=user` ならOK
+4. `/api/admin/...` は `role=admin` のみ可
+
+**ログアウト**:
+- Cookie削除 or JWT 無効化(サーバ側でブラックリスト管理 or 短い有効期限+リフレッシュトークン管理)
+
+## 3. Request/Response 共通仕様
+
+### 3.1 認証(HTTP Header)
+
+- **Authorization** : `Bearer <JWT>`
+  - 例: `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+
+### 3.2 エラーレスポンス
+
+- フォーマット
+```jsonc
+{
+  "error": {
+    "code": "E400x",          // 一意のエラーコード
+    "message": "Description", // ユーザーに伝えるエラーメッセージ
+    "details": { }            // 任意の追加情報
+  }
+}
+```
+- HTTPステータス: 4xx / 5xx を適切に返す。
+
+### 3.3 ロール判定
+
+- JWTペイロードに `role: "admin"|"user"` を含める
+- **Next.js ミドルウェア**で `/api/admin/` にアクセス時は `role==="admin"` か検証
+
+## common/implementation_patterns.md
 
 # API実装パターン集
 
@@ -10138,85 +9650,7 @@ export default withApiHandler(handler);
 
 これらのパターンは、DigeClipのバックエンド開発において「**機能追加しやすく、何度も同じようなコードを書かなくていい**」アーキテクチャを実現するための基盤となります。
 
-# API 共通仕様
-
-## 1. ディレクトリ構成 (Next.js 例)
-
-```
-/api
-  ├─ /auth
-  │    ├─ google-callback.ts
-  │    ├─ login.ts
-  │    ├─ logout.ts
-  │    ├─ register.ts
-  │    ├─ reset-password.ts
-  │    └─ change-password.ts
-  ├─ /user
-  │    ├─ contents
-  │    ├─ tags
-  │    ├─ system
-  │    └─ ...
-  └─ /admin
-       ├─ sources
-       ├─ contents
-       ├─ ai-models
-       ├─ notifications
-       ├─ tags
-       ├─ system
-       └─ ...
-```
-
-1. **`/api/auth`** : 認証関連 (JWT/Google OAuth 用のエンドポイント)
-2. **`/api/user`** : 一般ユーザーが利用する機能
-3. **`/api/admin`** : 管理者のみが操作する機能
-
-## 2. 認証・認可 概要
-
-- **JWT** : メール & パスワードで登録/login するユーザー向け
-  - ログイン成功時に JWT を発行し、Cookie もしくは `Authorization: Bearer <token>` で利用
-  - ログインフロー:
-    1. **Googleログイン** or **email+pwログイン**
-    2. APIが認証成功 → JWT発行 → Cookie/LocalStorage 保存
-    3. 以後 `/api/user/...` など呼び出し時、JWTを付与 → ミドルウェア検証 → `role=user` ならOK
-    4. `/api/admin/...` は `role=admin` のみ可
-- **Googleアカウント OAuth** : ボタン押下 → `/api/auth/google-callback` にコールバック → 成功時にログインセッション確立
-  - 同様に JWT を発行し、内部的に userId & googleId を紐づける
-- **未ログイン(guest)** : コンテンツの一部閲覧のみ可能(必要なら)
-
-**ログインフロー**:
-1. **Googleログイン** or **email+pwログイン**
-2. APIが認証成功 → JWT発行 → Cookie/LocalStorage 保存
-3. 以後 `/api/user/...` など呼び出し時、JWTを付与 → ミドルウェア検証 → `role=user` ならOK
-4. `/api/admin/...` は `role=admin` のみ可
-
-**ログアウト**:
-- Cookie削除 or JWT 無効化(サーバ側でブラックリスト管理 or 短い有効期限+リフレッシュトークン管理)
-
-## 3. Request/Response 共通仕様
-
-### 3.1 認証(HTTP Header)
-
-- **Authorization** : `Bearer <JWT>`
-  - 例: `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
-
-### 3.2 エラーレスポンス
-
-- フォーマット
-```jsonc
-{
-  "error": {
-    "code": "E400x",          // 一意のエラーコード
-    "message": "Description", // ユーザーに伝えるエラーメッセージ
-    "details": { }            // 任意の追加情報
-  }
-}
-```
-- HTTPステータス: 4xx / 5xx を適切に返す。
-
-### 3.3 ロール判定
-
-- JWTペイロードに `role: "admin"|"user"` を含める
-- **Next.js ミドルウェア**で `/api/admin/` にアクセス時は `role==="admin"` か検証
+## common/reusable_components.md
 
 # 再利用可能なコンポーネント集
 
@@ -10984,7 +10418,7 @@ export const generateSlug = (text: string): string => {
 
 これらのコンポーネントは、DigeClipのバックエンド開発において「**機能追加しやすく、何度も同じようなコンポーネントを作成しなくていい**」アーキテクチャを実現するための基盤となります。
 
-## 2_api/user
+## user/README.md
 
 # ユーザーロール API ( `/api/user/...` )
 
@@ -11001,7 +10435,7 @@ export const generateSlug = (text: string): string => {
 | [/api/user/tags](./tags/list.md) | GET | タグ一覧取得 | 要(user/admin) |
 | [/api/user/system/status](./system/status.md) | GET | システム状態取得 | 要(user/admin) |
 
-## 2_api/user/contents
+## contents/add-tag.md
 
 # タグ追加 API
 
@@ -11128,6 +10562,8 @@ export interface IUserAddTagResponse {
     - スキーマ設計では `contents` テーブルに `user_id` カラムが明示的に定義されていないため、コンテンツとユーザーの関連付けを適切に管理するための追加テーブルまたはカラムを検討してください。
     - 例えば、`user_contents` という中間テーブルを作成するか、`contents` テーブルに `user_id` カラムを追加することを検討してください。
 
+## contents/delete-tag.md
+
 # タグ削除 API
 
 - **HTTPメソッド**: `DELETE`
@@ -11231,6 +10667,8 @@ export interface IUserDeleteTagResponse {
 13. **ユーザーとコンテンツの関連付け**:
     - スキーマ設計では `contents` テーブルに `user_id` カラムが明示的に定義されていないため、コンテンツとユーザーの関連付けを適切に管理するための追加テーブルまたはカラムを検討してください。
     - 例えば、`user_contents` という中間テーブルを作成するか、`contents` テーブルに `user_id` カラムを追加することを検討してください。
+
+## contents/detail.md
 
 # コンテンツ詳細取得 API
 
@@ -11380,6 +10818,8 @@ export interface IUserGetContentDetailResponse {
 14. **ユーザーとコンテンツの関連付け**:
     - スキーマ設計では `contents` テーブルに `user_id` カラムが明示的に定義されていないため、コンテンツとユーザーの関連付けを適切に管理するための追加テーブルまたはカラムを検討してください。
     - 例えば、`user_contents` という中間テーブルを作成するか、`contents` テーブルに `user_id` カラムを追加することを検討してください。
+
+## contents/list.md
 
 # コンテンツ一覧取得 API
 
@@ -11546,7 +10986,7 @@ export interface IUserGetContentsResponse {
     - スキーマ設計では `contents` テーブルに `user_id` カラムが明示的に定義されていないため、コンテンツとユーザーの関連付けを適切に管理するための追加テーブルまたはカラムを検討してください。
     - 例えば、`user_contents` という中間テーブルを作成するか、`contents` テーブルに `user_id` カラムを追加することを検討してください。
 
-## 2_api/user/system
+## system/status.md
 
 # システム状態取得 API
 
@@ -11574,7 +11014,7 @@ export interface IUserSystemStatusResponse {
 }
 ```
 
-## 2_api/user/tags
+## tags/list.md
 
 # タグ一覧取得 API
 
@@ -11620,4 +11060,672 @@ export interface IUserGetTagsResponse {
   ]
 }
 ```
+
+## 2_backend_functional_requirements/3_Backend_Testing.md
+
+# バックエンドテスト仕様
+
+## 概要
+
+このドキュメントでは、DigeClipプロジェクトのバックエンド部分に特化したテスト仕様を定義します。共通のテスト戦略については[共通テスト戦略](../../0_common/5_Testing_Strategy.md)を参照してください。
+
+## 1. バックエンド特有のテスト目標
+
+- APIエンドポイントの正確性と信頼性の確保
+- データベース操作の整合性検証
+- 認証・認可メカニズムの安全性確認
+- パフォーマンスとスケーラビリティの検証
+- エラーハンドリングの適切な実装確認
+
+## 2. APIテスト
+
+### 2.1 エンドポイントテスト
+
+- **対象**: 個別のAPIエンドポイント
+- **ツール**: Supertest、Jest
+- **検証項目**:
+  - ステータスコードの正確性
+  - レスポンス形式の一貫性
+  - エラーハンドリング
+  - 認証・認可の適切な実装
+
+### 2.2 テスト例
+
+```typescript
+// articles.test.ts
+import request from 'supertest';
+import { app } from '../app';
+import { createTestToken } from '../utils/test-helpers';
+
+describe('GET /api/articles', () => {
+  it('should return 200 and articles list', async () => {
+    const response = await request(app)
+      .get('/api/articles')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body[0]).toHaveProperty('id');
+    expect(response.body[0]).toHaveProperty('title');
+  });
+
+  it('should return 401 when not authenticated', async () => {
+    await request(app)
+      .post('/api/articles')
+      .send({ title: 'New Article', content: 'Content' })
+      .expect(401);
+  });
+
+  it('should create article when authenticated', async () => {
+    const token = createTestToken({ id: 1, role: 'user' });
+
+    const response = await request(app)
+      .post('/api/articles')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'New Article', content: 'Content' })
+      .expect(201);
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body.title).toBe('New Article');
+  });
+});
+```
+
+## 3. データベーステスト
+
+### 3.1 リポジトリレイヤーテスト
+
+- **対象**: データベースアクセスロジック
+- **ツール**: Jest、テスト用DBクライアント
+- **検証項目**:
+  - CRUD操作の正確性
+  - トランザクション処理
+  - エラー処理
+  - クエリパフォーマンス
+
+### 3.2 テスト例
+
+```typescript
+// articleRepository.test.ts
+import { ArticleRepository } from './articleRepository';
+import { db } from '../db';
+
+// テスト前にテストデータベースをセットアップ
+beforeAll(async () => {
+  await db.migrate.latest();
+  await db.seed.run();
+});
+
+// テスト後にクリーンアップ
+afterAll(async () => {
+  await db.destroy();
+});
+
+describe('ArticleRepository', () => {
+  const repo = new ArticleRepository(db);
+
+  it('should find all articles', async () => {
+    const articles = await repo.findAll();
+    expect(articles.length).toBeGreaterThan(0);
+    expect(articles[0]).toHaveProperty('id');
+    expect(articles[0]).toHaveProperty('title');
+  });
+
+  it('should create a new article', async () => {
+    const newArticle = {
+      title: 'Test Article',
+      content: 'Test Content',
+      userId: 1
+    };
+
+    const created = await repo.create(newArticle);
+    expect(created).toHaveProperty('id');
+    expect(created.title).toBe(newArticle.title);
+
+    // 作成したデータが取得できることを確認
+    const found = await repo.findById(created.id);
+    expect(found).toMatchObject(newArticle);
+  });
+
+  it('should update an article', async () => {
+    const article = await repo.findAll().then(articles => articles[0]);
+    const updated = await repo.update(article.id, { title: 'Updated Title' });
+
+    expect(updated.title).toBe('Updated Title');
+    expect(updated.id).toBe(article.id);
+  });
+
+  it('should delete an article', async () => {
+    const article = await repo.create({
+      title: 'To Be Deleted',
+      content: 'Content',
+      userId: 1
+    });
+
+    await repo.delete(article.id);
+    const found = await repo.findById(article.id);
+    expect(found).toBeNull();
+  });
+});
+```
+
+## 4. サービスレイヤーテスト
+
+### 4.1 ビジネスロジックテスト
+
+- **対象**: サービスクラス/関数
+- **ツール**: Jest
+- **検証項目**:
+  - ビジネスルールの適用
+  - 例外処理
+  - 依存サービスとの連携
+  - 認可ロジック
+
+### 4.2 テスト例
+
+```typescript
+// articleService.test.ts
+import { ArticleService } from './articleService';
+import { mockArticleRepository } from '../__mocks__/articleRepository';
+import { mockUserService } from '../__mocks__/userService';
+import { NotFoundError, UnauthorizedError } from '../errors';
+
+describe('ArticleService', () => {
+  const articleRepo = mockArticleRepository();
+  const userService = mockUserService();
+  const service = new ArticleService(articleRepo, userService);
+
+  it('should get articles with author information', async () => {
+    const articles = await service.getArticles();
+
+    expect(articles[0]).toHaveProperty('author');
+    expect(articles[0].author).toHaveProperty('name');
+  });
+
+  it('should throw NotFoundError when article not found', async () => {
+    articleRepo.findById.mockResolvedValue(null);
+
+    await expect(service.getArticleById(999)).rejects.toThrow(NotFoundError);
+  });
+
+  it('should check permissions before updating article', async () => {
+    const article = { id: 1, userId: 2, title: 'Test' };
+    articleRepo.findById.mockResolvedValue(article);
+
+    // 別のユーザーIDでアクセス
+    await expect(
+      service.updateArticle(1, { title: 'Updated' }, { id: 3, role: 'user' })
+    ).rejects.toThrow(UnauthorizedError);
+
+    // 管理者は更新可能
+    articleRepo.update.mockResolvedValue({ ...article, title: 'Updated' });
+    const result = await service.updateArticle(
+      1,
+      { title: 'Updated' },
+      { id: 3, role: 'admin' }
+    );
+
+    expect(result.title).toBe('Updated');
+  });
+});
+```
+
+## 5. 認証・認可テスト
+
+### 5.1 認証テスト
+
+- **対象**: 認証ミドルウェア、認証サービス
+- **ツール**: Jest、Supertest
+- **検証項目**:
+  - トークン検証
+  - 認証失敗時の適切なエラー
+  - セッション管理
+  - パスワードハッシュ化
+
+### 5.2 テスト例
+
+```typescript
+// auth.test.ts
+import request from 'supertest';
+import { app } from '../app';
+import { createUser, deleteUser } from '../utils/test-helpers';
+
+describe('Authentication', () => {
+  const testUser = {
+    email: 'test@example.com',
+    password: 'Password123!'
+  };
+
+  beforeAll(async () => {
+    await createUser(testUser);
+  });
+
+  afterAll(async () => {
+    await deleteUser(testUser.email);
+  });
+
+  it('should login with valid credentials', async () => {
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send(testUser)
+      .expect(200);
+
+    expect(response.body).toHaveProperty('token');
+    expect(response.body).toHaveProperty('user');
+    expect(response.body.user.email).toBe(testUser.email);
+  });
+
+  it('should reject invalid credentials', async () => {
+    await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: testUser.email,
+        password: 'wrongpassword'
+      })
+      .expect(401);
+  });
+
+  it('should verify token and return user data', async () => {
+    // まずログイン
+    const loginResponse = await request(app)
+      .post('/api/auth/login')
+      .send(testUser);
+
+    const token = loginResponse.body.token;
+
+    // トークンを使用して保護されたエンドポイントにアクセス
+    const response = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body.email).toBe(testUser.email);
+  });
+});
+```
+
+## 6. 統合テスト
+
+### 6.1 APIフローテスト
+
+- **対象**: 複数のAPIエンドポイントを組み合わせたフロー
+- **ツール**: Supertest、Jest
+- **検証項目**:
+  - エンドツーエンドのユーザーフロー
+  - データの整合性
+  - エラー状態からの回復
+
+### 6.2 テスト例
+
+```typescript
+// article-workflow.test.ts
+import request from 'supertest';
+import { app } from '../app';
+import { createTestToken, createUser, deleteUser } from '../utils/test-helpers';
+
+describe('Article Workflow', () => {
+  let token;
+  let userId;
+  let articleId;
+
+  beforeAll(async () => {
+    // テストユーザー作成
+    const user = await createUser({
+      email: 'workflow@example.com',
+      password: 'Password123!'
+    });
+    userId = user.id;
+    token = createTestToken({ id: userId, role: 'user' });
+  });
+
+  afterAll(async () => {
+    await deleteUser('workflow@example.com');
+  });
+
+  it('should create a new article', async () => {
+    const response = await request(app)
+      .post('/api/articles')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Workflow Test',
+        content: 'This is a test article'
+      })
+      .expect(201);
+
+    articleId = response.body.id;
+    expect(response.body.title).toBe('Workflow Test');
+  });
+
+  it('should update the article', async () => {
+    await request(app)
+      .put(`/api/articles/${articleId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Updated Workflow Test'
+      })
+      .expect(200);
+
+    // 更新されたことを確認
+    const response = await request(app)
+      .get(`/api/articles/${articleId}`)
+      .expect(200);
+
+    expect(response.body.title).toBe('Updated Workflow Test');
+  });
+
+  it('should add a comment to the article', async () => {
+    const response = await request(app)
+      .post(`/api/articles/${articleId}/comments`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        content: 'This is a test comment'
+      })
+      .expect(201);
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body.content).toBe('This is a test comment');
+
+    // コメントが記事に関連付けられていることを確認
+    const articleResponse = await request(app)
+      .get(`/api/articles/${articleId}?include=comments`)
+      .expect(200);
+
+    expect(articleResponse.body.comments).toBeDefined();
+    expect(articleResponse.body.comments.length).toBeGreaterThan(0);
+    expect(articleResponse.body.comments[0].content).toBe('This is a test comment');
+  });
+
+  it('should delete the article', async () => {
+    await request(app)
+      .delete(`/api/articles/${articleId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204);
+
+    // 削除されたことを確認
+    await request(app)
+      .get(`/api/articles/${articleId}`)
+      .expect(404);
+  });
+});
+```
+
+## 7. パフォーマンステスト
+
+### 7.1 負荷テスト
+
+- **対象**: 主要APIエンドポイント
+- **ツール**: k6、Artillery
+- **検証項目**:
+  - レスポンスタイム
+  - スループット
+  - エラー率
+  - リソース使用率
+
+### 7.2 テスト例
+
+```javascript
+// k6-load-test.js
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  stages: [
+    { duration: '30s', target: 20 }, // 20ユーザーまでランプアップ
+    { duration: '1m', target: 20 },  // 1分間負荷を維持
+    { duration: '30s', target: 0 },  // ランプダウン
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<500'], // 95%のリクエストが500ms以内に完了すること
+    http_req_failed: ['rate<0.01'],   // エラー率1%未満
+  },
+};
+
+export default function() {
+  const BASE_URL = 'http://localhost:3000/api';
+
+  // 記事一覧の取得
+  const articlesResponse = http.get(`${BASE_URL}/articles`);
+  check(articlesResponse, {
+    'articles status is 200': (r) => r.status === 200,
+    'articles response time < 200ms': (r) => r.timings.duration < 200,
+  });
+
+  // 個別記事の取得（IDは1〜10からランダム）
+  const articleId = Math.floor(Math.random() * 10) + 1;
+  const articleResponse = http.get(`${BASE_URL}/articles/${articleId}`);
+  check(articleResponse, {
+    'article status is 200': (r) => r.status === 200,
+    'article response time < 150ms': (r) => r.timings.duration < 150,
+  });
+
+  sleep(1);
+}
+```
+
+## 8. セキュリティテスト
+
+### 8.1 脆弱性テスト
+
+- **対象**: APIエンドポイント、認証システム
+- **ツール**: OWASP ZAP、Jest
+- **検証項目**:
+  - SQLインジェクション対策
+  - XSS対策
+  - CSRF対策
+  - 認証バイパス対策
+
+### 8.2 テスト例
+
+```typescript
+// security.test.ts
+import request from 'supertest';
+import { app } from '../app';
+
+describe('Security Tests', () => {
+  it('should prevent SQL injection in query parameters', async () => {
+    const maliciousQuery = "1'; DROP TABLE users; --";
+
+    // SQLインジェクションが防止されていれば、エラーは発生するが
+    // サーバーはクラッシュせず、適切なエラーレスポンスを返す
+    const response = await request(app)
+      .get(`/api/articles/${maliciousQuery}`)
+      .expect(400); // または404、どちらにせよ500ではない
+
+    expect(response.body).toHaveProperty('error');
+  });
+
+  it('should set secure headers', async () => {
+    const response = await request(app)
+      .get('/api/articles')
+      .expect(200);
+
+    // セキュリティヘッダーの確認
+    expect(response.headers).toHaveProperty('x-content-type-options', 'nosniff');
+    expect(response.headers).toHaveProperty('x-xss-protection', '1; mode=block');
+    expect(response.headers).toHaveProperty('x-frame-options', 'DENY');
+  });
+
+  it('should require CSRF token for state-changing operations', async () => {
+    // ログイン
+    const loginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: 'test@example.com',
+        password: 'Password123!'
+      });
+
+    const token = loginResponse.body.token;
+
+    // CSRFトークンなしでPOSTリクエスト
+    await request(app)
+      .post('/api/articles')
+      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', loginResponse.headers['set-cookie'])
+      .send({
+        title: 'Test Article',
+        content: 'Content'
+      })
+      .expect(403); // CSRFトークンがないため拒否される
+  });
+});
+```
+
+## 9. バックエンド特有のテスト環境設定
+
+### 9.1 Jest設定
+
+```javascript
+// jest.config.js
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/'],
+  collectCoverageFrom: [
+    'src/**/*.{js,ts}',
+    '!src/**/*.d.ts',
+    '!src/migrations/**',
+    '!src/seeds/**',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+};
+```
+
+### 9.2 テストデータベース設定
+
+```javascript
+// knexfile.js
+module.exports = {
+  test: {
+    client: 'pg',
+    connection: {
+      host: process.env.TEST_DB_HOST || 'localhost',
+      user: process.env.TEST_DB_USER || 'postgres',
+      password: process.env.TEST_DB_PASSWORD || 'postgres',
+      database: process.env.TEST_DB_NAME || 'digeclip_test',
+    },
+    migrations: {
+      directory: './src/migrations',
+    },
+    seeds: {
+      directory: './src/seeds/test',
+    },
+  },
+};
+```
+
+## 10. CI/CDパイプラインでのバックエンドテスト
+
+### 10.1 GitHub Actions設定例
+
+```yaml
+# .github/workflows/backend-tests.yml
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'jest.config.js'
+      - 'knexfile.js'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: digeclip_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run migrations
+        run: npm run migrate:test
+        env:
+          TEST_DB_HOST: localhost
+          TEST_DB_USER: postgres
+          TEST_DB_PASSWORD: postgres
+          TEST_DB_NAME: digeclip_test
+
+      - name: Run tests
+        run: npm test
+        env:
+          TEST_DB_HOST: localhost
+          TEST_DB_USER: postgres
+          TEST_DB_PASSWORD: postgres
+          TEST_DB_NAME: digeclip_test
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
+```
+
+## 11. バックエンドテストの優先順位
+
+1. **最優先**: 認証・認可システム、データ整合性に関わるAPI
+2. **高優先度**: 主要なビジネスロジック、データアクセスレイヤー
+3. **中優先度**: 二次的なAPIエンドポイント、ユーティリティ関数
+4. **低優先度**: エラーメッセージ、ログ機能
+
+## 12. バックエンド特有のテストデータ
+
+### 12.1 シードデータ
+
+- ユーザーアカウント
+- 記事データ
+- タグ・カテゴリ
+- 設定データ
+
+### 12.2 データ管理
+
+- マイグレーションとシードスクリプトの活用
+- テスト用ファクトリー関数
+- テスト間のデータ分離
+
+## 13. バックエンドテストのトラブルシューティング
+
+### 13.1 よくある問題と解決策
+
+- **テストデータベース接続エラー**: 環境変数とコネクション設定を確認
+- **非同期テストのタイムアウト**: テストタイムアウト設定の調整
+- **テスト間の依存関係**: 各テストでデータをクリーンアップ
+- **モックの不整合**: モックの戻り値と実際の実装の一致を確認
+
+### 13.2 デバッグ方法
+
+- `console.log` を使用したデバッグ出力
+- Jest の `--verbose` フラグでより詳細な出力
+- データベースクエリのログ記録
+- トランザクションを使用したテストデータの分離
 

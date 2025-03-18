@@ -1,35 +1,101 @@
-# E2Eテスト
+# E2Eテスト (End-to-End Tests)
 
-E2Eテスト（エンドツーエンドテスト）は、アプリケーション全体が実際のユーザーシナリオに沿って正しく動作することを確認するためのテストです。
+E2Eテストは、アプリケーション全体を実際のユーザーの視点からテストします。ユーザーの行動を模倣し、アプリケーションが期待通りに動作することを確認します。
 
-## 目的
+## E2Eテストの目的
 
-- 実際のユーザーの操作シナリオを模倣し、アプリケーション全体が正しく機能することを確認する
-- フロントエンドとバックエンドの統合、データベースとの連携など、システム全体の動作を検証する
-- 本番環境に近い状態でのテストを行う
+- 実際のユーザー体験をシミュレートする
+- アプリケーション全体の機能が連携して動作することを確認する
+- 本番環境に近い状態でのテストを行い、統合上の問題を発見する
+- 重要なユーザーフローが正常に機能することを確認する
 
-## テスト対象
+## 対象となるユーザーフロー
 
-- ユーザーフロー（ログイン、コンテンツ作成、検索など）
-- 画面遷移
-- データの永続化
-- エラーハンドリング
+以下のようなユーザーフローがE2Eテストの対象となります：
+
+1. **認証フロー**
+   - ユーザーのログイン
+   - ユーザーの登録
+   - パスワードリセット
+
+2. **ナビゲーションフロー**
+   - メニュー間の移動
+   - ページ間の遷移
+   - ディープリンクの動作
+
+3. **データ操作フロー**
+   - フォーム入力と送信
+   - データの作成・読み取り・更新・削除（CRUD）
+   - ファイルのアップロードとダウンロード
 
 ## ディレクトリ構造
 
-E2Eテストは、`src/__tests__/e2e` ディレクトリに配置します。
+E2Eテストは、`digeclip/src/__tests__/e2e` ディレクトリに配置します。
 
 ```
-/src
-  └─ /__tests__
-      └─ /e2e
-          ├─ /flows           # ユーザーフロー別のテスト
-          │   ├─ login.spec.ts
-          │   ├─ content.spec.ts
+/digeclip/src
+  └─ /__tests__                    # テストコード
+      └─ /e2e                      # E2Eテスト
+          ├─ /auth                 # 認証関連E2Eテスト
+          │   ├─ login.test.ts
+          │   ├─ register.test.ts
           │   └─ ...
-          ├─ /fixtures        # テストデータ
-          ├─ /support         # ヘルパー関数
-          └─ /utils           # ユーティリティ
+          ├─ /navigation           # ナビゲーション関連E2Eテスト
+          │   ├─ menu.test.ts
+          │   └─ ...
+          └─ /content              # コンテンツ関連E2Eテスト
+              ├─ contentList.test.ts
+              ├─ contentDetail.test.ts
+              └─ ...
+```
+
+## Cypressを使用したE2Eテスト例
+
+```typescript
+// E2Eテスト例：ログインフロー
+describe('ログイン機能', () => {
+  beforeEach(() => {
+    // 各テスト前にホームページにアクセス
+    cy.visit('/');
+  });
+
+  it('有効な認証情報でログインできること', () => {
+    // ログインページに移動
+    cy.get('[data-testid="login-button"]').click();
+
+    // 認証情報を入力
+    cy.get('[data-testid="email-input"]').type('test@example.com');
+    cy.get('[data-testid="password-input"]').type('password123');
+
+    // ログインボタンをクリック
+    cy.get('[data-testid="submit-button"]').click();
+
+    // ダッシュボードにリダイレクトされることを確認
+    cy.url().should('include', '/dashboard');
+
+    // ユーザー名が表示されることを確認
+    cy.get('[data-testid="user-greeting"]').should('contain', 'テストユーザー');
+  });
+
+  it('無効な認証情報でログインするとエラーが表示されること', () => {
+    // ログインページに移動
+    cy.get('[data-testid="login-button"]').click();
+
+    // 無効な認証情報を入力
+    cy.get('[data-testid="email-input"]').type('invalid@example.com');
+    cy.get('[data-testid="password-input"]').type('wrongpassword');
+
+    // ログインボタンをクリック
+    cy.get('[data-testid="submit-button"]').click();
+
+    // エラーメッセージが表示されることを確認
+    cy.get('[data-testid="error-message"]').should('be.visible');
+    cy.get('[data-testid="error-message"]').should('contain', 'メールアドレスまたはパスワードが正しくありません');
+
+    // URLがログインページのままであることを確認
+    cy.url().should('include', '/login');
+  });
+});
 ```
 
 ## テスト命名規則

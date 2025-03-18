@@ -2,10 +2,10 @@ Cursor rules are user provided instructions for the AI to follow to help work wi
 They may or may not be relevent to the task at hand. If they are, use the fetch_rules tool to fetch the full rule.
 Some rules may be automatically attached to the conversation if the user attaches a file that matches the rule's glob, and wont need to be fetched.
 
+000_common_coding_conventions: コーディング規約
+000_common_directory_structure: ディレクトリ構造
 000_common_requirements: 共通要件
 000_common_tech_stack: 共通技術スタック
-000_common_directory_structure: ディレクトリ構造
-000_common_coding_conventions: コーディング規約
 000_common_test_strategy: テスト戦略
 001_business_requirements: ビジネス要件の定義
 002_backend_requirements: バックエンド機能要件

@@ -1,18 +1,39 @@
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
+const nextJest = require('next/jest');
+
+const createJestConfig = nextJest({
+  dir: './',
+});
+
+/** @type {import('jest').Config} */
+const config = {
+  testMatch: [
+    '<rootDir>/src/__tests__/unit/**/*.test.{ts,tsx}',
+    '<rootDir>/src/__tests__/integration/**/*.test.{ts,tsx}',
+  ],
+
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+  },
+
+  testEnvironment: 'jest-environment-jsdom',
+
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
-  testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
-  transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        tsconfig: 'tsconfig.jest.json',
-      },
-    ],
-  },
-  setupFiles: ['<rootDir>/jest.setup.js'],
-  setupFilesAfterEnv: ['@testing-library/jest-dom'],
+
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/*.stories.{ts,tsx}',
+    '!src/types/**/*',
+    '!src/__tests__/**/*',
+  ],
+
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+
+  // ESLintエラー回避のためのコメント
+  // @ts-ignore
 };
+
+module.exports = createJestConfig(config);
