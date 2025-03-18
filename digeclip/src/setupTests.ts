@@ -11,7 +11,8 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // 環境変数の設定
-process.env.NODE_ENV = 'test';
+// process.env.NODE_ENVは読み取り専用プロパティなので、Object.definePropertyを使用して設定
+Object.defineProperty(process.env, 'NODE_ENV', { value: 'test' });
 process.env.JEST_WORKER_ID = '1';
 
 // コンソール出力の抑制（必要に応じてコメントアウト）
