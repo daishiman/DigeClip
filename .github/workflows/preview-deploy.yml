@@ -77,9 +77,19 @@ jobs:
         run: |
           echo "出力ディレクトリの検索："
           find . -type d -name "out" | cat
-          if [ ! -d "./out" ] && [ -d "./digeclip/out" ]; then
-            echo "digeclip/outディレクトリが見つかりました。これを使用します。"
-            cp -r ./digeclip/out ./out
+          if [ ! -d "./out" ]; then
+            if [ -d "./digeclip/out" ]; then
+              echo "digeclip/outディレクトリが見つかりました。これを使用します。"
+              cp -r ./digeclip/out ./out
+            # Next.jsの出力がoutではなく.nextにある場合（静的エクスポートが設定されていない場合）
+            elif [ -d "./digeclip/.next" ]; then
+              echo "digeclip/.nextディレクトリが見つかりました。このプロジェクトはexport設定がありません。"
+              echo "next.config.jsにoutput: 'export'の設定を追加して、静的出力を有効にしてください。"
+              # 一時的なソリューションとして、.nextディレクトリをoutとしてコピー
+              mkdir -p ./out
+              cp -r ./digeclip/.next/static ./out/
+              echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=https://github.com/daishiman/DigeClip"></head><body><p>リダイレクト中...</p></body></html>' > ./out/index.html
+            fi
           fi
 
       - name: Cloudflare Pagesへプレビューデプロイ
@@ -90,16 +100,18 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: digeclip
           directory: ./out
-          deploymentEnvironment: preview
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: PRにプレビューURLをコメント
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const previewUrl = '${{ steps.cloudflare_deployment.outputs.url }}';
+            const url = '${{ steps.cloudflare_deployment.outputs.url }}';
+            const alias = '${{ steps.cloudflare_deployment.outputs.alias }}';
+            const previewUrl = alias || url;
+
             if (previewUrl) {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
