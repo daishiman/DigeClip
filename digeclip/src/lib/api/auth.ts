@@ -1,6 +1,5 @@
 import { apiClient, ApiResponse } from './client';
 import { AUTH_ENDPOINTS } from '../constants';
-import { isTestEnvironment } from '../constants';
 
 // 認証関連の型定義
 export interface User {
@@ -45,8 +44,11 @@ const MOCK_TOKEN = 'mock-auth-token';
 export const authService = {
   // ユーザー登録
   async register(data: RegisterRequest): Promise<ApiResponse<User>> {
-    // テスト環境ではモックデータを返す
-    if (isTestEnvironment()) {
+    // テスト環境検出
+    const isTest = process.env.NODE_ENV === 'test' || typeof jest !== 'undefined';
+
+    // テスト環境の場合はモックデータを返す
+    if (isTest) {
       return Promise.resolve({ data: MOCK_USER });
     }
 
@@ -57,8 +59,11 @@ export const authService = {
 
   // ログイン
   async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    // テスト環境ではモックデータを返す
-    if (isTestEnvironment()) {
+    // テスト環境検出
+    const isTest = process.env.NODE_ENV === 'test' || typeof jest !== 'undefined';
+
+    // テスト環境の場合はモックデータを返す
+    if (isTest) {
       // テストでも必要な場合はトークンをローカルストレージに保存
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', MOCK_TOKEN);
@@ -86,8 +91,11 @@ export const authService = {
 
   // ログアウト
   async logout(): Promise<ApiResponse<LogoutResponse>> {
-    // テスト環境ではモックデータを返す
-    if (isTestEnvironment()) {
+    // テスト環境検出
+    const isTest = process.env.NODE_ENV === 'test' || typeof jest !== 'undefined';
+
+    // テスト環境の場合はモックデータを返す
+    if (isTest) {
       // テスト環境でもトークンを削除
       if (typeof window !== 'undefined') {
         localStorage.removeItem('auth_token');
