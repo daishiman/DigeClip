@@ -45,7 +45,7 @@ export const authService = {
   // ユーザー登録
   async register(data: RegisterRequest): Promise<ApiResponse<User>> {
     // テスト環境検出
-    const isTest = process.env.NODE_ENV === 'test' || typeof jest !== 'undefined';
+    const isTest = process.env.NODE_ENV === 'test';
 
     // テスト環境の場合はモックデータを返す
     if (isTest) {
@@ -60,7 +60,7 @@ export const authService = {
   // ログイン
   async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
     // テスト環境検出
-    const isTest = process.env.NODE_ENV === 'test' || typeof jest !== 'undefined';
+    const isTest = process.env.NODE_ENV === 'test';
 
     // テスト環境の場合はモックデータを返す
     if (isTest) {
@@ -92,7 +92,7 @@ export const authService = {
   // ログアウト
   async logout(): Promise<ApiResponse<LogoutResponse>> {
     // テスト環境検出
-    const isTest = process.env.NODE_ENV === 'test' || typeof jest !== 'undefined';
+    const isTest = process.env.NODE_ENV === 'test';
 
     // テスト環境の場合はモックデータを返す
     if (isTest) {
