@@ -1,13 +1,25 @@
 // import { PrismaClient } from '@prisma/client';
 // TODO: Prismaスキーマを生成後に実際のPrismaClientをインポートする
 
+// インターフェース型
+interface UserRecord {
+  id: string;
+  [key: string]: unknown;
+}
+
+// モックリクエスト型
+interface MockRequest {
+  where?: { id: string };
+  data?: Record<string, unknown>;
+}
+
 // 一時的なモデル型
 interface MockModel {
-  findMany: () => Promise<any[]>;
-  findUnique: (args: any) => Promise<any | null>;
-  create: (args: any) => Promise<any>;
-  update: (args: any) => Promise<any>;
-  delete: (args: any) => Promise<void>;
+  findMany: () => Promise<UserRecord[]>;
+  findUnique: (_args: MockRequest) => Promise<UserRecord | null>;
+  create: (_args: MockRequest) => Promise<UserRecord>;
+  update: (_args: MockRequest) => Promise<UserRecord>;
+  delete: (_args: MockRequest) => Promise<void>;
 }
 
 // 一時的なPrismaClientのモック
@@ -16,11 +28,18 @@ class PrismaClientMock {
   user: MockModel = {
     findMany: async () => [],
     findUnique: async () => null,
-    create: async args => ({ id: 'mock-id', ...args.data }),
-    update: async args => ({ id: args.where.id, ...args.data }),
+    create: async _args => {
+      if (!_args.data) return { id: 'mock-id' };
+      return { id: 'mock-id', ...(_args.data as Record<string, unknown>) };
+    },
+    update: async _args => {
+      if (!_args.where || !_args.data) return { id: 'unknown-id' };
+      return { id: _args.where.id, ...(_args.data as Record<string, unknown>) };
+    },
     delete: async () => {},
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   constructor(_options?: Record<string, unknown>) {
     // モック初期化
   }
