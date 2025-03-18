@@ -1,17 +1,17 @@
-name: Cloudflare Pagesデプロイ
+name: PR プレビューデプロイ
 
 on:
-  push:
-    branches: [ development, production ]
-  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
-# 権限設定を追加
+# 権限設定
 permissions:
   contents: read
   deployments: write
+  pull-requests: write
 
 jobs:
-  deploy:
+  deploy-preview:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -21,22 +21,9 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 環境変数の設定
-        id: set_env_vars
-        run: |
-          if [[ $GITHUB_REF == *"development"* ]]; then
-            echo "ENVIRONMENT=development" >> $GITHUB_OUTPUT
-          elif [[ $GITHUB_REF == *"production"* ]]; then
-            echo "ENVIRONMENT=production" >> $GITHUB_OUTPUT
-          else
-            echo "ENVIRONMENT=preview" >> $GITHUB_OUTPUT
-          fi
-
       - name: 依存関係のインストール
         run: |
-          echo "現在のディレクトリ構造を確認"
-          ls -la
-
+          echo "PR プレビュー用にビルドします"
           if [ -f "package.json" ]; then
             npm ci
           else
@@ -53,30 +40,43 @@ jobs:
           fi
 
       - name: ビルド
-        env:
-          ENVIRONMENT: ${{ steps.set_env_vars.outputs.ENVIRONMENT }}
         run: |
           if [ -f "package.json" ]; then
             npm run build
-            echo "環境: $ENVIRONMENT"
           else
             PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
             if [ ! -z "$PKG_DIR" ]; then
               cd $PKG_DIR
               npm run build
-              echo "環境: $ENVIRONMENT"
             else
               echo "package.jsonが見つからないためビルドを実行できません"
               exit 1
             fi
           fi
 
-      - name: Cloudflare Pagesへデプロイ
+      - name: Cloudflare Pagesへプレビューデプロイ
+        id: cloudflare_deployment
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: digeclip
           directory: ./out
-          # 本番環境の場合は production フラグを設定
-          deploymentEnvironment: ${{ steps.set_env_vars.outputs.ENVIRONMENT }}
+          deploymentEnvironment: preview
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
+
+      - name: PRにプレビューURLをコメント
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const previewUrl = '${{ steps.cloudflare_deployment.outputs.url }}';
+            if (previewUrl) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `✅ プレビューデプロイが完了しました！\n\n[プレビューを表示](${previewUrl})`
+              });
+            }

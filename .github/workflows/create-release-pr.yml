@@ -1,0 +1,116 @@
+name: リリースPR作成
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_title:
+        description: 'リリースのタイトル'
+        required: true
+        default: '新機能リリース'
+  schedule:
+    # 毎週月曜日の午前9時（UTC）に実行
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: リリースするコミットを確認
+        id: check_changes
+        run: |
+          git fetch origin production
+          COMMITS_AHEAD=$(git rev-list --count origin/production..origin/development)
+          echo "commits_ahead=$COMMITS_AHEAD" >> $GITHUB_OUTPUT
+          if [ "$COMMITS_AHEAD" -gt 0 ]; then
+            echo "リリース可能なコミットが $COMMITS_AHEAD 件見つかりました"
+            CHANGES=$(git log --pretty=format:"- %s" origin/production..origin/development)
+            echo "changes<<EOF" >> $GITHUB_OUTPUT
+            echo "$CHANGES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "リリース可能なコミットがありません"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: リリースPRの作成
+        if: steps.check_changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const changes = `${{ steps.check_changes.outputs.changes }}`;
+            const releaseTitle = '${{ github.event.inputs.release_title }}' || '開発環境から本番環境へのリリース';
+
+            // 既存のPRを確認
+            const existingPRs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: 'development',
+              base: 'production',
+              state: 'open'
+            });
+
+            if (existingPRs.data.length > 0) {
+              console.log('既にリリースPRが存在します:', existingPRs.data[0].html_url);
+
+              // 既存PRを更新
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: existingPRs.data[0].number,
+                title: releaseTitle,
+                body: `## 本番環境へのリリース
+
+### 変更内容
+${changes}
+
+### チェックリスト
+- [ ] テストはすべて通過していますか？
+- [ ] 開発環境で動作確認は完了していますか？
+- [ ] セキュリティ上の問題はありませんか？
+
+このPRがマージされると、変更が本番環境に自動デプロイされます。`
+              });
+
+              console.log('既存のリリースPRを更新しました');
+            } else {
+              // 新規PR作成
+              const pr = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: releaseTitle,
+                head: 'development',
+                base: 'production',
+                body: `## 本番環境へのリリース
+
+### 変更内容
+${changes}
+
+### チェックリスト
+- [ ] テストはすべて通過していますか？
+- [ ] 開発環境で動作確認は完了していますか？
+- [ ] セキュリティ上の問題はありませんか？
+
+このPRがマージされると、変更が本番環境に自動デプロイされます。`
+              });
+
+              console.log('リリースPRを作成しました:', pr.data.html_url);
+
+              // PRにラベル付け
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.data.number,
+                labels: ['release', 'automated-pr']
+              });
+            }
