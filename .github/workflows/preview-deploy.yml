@@ -1,4 +1,4 @@
-name: 🚀 Preview Deploy
+name: 'Preview Deploy'
 
 on:
   pull_request:
@@ -14,15 +14,15 @@ jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      - name: パッケージロックファイルの更新
+      - name: Install root dependencies (package-lock generation)
         run: |
           if [ -f "package.json" ]; then
             npm install --package-lock-only --no-audit --no-fund
@@ -34,7 +34,7 @@ jobs:
             fi
           fi
 
-      - name: 依存関係のインストール
+      - name: Prepare build directories and install dependencies
         run: |
           echo "PR プレビュー用にビルドします"
           if [ -f "package.json" ]; then
@@ -52,14 +52,14 @@ jobs:
             fi
           fi
 
-      - name: Tailwind CSS依存関係の追加
+      - name: Install Tailwind CSS dependencies
         run: |
           if [ -d "digeclip" ]; then
             cd digeclip
-            npm install @tailwindcss/postcss postcss autoprefixer --save
+            npm install autoprefixer postcss @tailwindcss/postcss --save
           fi
 
-      - name: ビルド
+      - name: Build application
         run: |
           if [ -f "package.json" ]; then
             # ルートのpackage.jsonがあるが、おそらくdigeclipディレクトリでビルドする必要がある
@@ -81,7 +81,7 @@ jobs:
             fi
           fi
 
-      - name: 出力ディレクトリの確認
+      - name: Verify build output and prepare for deployment
         run: |
           # ビルド出力ディレクトリが存在するか確認
           if [ -d "out" ]; then
@@ -96,6 +96,8 @@ jobs:
           else
             echo "警告: ビルド出力ディレクトリが見つかりませんでした"
             find . -type d -name "out" -o -name ".next" | grep -v "node_modules"
+            exit 1
+          fi
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
@@ -105,17 +107,20 @@ jobs:
           projectName: digeclip
           directory: out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref || github.ref_name }}
+          wranglerVersion: '3'
 
-      - name: コメントのプレビューURL
+      - name: "URL の設定"
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { issue: { number: issue_number }, repo: { owner, repo } } = context;
-            const deploymentUrl = `https://pr-${issue_number}.digeclip.pages.dev`;
+            const branch = context.payload.pull_request.head.ref.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+            const url = `https://${branch}.digeclip.pages.dev`;
 
             github.rest.issues.createComment({
-              issue_number,
-              owner,
-              repo,
-              body: `🚀 プレビューデプロイが完了しました！\n\n[プレビューURL](${deploymentUrl})`
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 プレビューがデプロイされました！ [こちらからアクセス](${url})`
             });
