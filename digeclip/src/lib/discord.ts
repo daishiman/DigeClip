@@ -1,38 +1,58 @@
 import axios from 'axios';
 
-// Discordウェブフックの設定
-// 環境変数から設定を取得
-const DISCORD_WEBHOOK_URL = process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL || '';
+/**
+ * テスト環境かどうかを判定する関数
+ * テスト実行中かつモック環境で実行されているかどうかをチェック
+ */
+const isTestEnvironment = (): boolean => {
+  return (
+    process.env.NODE_ENV === 'test' ||
+    typeof jest !== 'undefined' ||
+    process.env.JEST_WORKER_ID !== undefined
+  );
+};
+
+/**
+ * Discordウェブフックのエンドポイントを取得
+ * 環境変数から設定値を安全に取得
+ */
+const getWebhookUrl = (): string => {
+  return process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL || '';
+};
 
 /**
  * シンプルなテキストメッセージをDiscordに送信
  * @param message 送信するテキストメッセージ
  * @param username 送信者名（オプション）
- * @returns レスポンス結果
+ * @returns 処理結果を含むオブジェクト
  */
 export async function sendTextMessage(
   message: string,
   username = 'DigeClip Bot'
 ): Promise<{ success: boolean; error?: string }> {
-  // テスト環境では常に成功を返す
-  if (process.env.NODE_ENV === 'test' || typeof jest !== 'undefined') {
-    return { success: true };
-  }
+  const webhookUrl = getWebhookUrl();
 
-  if (!DISCORD_WEBHOOK_URL) {
+  // WebフックURLが設定されていない場合はエラー
+  if (!webhookUrl) {
     console.error('Discord webhook URL is not configured');
     return { success: false, error: 'Discord webhook URL is not configured' };
   }
 
   try {
-    await axios.post(DISCORD_WEBHOOK_URL, {
+    // テスト環境とそれ以外で共通の実装を使用
+    await axios.post(webhookUrl, {
       content: message,
       username,
     });
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Error sending Discord message:', errorMessage);
+
+    // テスト環境以外の場合のみログ出力
+    if (!isTestEnvironment()) {
+      console.error('Error sending Discord message:', errorMessage);
+    }
+
     return {
       success: false,
       error: errorMessage,
@@ -44,7 +64,7 @@ export async function sendTextMessage(
  * 埋め込みメッセージをDiscordに送信
  * @param embed 埋め込みメッセージのオブジェクト
  * @param username 送信者名（オプション）
- * @returns レスポンス結果
+ * @returns 処理結果を含むオブジェクト
  */
 export async function sendEmbedMessage(
   embed: {
@@ -58,25 +78,29 @@ export async function sendEmbedMessage(
   },
   username = 'DigeClip Bot'
 ): Promise<{ success: boolean; error?: string }> {
-  // テスト環境では常に成功を返す
-  if (process.env.NODE_ENV === 'test' || typeof jest !== 'undefined') {
-    return { success: true };
-  }
+  const webhookUrl = getWebhookUrl();
 
-  if (!DISCORD_WEBHOOK_URL) {
+  // WebフックURLが設定されていない場合はエラー
+  if (!webhookUrl) {
     console.error('Discord webhook URL is not configured');
     return { success: false, error: 'Discord webhook URL is not configured' };
   }
 
   try {
-    await axios.post(DISCORD_WEBHOOK_URL, {
+    // テスト環境とそれ以外で共通の実装を使用
+    await axios.post(webhookUrl, {
       embeds: [embed],
       username,
     });
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Error sending Discord embed:', errorMessage);
+
+    // テスト環境以外の場合のみログ出力
+    if (!isTestEnvironment()) {
+      console.error('Error sending Discord embed:', errorMessage);
+    }
+
     return {
       success: false,
       error: errorMessage,
@@ -85,6 +109,7 @@ export async function sendEmbedMessage(
 }
 
 // エクスポートするDiscordサービス
+// 外部からは単一のオブジェクトとしてアクセス可能に
 export const discordService = {
   sendTextMessage,
   sendEmbedMessage,

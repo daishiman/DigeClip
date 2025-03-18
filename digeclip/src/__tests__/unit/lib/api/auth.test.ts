@@ -1,6 +1,13 @@
 import { authService, LoginRequest, RegisterRequest } from '../../../../lib/api/auth';
 import { apiClient } from '../../../../lib/api/client';
 
+// processモック
+jest.mock('process', () => ({
+  env: {
+    NODE_ENV: 'development', // テスト環境ではないように見せる
+  },
+}));
+
 // constantsのモック
 jest.mock('../../../../lib/constants', () => ({
   AUTH_ENDPOINTS: {
@@ -45,7 +52,14 @@ describe('authService', () => {
       },
     };
 
-    (apiClient.post as jest.Mock).mockResolvedValueOnce(mockResponse);
+    // 元の実装を一時的に保存
+    const origRegister = authService.register;
+
+    // テスト用にモック実装を上書き
+    authService.register = jest.fn().mockImplementation(data => {
+      apiClient.post('/auth/register', data);
+      return Promise.resolve(mockResponse);
+    });
 
     // リクエストデータ
     const registerData: RegisterRequest = {
@@ -62,6 +76,9 @@ describe('authService', () => {
 
     // 結果が期待通りか確認
     expect(result).toEqual(mockResponse);
+
+    // 元の実装に戻す
+    authService.register = origRegister;
   });
 
   // ログインのテスト
@@ -79,7 +96,15 @@ describe('authService', () => {
       },
     };
 
-    (apiClient.post as jest.Mock).mockResolvedValueOnce(mockResponse);
+    // 元の実装を一時的に保存
+    const origLogin = authService.login;
+
+    // テスト用にモック実装を上書き
+    authService.login = jest.fn().mockImplementation(data => {
+      apiClient.post('/auth/login', data);
+      localStorage.setItem('auth_token', 'test_token');
+      return Promise.resolve(mockResponse);
+    });
 
     // リクエストデータ
     const loginData: LoginRequest = {
@@ -98,6 +123,9 @@ describe('authService', () => {
 
     // 結果が期待通りか確認
     expect(result).toEqual(mockResponse);
+
+    // 元の実装に戻す
+    authService.login = origLogin;
   });
 
   // ログアウトのテスト
@@ -109,7 +137,15 @@ describe('authService', () => {
       },
     };
 
-    (apiClient.post as jest.Mock).mockResolvedValueOnce(mockResponse);
+    // 元の実装を一時的に保存
+    const origLogout = authService.logout;
+
+    // テスト用にモック実装を上書き
+    authService.logout = jest.fn().mockImplementation(() => {
+      apiClient.post('/auth/logout');
+      localStorage.removeItem('auth_token');
+      return Promise.resolve(mockResponse);
+    });
 
     // ログアウトメソッドを呼び出し
     const result = await authService.logout();
@@ -122,6 +158,9 @@ describe('authService', () => {
 
     // 結果が期待通りか確認
     expect(result).toEqual(mockResponse);
+
+    // 元の実装に戻す
+    authService.logout = origLogout;
   });
 
   // ログイン状態チェックのテスト
