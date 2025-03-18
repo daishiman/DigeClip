@@ -4,13 +4,23 @@
 // インターフェース型
 interface UserRecord {
   id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   [key: string]: unknown;
 }
 
 // モックリクエスト型
 interface MockRequest {
-  where?: { id: string };
+  where?: {
+    id?: string;
+    email?: string;
+    [key: string]: unknown;
+  };
   data?: Record<string, unknown>;
+  include?: Record<string, unknown>;
 }
 
 // 一時的なモデル型
@@ -27,19 +37,65 @@ class PrismaClientMock {
   // ユーザーモデル
   user: MockModel = {
     findMany: async () => [],
-    findUnique: async () => null,
+    findUnique: async _args => {
+      if (_args.where?.id === 'mock-id') {
+        return {
+          id: 'mock-id',
+          email: 'user@example.com',
+          name: 'テストユーザー',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+      if (_args.where?.email === 'user@example.com') {
+        return {
+          id: 'mock-id',
+          email: 'user@example.com',
+          name: 'テストユーザー',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+      return null;
+    },
     create: async _args => {
-      if (!_args.data) return { id: 'mock-id' };
-      return { id: 'mock-id', ...(_args.data as Record<string, unknown>) };
+      if (!_args.data)
+        return {
+          id: 'mock-id',
+          email: 'user@example.com',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      return {
+        id: 'mock-id',
+        email: (_args.data.email as string) || 'user@example.com',
+        name: (_args.data.name as string) || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...(_args.data as Record<string, unknown>),
+      };
     },
     update: async _args => {
-      if (!_args.where || !_args.data) return { id: 'unknown-id' };
-      return { id: _args.where.id, ...(_args.data as Record<string, unknown>) };
+      if (!_args.where || !_args.data)
+        return {
+          id: 'unknown-id',
+          email: 'user@example.com',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+      return {
+        id: (_args.where.id as string) || 'unknown-id',
+        email: 'user@example.com',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...(_args.data as Record<string, unknown>),
+      };
     },
     delete: async () => {},
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(_options?: Record<string, unknown>) {
     // モック初期化
   }
