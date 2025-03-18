@@ -1,10 +1,9 @@
-```markdown
 # 自動化 (CI/CD, IaC)
 
 > **前提**
 > - お金をかけずに、経験の浅いエンジニアでも構築しやすい仕組みを重視
 > - 将来的に機能追加やメンバー増への対応が容易な構成を目指す
-> - GitHub リポジトリ + Vercel を中心に**簡易CI/CD**を実装し、さらに必要に応じてテスト/インフラ自動化を拡張
+> - GitHub リポジトリ + Cloudflare Pages を中心に**簡易CI/CD**を実装し、さらに必要に応じてテスト/インフラ自動化を拡張
 
 ---
 
@@ -34,19 +33,22 @@
 
 ## 2. CDパイプライン
 
-1. **ステージング・本番デプロイ方法**
-   - **Vercel** を活用することで、**GitHub リポジトリ**にプッシュするたびに自動ビルド＆デプロイ
+1. **環境分離とデプロイ方法**
+   - **開発環境**: `development` ブランチをデフォルトブランチとし、開発環境にデプロイ
+   - **本番環境**: `production` ブランチへのマージで本番環境にデプロイ
+   - **Cloudflare Pages** を活用することで、**GitHub リポジトリ**にプッシュするたびに自動ビルド＆デプロイ
    - **Preview Deploy**: PRごとにプレビューURLが発行され、UIの確認が容易
-   - **本番デプロイ**: `main` ブランチへのマージをトリガーに自動リリース
+   - **開発/本番分離**: 各ブランチに対応する環境が自動的に構築され、開発と本番の分離が容易
 
 2. **承認フロー (簡易)**
-   1. Pull Request → CIパス → コードレビュー → マージ
-   2. マージ後、自動で Vercel の本番環境にデプロイ
-   3. Slack 等へ「デプロイ完了通知」
+   1. 機能ブランチを作成 → 開発 → `development`ブランチへPR → CIパス → コードレビュー → マージ
+   2. 開発環境で十分にテスト → `production`ブランチへPR → コードレビュー → マージ
+   3. マージ後、自動で Cloudflare Pages の本番環境にデプロイ
+   4. Slack 等へ「デプロイ完了通知」
    - 大規模/厳密な運用が必要な場合は、**手動承認ステップ** など追加可
 
 3. **環境変数管理**
-   - **Vercel Dashboard** 上で本番/プレビュー用に環境変数を設定 (.env.* はGit ignore)
+   - **Cloudflare Pages Dashboard** 上で開発/本番環境ごとに環境変数を設定 (.env.* はGit ignore)
    - Supabase 接続URL, JWT_SECRET などはここで安全に管理
 
 ---
@@ -55,7 +57,7 @@
 
 1. **対象範囲** (将来拡張)
    - Supabase はマネージドで自動管理 → Terraform でDBスキーマ管理までは不要かもしれない
-   - Vercel は自動デプロイが主 → Terraform, Pulumi などで管理するメリットは限定的
+   - Cloudflare Pages は自動デプロイが主 → Terraform, Pulumi などで管理するメリットは限定的
    - 小規模なら**手動設定**で十分 → 将来的に AWS移行や大規模化を考えるなら IaC検討
 
 2. **ツール例**
@@ -64,7 +66,7 @@
    - 運用コスト(学習+メンテ)があるため、当面は**手動** or **Supabase migration scripts** でも可
 
 3. **推奨方針**
-   - MVPフェーズ：Vercel + Supabase の**GUI管理が中心**
+   - MVPフェーズ：Cloudflare Pages + Supabase の**GUI管理が中心**
    - 将来的に本格インフラ(EC2, RDS, S3 など)を使う場合→Terraform/Pulumi でIaC化
 
 ---
@@ -90,7 +92,7 @@
 ## 5. 運用タスクの自動化
 
 1. **定期バッチ**
-   - 現状: **Vercel Cron Jobs** を利用してRSS/YouTube監視 → DB保存
+   - 現状: **Cloudflare Workers** を利用したスケジュール実行でRSS/YouTube監視 → DB保存
    - スクリプトは Next.js API Routes or バックエンドCron専用パスで管理
    - Supabase Functions は要検討(無料枠/制限)
 
@@ -111,10 +113,14 @@
 ### まとめ
 
 - **CI (GitHub Actions)**: Pull Request 時にビルド+Lint+テスト → 失敗を早期検知
-- **CD (Vercel)**: main ブランチマージで本番リリース → Preview URL で安全にレビュー
+- **CD (Cloudflare Pages)**:
+  - `development` ブランチをデフォルトとし、開発環境へ自動デプロイ
+  - `production` ブランチマージで本番環境へ自動デプロイ
+  - Preview URL で安全にレビュー
+- **環境分離**: 開発環境と本番環境を明確に分離
 - **テスト自動化**: まず単体テストを整備 → 余力があれば E2E
 - **IaC**: 小規模MVP段階は手動/GUI管理が妥当、拡張時にTerraform等導入検討
-- **運用自動化**: Vercel Cron で監視バッチ、Slack通知など最低限を実装 → 大規模化時に細分化
+- **運用自動化**: Cloudflare Workers でスケジュール実行、Slack通知など最低限を実装 → 大規模化時に細分化
 
 このようにして、**低コスト & シンプル** に **CI/CD + 運用自動化** を導入し、後から段階的に拡張できる体制を整えます。
 ```
