@@ -1,5 +1,14 @@
-import { User } from '@prisma/client';
 import { PrismaRepository, prisma } from './base.repository';
+
+// User型を直接定義して@prisma/clientのインポートを避ける
+interface User {
+  id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * ユーザーリポジトリのインターフェース
