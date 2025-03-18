@@ -82,6 +82,42 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
+### 開発環境と本番環境のデータベース分離
+
+DigeClipでは、開発環境と本番環境でSupabaseのデータベース（プロジェクト）を完全に分離しています。
+
+#### 環境別Supabaseプロジェクト
+
+- **開発環境**: `digeclip-dev` プロジェクト
+
+  - 開発・テスト用のデータベース
+  - `dev`ブランチと連携
+  - テストデータを含む
+
+- **本番環境**: `digeclip-prod` プロジェクト
+  - 本番用のデータベース
+  - `main`ブランチと連携
+  - 実際のユーザーデータのみ
+
+#### 環境別設定ファイル
+
+- **開発環境**: `.env.development.local`
+
+  ```
+  NEXT_PUBLIC_SUPABASE_URL=https://[dev-project-id].supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=[dev-anon-key]
+  SUPABASE_SERVICE_ROLE_KEY=[dev-service-role-key]
+  ```
+
+- **本番環境**: `.env.production`
+  ```
+  NEXT_PUBLIC_SUPABASE_URL=https://[prod-project-id].supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=[prod-anon-key]
+  SUPABASE_SERVICE_ROLE_KEY=[prod-service-role-key]
+  ```
+
+Cloudflare Pagesでも、開発環境（`dev`ブランチ）と本番環境（`main`ブランチ）それぞれに適切なSupabase接続情報を環境変数として設定しています。
+
 ## 開発ガイド
 
 ### ディレクトリ構造
@@ -172,8 +208,8 @@ Gitフックはhuskyを使用して設定されており、自動的に利用で
 
 プロジェクトでは以下のブランチ戦略を採用しています：
 
-- **development**: 開発環境用のデフォルトブランチ
-- **production**: 本番環境用のブランチ
+- **main**: 本番環境用のブランチ
+- **dev**: 開発環境用のデフォルトブランチ
 - **feature/\***、**fix/\***: 各機能開発、バグ修正用のブランチ
 
 ### デプロイプロセス
@@ -181,51 +217,37 @@ Gitフックはhuskyを使用して設定されており、自動的に利用で
 1. **開発サイクル**:
 
    - `feature/*` や `fix/*` ブランチで機能開発
-   - `development` ブランチにPRを作成
-   - コードレビュー後、`development` にマージ
+   - `dev` ブランチにPRを作成
+   - コードレビュー後、`dev` にマージ
    - 自動的に開発環境にデプロイ
 
 2. **リリースプロセス**:
 
-   - `development` から `production` へのPR作成（毎週月曜日に自動作成、または手動で作成可）
+   - `dev` から `main` へのPR作成（毎週月曜日に自動作成、または手動で作成可）
    - QAと最終チェック
-   - `production` へマージで本番環境に自動デプロイ
+   - `main` へマージで本番環境に自動デプロイ
 
 3. **ホットフィックス**:
    - 緊急修正が必要な場合は `hotfix/*` ブランチを使用
-   - 修正後、`development` と `production` 両方にマージ
+   - 修正後、`dev` と `main` 両方にマージ
 
-### ローカル開発とngrok
+### デプロイ環境
 
-認証機能やWebhookのテストなど、ローカル環境を外部から接続する必要がある場合：
+- **開発環境**: `dev-digeclip.pages.dev`（`dev` ブランチ）
+- **本番環境**: `digeclip.com`（`main` ブランチ）
+- **プレビュー環境**: PR毎に自動生成（PR内にURLが表示されます）
 
-```bash
-# 開発サーバーを起動
-npm run dev
-
-# 別のターミナルでngrokを実行
-../scripts/start-ngrok.sh
-```
-
-表示されるngrokのURLを使用して外部サービス（Supabase、OAuth、Webhook）などのコールバックURLに設定できます。
-
-## CI/CD (GitHub Actions)
+### CI/CD (GitHub Actions)
 
 GitHub Actionsにより、以下のワークフローが自動化されています：
 
 - **PR検証**: PR作成時にLint、型チェック、テストを実行
 - **プレビューデプロイ**: PR作成時にプレビュー環境にデプロイ（URLがPRにコメントされます）
-- **開発環境デプロイ**: `development` へのマージで開発環境に自動デプロイ
-- **本番環境デプロイ**: `production` へのマージで本番環境に自動デプロイ
+- **開発環境デプロイ**: `dev` へのマージで開発環境に自動デプロイ
+- **本番環境デプロイ**: `main` へのマージで本番環境に自動デプロイ
 - **リリースPR作成**: 毎週月曜日に開発→本番へのリリースPRを自動作成
 
 詳細なワークフロー設定は、リポジトリのルートディレクトリにある `.github/workflows` フォルダをご確認ください。
-
-## デプロイ環境
-
-- **開発環境**: `dev-digeclip.pages.dev`（`development` ブランチ）
-- **本番環境**: `digeclip.com`（`production` ブランチ）
-- **プレビュー環境**: PR毎に自動生成（PR内にURLが表示されます）
 
 ## 学習リソース
 

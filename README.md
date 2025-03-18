@@ -83,6 +83,40 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
+### 開発環境と本番環境のデータベース分離
+
+DigeClipでは、開発環境と本番環境でSupabaseのデータベース（プロジェクト）を完全に分離しています。
+
+#### 環境別Supabaseプロジェクト
+
+- **開発環境**: `digeclip-dev` プロジェクト
+  - 開発・テスト用のデータベース
+  - `dev`ブランチと連携
+  - テストデータを含む
+
+- **本番環境**: `digeclip-prod` プロジェクト
+  - 本番用のデータベース
+  - `main`ブランチと連携
+  - 実際のユーザーデータのみ
+
+#### 環境別設定ファイル
+
+- **開発環境**: `.env.development.local`
+  ```
+  NEXT_PUBLIC_SUPABASE_URL=https://[dev-project-id].supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=[dev-anon-key]
+  SUPABASE_SERVICE_ROLE_KEY=[dev-service-role-key]
+  ```
+
+- **本番環境**: `.env.production`
+  ```
+  NEXT_PUBLIC_SUPABASE_URL=https://[prod-project-id].supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=[prod-anon-key]
+  SUPABASE_SERVICE_ROLE_KEY=[prod-service-role-key]
+  ```
+
+Cloudflare Pagesでも、開発環境（`dev`ブランチ）と本番環境（`main`ブランチ）それぞれに適切なSupabase接続情報を環境変数として設定しています。
+
 ## 開発ガイド
 
 ### ディレクトリ構造
@@ -186,76 +220,48 @@ npm run test:all
 
 詳細なテスト戦略は `.cursor/rules/000_common_requirements.mdc` ファイルに定義されています。
 
-## デプロイとCI/CD
+## ブランチ戦略とデプロイフロー
 
-プロジェクトではCloudflare Pagesを使用して、開発環境と本番環境を分離した自動デプロイを実装しています。
+プロジェクトでは以下のブランチ戦略を採用しています：
 
-### ブランチとデプロイ環境
+- **main**: 本番環境用のブランチ
+- **dev**: 開発環境用のデフォルトブランチ
+- **feature/\***、**fix/\***: 各機能開発、バグ修正用のブランチ
 
-- **development**ブランチ: 開発環境（デフォルトブランチ）
-- **production**ブランチ: 本番環境
-- 機能開発ブランチ: 各機能開発用（feature/xxなど）
+### デプロイプロセス
 
-### 自動デプロイワークフロー
+1. **開発サイクル**:
+   - `feature/*` や `fix/*` ブランチで機能開発
+   - `dev` ブランチにPRを作成
+   - コードレビュー後、`dev` にマージ
+   - 自動的に開発環境にデプロイ
 
-GitHub Actionsで以下のワークフローを自動化しています：
+2. **リリースプロセス**:
+   - `dev` から `main` へのPR作成（毎週月曜日に自動作成、または手動で作成可）
+   - QAと最終チェック
+   - `main` へマージで本番環境に自動デプロイ
 
-1. **PR作成時**: プレビュー環境にデプロイ（PRにURLがコメントされます）
-2. **developmentへのマージ**: 開発環境に自動デプロイ
-3. **productionへのマージ**: 本番環境に自動デプロイ
-4. **定期リリース**: 毎週月曜日に開発→本番へのリリースPRを自動作成
+3. **ホットフィックス**:
+   - 緊急修正が必要な場合は `hotfix/*` ブランチを使用
+   - 修正後、`dev` と `main` 両方にマージ
 
-### 環境別URL
+### デプロイ環境
 
-- 開発環境: `dev-digeclip.pages.dev`
-- 本番環境: `digeclip.com` または `www.digeclip.com`
-- プレビュー環境: PR作成時に自動生成されたURL
+- **開発環境**: `dev-digeclip.pages.dev`（`dev` ブランチ）
+- **本番環境**: `digeclip.com`（`main` ブランチ）
+- **プレビュー環境**: PR毎に自動生成（PR内にURLが表示されます）
 
-### 初期環境セットアップ
+### CI/CD (GitHub Actions)
 
-新しいリポジトリをセットアップする場合：
+GitHub Actionsにより、以下のワークフローが自動化されています：
 
-1. ローカルで`development`と`production`ブランチを作成
-   ```bash
-   git checkout -b development
-   git push -u origin development
+- **PR検証**: PR作成時にLint、型チェック、テストを実行
+- **プレビューデプロイ**: PR作成時にプレビュー環境にデプロイ（URLがPRにコメントされます）
+- **開発環境デプロイ**: `dev` へのマージで開発環境に自動デプロイ
+- **本番環境デプロイ**: `main` へのマージで本番環境に自動デプロイ
+- **リリースPR作成**: 毎週月曜日に開発→本番へのリリースPRを自動作成
 
-   git checkout -b production
-   git push -u origin production
-   ```
-
-2. GitHubの設定
-   - リポジトリの設定でデフォルトブランチを`development`に変更
-   - 必要なシークレット（`CLOUDFLARE_API_TOKEN`など）を追加
-
-3. Cloudflare Pagesの設定
-   - GitHubリポジトリと連携したプロジェクトを作成
-   - ビルド設定と環境変数を設定
-
-詳細なセットアップ手順は `.github/SETUP.md` ファイルを参照してください。
-
-### ローカル開発とngrok
-
-認証コールバックなどをテストするためにngrokでローカル環境を外部公開できます：
-
-```bash
-# スクリプトを実行可能にする
-chmod +x scripts/start-ngrok.sh
-
-# ngrokを起動（デフォルトは3000ポート）
-./scripts/start-ngrok.sh
-```
-
-表示されたURLをコールバックURLやOAuth設定に使用できます。
-
-### 手動リリース方法
-
-通常の週次リリース以外でリリースが必要な場合：
-
-1. GitHubリポジトリのActionsタブを開く
-2. 「リリースPR作成」ワークフローを選択
-3. 「Run workflow」からリリースタイトルを入力して実行
-4. 作成されたPRをレビューしてマージ
+詳細なワークフロー設定は、リポジトリのルートディレクトリにある `.github/workflows` フォルダをご確認ください。
 
 ## 貢献
 
