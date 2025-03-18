@@ -1,8 +1,26 @@
 // import { PrismaClient } from '@prisma/client';
 // TODO: Prismaスキーマを生成後に実際のPrismaClientをインポートする
 
+// 一時的なモデル型
+interface MockModel {
+  findMany: () => Promise<any[]>;
+  findUnique: (args: any) => Promise<any | null>;
+  create: (args: any) => Promise<any>;
+  update: (args: any) => Promise<any>;
+  delete: (args: any) => Promise<void>;
+}
+
 // 一時的なPrismaClientのモック
 class PrismaClientMock {
+  // ユーザーモデル
+  user: MockModel = {
+    findMany: async () => [],
+    findUnique: async () => null,
+    create: async args => ({ id: 'mock-id', ...args.data }),
+    update: async args => ({ id: args.where.id, ...args.data }),
+    delete: async () => {},
+  };
+
   constructor(_options?: Record<string, unknown>) {
     // モック初期化
   }
