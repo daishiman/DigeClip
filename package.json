@@ -1,16 +1,32 @@
 {
-  "name": "digeclip",
-  "version": "1.0.0",
-  "description": "DigeClip project",
-  "type": "module",
+  "name": "digeclip-root",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "build:mdc": "node --loader ts-node/esm build-mdc.ts"
+    "dev": "cd digeclip && npm run dev",
+    "build": "cd digeclip && npm run build",
+    "start": "cd digeclip && npm run start",
+    "lint": "cd digeclip && npm run lint",
+    "test": "cd digeclip && npm test",
+    "verify": "bash scripts/local-ci.sh",
+    "local-ci": "bash scripts/local-ci.sh",
+    "type-check": "cd digeclip && npm run type-check",
+    "format": "cd digeclip && npm run format",
+    "prepare": "husky"
   },
   "dependencies": {
     "glob": "^11.0.1"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "lint-staged": "^15.5.0"
+  },
+  "lint-staged": {
+    "digeclip/**/*.{js,jsx,ts,tsx}": [
+      "cd digeclip && npx eslint --fix",
+      "cd digeclip && npx prettier --write"
+    ]
   }
 }

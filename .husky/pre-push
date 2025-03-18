@@ -1,0 +1,49 @@
+echo "🔍 プッシュ前に型チェックとテストを実行しています..."
+
+# プロジェクトのルートディレクトリに移動
+cd "$(git rev-parse --show-toplevel)"
+
+# digeclipディレクトリに移動
+cd digeclip
+
+# 実行開始時間を記録
+start_time=$(date +%s)
+
+# 型チェックの実行
+echo "TypeScriptの型チェックを実行中..."
+npm run type-check
+typecheck_result=$?
+
+# Jestテストの実行
+echo "Jestテストを実行中..."
+npm run test
+test_result=$?
+
+# Prettierフォーマットチェックの実行
+echo "Prettierフォーマットチェックを実行中..."
+npm run format
+format_result=$?
+
+# 実行終了時間を記録
+end_time=$(date +%s)
+execution_time=$((end_time - start_time))
+
+# 結果の表示
+echo "============================="
+echo "実行結果"
+
+# エラーが発生したかどうかを判定
+if [ $typecheck_result -ne 0 ] || [ $test_result -ne 0 ] || [ $format_result -ne 0 ]; then
+  echo "✗ 以下のチェックが失敗しました:"
+  [ $typecheck_result -ne 0 ] && echo "  - 型チェック"
+  [ $test_result -ne 0 ] && echo "  - テスト"
+  [ $format_result -ne 0 ] && echo "  - フォーマットチェック"
+  exit_code=1
+else
+  echo "✓ すべてのチェックが成功しました"
+  exit_code=0
+fi
+
+echo "合計実行時間: ${execution_time}秒"
+
+exit $exit_code

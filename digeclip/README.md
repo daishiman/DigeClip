@@ -85,39 +85,55 @@ GEMINI_API_KEY=your_gemini_api_key
 ### ディレクトリ構造
 
 ```
-/src
-  ├─ /app                          # Next.jsのApp Routerディレクトリ
-  │   ├─ /page.tsx                 # ダッシュボード画面
-  │   ├─ /sources/                 # ソース一覧
-  │   ├─ /contents/                # コンテンツ一覧・詳細
-  │   ├─ /settings/                # 各種設定画面
-  │   └─ /api                      # APIルートディレクトリ
-  │       ├─ /auth/                # 認証関連API
-  │       ├─ /admin/               # 管理者用API
-  │       └─ /user/                # 一般ユーザー用API
+/digeclip
+  ├─ /public              # 静的ファイル
+  │   ├─ /images          # 画像ファイル
+  │   ├─ /fonts           # フォントファイル
+  │   └─ /locales         # 多言語化ファイル
   │
-  ├─ /components                   # 再利用可能なコンポーネント
-  │   ├─ /ui                       # 基本UIコンポーネント
-  │   ├─ /layout                   # レイアウト関連コンポーネント
-  │   ├─ /features                 # 機能別コンポーネント
-  │   └─ /patterns                 # 再利用可能なパターン
+  ├─ /src                # ソースコード
+  │   ├─ /app              # Appルーター
+  │   │   ├─ /api          # APIルート
+  │   │   ├─ /(routes)     # ページルート
+  │   │   └─ layout.tsx    # ルートレイアウト
+  │   │
+  │   ├─ /components       # コンポーネント
+  │   │   ├─ /ui           # UIコンポーネント
+  │   │   ├─ /layout       # レイアウトコンポーネント
+  │   │   └─ /features     # 機能コンポーネント
+  │   │
+  │   ├─ /hooks            # カスタムフック
+  │   │   ├─ useAuth.ts
+  │   │   └─ ...
+  │   │
+  │   ├─ /lib              # ユーティリティ
+  │   │   ├─ /services     # サービス
+  │   │   ├─ /utils        # ユーティリティ関数
+  │   │   └─ /config       # 設定ファイル
+  │   │
+  │   ├─ /contexts         # Reactコンテキスト
+  │   │   ├─ AuthContext.tsx
+  │   │   └─ ...
+  │   │
+  │   ├─ /types            # 型定義
+  │   │   ├─ auth.ts
+  │   │   └─ ...
+  │   │
+  │   ├─ /styles           # スタイル
+  │   │   ├─ globals.css
+  │   │   └─ ...
+  │   │
+  │   └─ /__tests__        # テスト
+  │       ├─ /unit         # 単体テスト
+  │       ├─ /integration  # 統合テスト
+  │       └─ /e2e          # E2Eテスト
   │
-  ├─ /hooks                        # カスタムフック
-  │   ├─ /api                      # API関連フック
-  │   └─ /ui                       # UI関連フック
-  │
-  ├─ /lib                          # ユーティリティと共通関数
-  │   ├─ /api                      # API関連ユーティリティ
-  │   ├─ /db                       # データベース関連
-  │   ├─ /services                 # ビジネスロジック
-  │   └─ /utils                    # 汎用ユーティリティ
-  │
-  ├─ /types                        # 型定義
-  │   ├─ /api                      # API関連の型
-  │   └─ /models                   # モデル関連の型
-  │
-  ├─ /context                      # Reactコンテキスト
-  └─ /config                       # 設定ファイル
+  ├─ .env.local           # 環境変数
+  ├─ .eslintrc.js         # ESLint設定
+  ├─ next.config.js       # Next.js設定
+  ├─ package.json         # パッケージ設定
+  ├─ tsconfig.json        # TypeScript設定
+  └─ README.md            # README
 ```
 
 ### コーディング規約
@@ -126,6 +142,39 @@ GEMINI_API_KEY=your_gemini_api_key
 - **変数/関数**: キャメルケース（例: `fetchData`）
 - **定数**: 大文字スネークケース（例: `API_BASE_URL`）
 - **コンポーネント**: 関数コンポーネントとTypeScriptの型定義を使用
+
+## 開発ワークフロー
+
+### ローカルCI実行
+
+PRを作成する前に、ローカルでGitHubのCIと同じチェックを実行することができます。これにより、PRを作成する前に問題を修正することができます。
+
+```bash
+# すべてのチェック（lint、型チェック、テスト、フォーマット）を実行
+npm run verify
+
+# または、スクリプトを直接実行
+./scripts/local-ci.sh
+```
+
+### Git フック
+
+以下のGitフックが設定されています：
+
+- **pre-commit**: コミット前にlint-stagedを実行して、変更されたファイルのみをチェックします
+- **pre-push**: プッシュ前にすべてのテスト、リント、型チェックを実行します
+
+Gitフックはhuskyを使用して設定されており、自動的に利用できます。
+
+## CI/CD
+
+GitHub Actionsでは以下のワークフローが設定されています：
+
+- **Lint & Format**: コードの品質チェック
+- **テスト**: ユニットテストとインテグレーションテストの実行
+- **デプロイ**: 本番環境へのデプロイ（mainブランチのみ）
+
+PRを作成すると、自動的にこれらのチェックが実行されます。すべてのチェックが成功した場合のみマージが可能になります。
 
 ## デプロイ
 
@@ -185,7 +234,7 @@ npm test -- --coverage
 テストファイルは、テスト対象のファイルと同じディレクトリ内の `__tests__` フォルダに配置されています。
 
 ```
-src/
+digeclip/src/
   lib/
     api/
       __tests__/

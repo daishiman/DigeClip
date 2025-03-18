@@ -1,9 +1,11 @@
 ---
 description: コーディング規約
-globs: "src/**/*.{tsx,jsx,ts,js,md}"
-alwaysApply: true
+globs: ["**/*.{tsx,jsx,ts,js}"]
+alwaysApply: false
 ---
 # コーディング規約
+
+## 2_coding_conventions/1_conventions.md
 
 # コーディング規約
 

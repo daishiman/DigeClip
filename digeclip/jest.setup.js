@@ -54,3 +54,50 @@ jest.mock('axios', () => ({
   post: jest.fn().mockResolvedValue({ status: 204 }),
   get: jest.fn().mockResolvedValue({ status: 200, data: {} }),
 }));
+
+// import '@testing-library/jest-dom';
+
+// Prismaのモック設定
+jest.mock('./src/lib/db/db.ts', () => {
+  // requreの代わりにモックオブジェクトを直接定義
+  const prismaMock = {
+    user: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    bookmark: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    tag: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      upsert: jest.fn(),
+    },
+    collection: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      upsert: jest.fn(),
+    },
+    bookmarkTag: {
+      create: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    bookmarkCollection: {
+      create: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+  };
+
+  return {
+    prisma: prismaMock,
+  };
+});

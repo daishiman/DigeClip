@@ -1,9 +1,11 @@
 ---
 description: 非機能要件
-globs: "src/config/**/*.{tsx,jsx,ts,js}", "src/middleware/**/*.{tsx,jsx,ts,js}", "src/lib/db/**/*.{ts,js}", "src/lib/auth/**/*.{ts,js}"
-alwaysApply: true
+globs: ["**/config/**/*.ts", "**/lib/middleware/**/*.ts", "**/lib/db/**/*.ts", "**/lib/utils/**/*.ts", "**/prisma/schema.prisma"]
+alwaysApply: false
 ---
 # 非機能要件
+
+## 4_nonFunctional_requirements/1_Infrastructure.md
 
 ```markdown
 # インフラ構成 (最新版)
@@ -120,6 +122,8 @@ alwaysApply: true
 
 この構成により、初期費用や管理コストを最小化しつつ、将来的に**大規模アクセス**や**高度なネットワーク構成**が必要になった際にも比較的スムーズに移行可能である。
 ```
+
+## 4_nonFunctional_requirements/2_Security.md
 
 ```markdown
 # セキュリティ要件 (最新版)
@@ -257,6 +261,8 @@ alwaysApply: true
 
 これらにより、最小限のコスト・構成で**セキュリティ水準を確保**しつつ、運用負荷を低減できる見通しです。
 
+## 4_nonFunctional_requirements/3_Performance.md
+
 ```markdown
 # パフォーマンス要件 (最新版)
 
@@ -346,6 +352,8 @@ alwaysApply: true
 - **小規模環境**でも最小コストで運用可能だが、拡張しやすい構成をあらかじめ確保する
 
 以上により、初心者エンジニアが運用しつつも必要に応じて拡張できる**柔軟なパフォーマンス要件**を実現。
+
+## 4_nonFunctional_requirements/4_Availability_and_Reliability.md
 
 ```markdown
 # 可用性・信頼性要件 (最新版)
@@ -444,6 +452,8 @@ alwaysApply: true
 - **DR計画**は最低限のDump復旧で **RTO=24時間, RPO=~1週間** まで
 - **監視**はVercelとSupabaseのダッシュボード＋アラート連携、障害時は手動復旧を基本とし、将来の拡張も可能
 ```
+
+## 4_nonFunctional_requirements/5_Operations.md
 
 ```markdown
 # 保守運用要件 (最新版)
