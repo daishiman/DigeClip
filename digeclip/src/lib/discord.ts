@@ -1,88 +1,112 @@
 import axios from 'axios';
 
-// Discord Webhookの設定
-const getWebhookUrl = () => process.env.DISCORD_WEBHOOK_URL || '';
+/**
+ * テスト環境かどうかを判定する関数
+ * テスト実行中かつモック環境で実行されているかどうかをチェック
+ */
+const isTestEnvironment = (): boolean => {
+  return process.env.NODE_ENV === 'test';
+};
 
 /**
- * Discordに通知を送信する
- * @param content 送信するメッセージ内容
- * @param options 追加オプション
- * @returns 送信結果
+ * Discordウェブフックのエンドポイントを取得
+ * 環境変数から設定値を安全に取得
  */
-export async function sendDiscordNotification(
-  content: string,
-  options: {
-    username?: string;
-    avatar_url?: string;
-    embeds?: Record<string, unknown>[];
-  } = {}
-) {
+const getWebhookUrl = (): string => {
+  return process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL || '';
+};
+
+/**
+ * シンプルなテキストメッセージをDiscordに送信
+ * @param message 送信するテキストメッセージ
+ * @param username 送信者名（オプション）
+ * @returns 処理結果を含むオブジェクト
+ */
+export async function sendTextMessage(
+  message: string,
+  username = 'DigeClip Bot'
+): Promise<{ success: boolean; error?: string }> {
   const webhookUrl = getWebhookUrl();
+
+  // WebフックURLが設定されていない場合はエラー
   if (!webhookUrl) {
     console.error('Discord webhook URL is not configured');
-    return false;
+    return { success: false, error: 'Discord webhook URL is not configured' };
   }
 
-  const {
-    username = 'DigeClip Bot',
-    avatar_url = 'https://i.imgur.com/AfFp7pu.png', // デフォルトのアバター画像URL
-    embeds = [],
-  } = options;
-
   try {
-    const payload = {
-      content,
+    // テスト環境とそれ以外で共通の実装を使用
+    await axios.post(webhookUrl, {
+      content: message,
       username,
-      avatar_url,
-      embeds,
-    };
-
-    const response = await axios.post(webhookUrl, payload);
-    return response.status === 204; // Discord APIは成功時に204を返す
+    });
+    return { success: true };
   } catch (error) {
-    console.error('Error sending Discord notification:', error);
-    return false;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // テスト環境以外の場合のみログ出力
+    if (!isTestEnvironment()) {
+      console.error('Error sending Discord message:', errorMessage);
+    }
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
   }
 }
 
 /**
- * エラー通知をDiscordに送信する
- * @param error エラーオブジェクトまたはエラーメッセージ
- * @param context エラーが発生したコンテキスト情報
- * @returns 送信結果
+ * 埋め込みメッセージをDiscordに送信
+ * @param embed 埋め込みメッセージのオブジェクト
+ * @param username 送信者名（オプション）
+ * @returns 処理結果を含むオブジェクト
  */
-export async function sendErrorNotification(
-  error: Error | string,
-  context: Record<string, unknown> = {}
-) {
-  const errorMessage = error instanceof Error ? error.message : error;
-  const errorStack = error instanceof Error ? error.stack : '';
+export async function sendEmbedMessage(
+  embed: {
+    title?: string;
+    description?: string;
+    color?: number;
+    fields?: { name: string; value: string; inline?: boolean }[];
+    thumbnail?: { url: string };
+    image?: { url: string };
+    footer?: { text: string; icon_url?: string };
+  },
+  username = 'DigeClip Bot'
+): Promise<{ success: boolean; error?: string }> {
+  const webhookUrl = getWebhookUrl();
 
-  const embed = {
-    title: '🚨 エラーが発生しました',
-    color: 0xff0000, // 赤色
-    fields: [
-      {
-        name: 'エラーメッセージ',
-        value: errorMessage || 'エラーメッセージなし',
-      },
-      {
-        name: 'コンテキスト',
-        value:
-          Object.entries(context)
-            .map(([key, value]) => `**${key}**: ${JSON.stringify(value)}`)
-            .join('\n') || 'コンテキストなし',
-      },
-    ],
-    timestamp: new Date().toISOString(),
-  };
-
-  if (errorStack) {
-    embed.fields.push({
-      name: 'スタックトレース',
-      value: `\`\`\`\n${errorStack.substring(0, 1000)}${errorStack.length > 1000 ? '...' : ''}\n\`\`\``,
-    });
+  // WebフックURLが設定されていない場合はエラー
+  if (!webhookUrl) {
+    console.error('Discord webhook URL is not configured');
+    return { success: false, error: 'Discord webhook URL is not configured' };
   }
 
-  return sendDiscordNotification('', { embeds: [embed] });
+  try {
+    // テスト環境とそれ以外で共通の実装を使用
+    await axios.post(webhookUrl, {
+      embeds: [embed],
+      username,
+    });
+    return { success: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // テスト環境以外の場合のみログ出力
+    if (!isTestEnvironment()) {
+      console.error('Error sending Discord embed:', errorMessage);
+    }
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
 }
+
+// エクスポートするDiscordサービス
+// 外部からは単一のオブジェクトとしてアクセス可能に
+export const discordService = {
+  sendTextMessage,
+  sendEmbedMessage,
+};

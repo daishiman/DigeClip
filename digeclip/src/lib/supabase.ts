@@ -1,11 +1,23 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { isTestEnvironment } from './constants';
 
-// 環境変数からSupabaseの設定を取得
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+let supabase: SupabaseClient;
 
-// Supabaseクライアントの作成
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// テスト環境の場合はテスト用のモッククライアントを使用
+if (isTestEnvironment()) {
+  // テスト用のダミーURLとキーを使用
+  supabase = createClient('https://dummy-supabase-url.co', 'dummy-key-for-tests');
+} else {
+  // 環境変数からSupabaseの設定を取得
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+  // Supabaseクライアントの作成
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+}
+
+// クライアントをエクスポート
+export { supabase };
 
 // データベース操作のためのヘルパー関数
 export async function fetchData(table: string, query: Record<string, unknown> = {}) {
