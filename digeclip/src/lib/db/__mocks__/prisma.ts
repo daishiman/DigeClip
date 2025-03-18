@@ -1,39 +1,31 @@
-// Prismaクライアントのモック
-const prisma = {
+// モックのPrismaClient
+export const prisma = {
   user: {
-    findUnique: jest.fn(),
     findMany: jest.fn(),
+    findUnique: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   },
-  bookmark: {
-    findUnique: jest.fn(),
+  source: {
     findMany: jest.fn(),
+    findUnique: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   },
-  tag: {
-    findUnique: jest.fn(),
+  content: {
     findMany: jest.fn(),
-    create: jest.fn(),
-    upsert: jest.fn(),
-  },
-  collection: {
     findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  summary: {
     findMany: jest.fn(),
+    findUnique: jest.fn(),
     create: jest.fn(),
-    upsert: jest.fn(),
-  },
-  bookmarkTag: {
-    create: jest.fn(),
-    deleteMany: jest.fn(),
-  },
-  bookmarkCollection: {
-    create: jest.fn(),
-    deleteMany: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
   },
 };
-
-export default prisma;
