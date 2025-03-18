@@ -5,11 +5,7 @@ import axios from 'axios';
  * テスト実行中かつモック環境で実行されているかどうかをチェック
  */
 const isTestEnvironment = (): boolean => {
-  return (
-    process.env.NODE_ENV === 'test' ||
-    typeof jest !== 'undefined' ||
-    process.env.JEST_WORKER_ID !== undefined
-  );
+  return process.env.NODE_ENV === 'test';
 };
 
 /**
