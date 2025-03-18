@@ -1,4 +1,4 @@
-name: PR プレビューデプロイ
+name: 🚀 Preview Deploy
 
 on:
   pull_request:
@@ -14,14 +14,15 @@ jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: Node.jsのセットアップ
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: package-lock.jsonの更新
+      - name: パッケージロックファイルの更新
         run: |
           if [ -f "package.json" ]; then
             npm install --package-lock-only --no-audit --no-fund
@@ -51,6 +52,13 @@ jobs:
             fi
           fi
 
+      - name: Tailwind CSS依存関係の追加
+        run: |
+          if [ -d "digeclip" ]; then
+            cd digeclip
+            npm install @tailwindcss/postcss postcss autoprefixer --save
+          fi
+
       - name: ビルド
         run: |
           if [ -f "package.json" ]; then
@@ -75,48 +83,39 @@ jobs:
 
       - name: 出力ディレクトリの確認
         run: |
-          echo "出力ディレクトリの検索："
-          find . -type d -name "out" | cat
-          if [ ! -d "./out" ]; then
-            if [ -d "./digeclip/out" ]; then
-              echo "digeclip/outディレクトリが見つかりました。これを使用します。"
-              cp -r ./digeclip/out ./out
-            # Next.jsの出力がoutではなく.nextにある場合（静的エクスポートが設定されていない場合）
-            elif [ -d "./digeclip/.next" ]; then
-              echo "digeclip/.nextディレクトリが見つかりました。このプロジェクトはexport設定がありません。"
-              echo "next.config.jsにoutput: 'export'の設定を追加して、静的出力を有効にしてください。"
-              # 一時的なソリューションとして、.nextディレクトリをoutとしてコピー
-              mkdir -p ./out
-              cp -r ./digeclip/.next/static ./out/
-              echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=https://github.com/daishiman/DigeClip"></head><body><p>リダイレクト中...</p></body></html>' > ./out/index.html
-            fi
-          fi
+          # ビルド出力ディレクトリが存在するか確認
+          if [ -d "out" ]; then
+            echo "ルートディレクトリにoutディレクトリがあります"
+          elif [ -d "digeclip/out" ]; then
+            echo "digeclip/outディレクトリが見つかりました。ルートにコピーします"
+            cp -r digeclip/out ./out
+          elif [ -d "digeclip/.next" ]; then
+            echo "digeclip/.nextディレクトリが見つかりました。outディレクトリを作成します"
+            mkdir -p out
+            echo "<meta http-equiv=\"refresh\" content=\"0;url=digeclip/\">" > out/index.html
+          else
+            echo "警告: ビルド出力ディレクトリが見つかりませんでした"
+            find . -type d -name "out" -o -name ".next" | grep -v "node_modules"
 
-      - name: Cloudflare Pagesへプレビューデプロイ
-        id: cloudflare_deployment
+      - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: digeclip
-          directory: ./out
-          branch: ${{ github.head_ref }}
+          directory: out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: PRにプレビューURLをコメント
+      - name: コメントのプレビューURL
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const url = '${{ steps.cloudflare_deployment.outputs.url }}';
-            const alias = '${{ steps.cloudflare_deployment.outputs.alias }}';
-            const previewUrl = alias || url;
+            const { issue: { number: issue_number }, repo: { owner, repo } } = context;
+            const deploymentUrl = `https://pr-${issue_number}.digeclip.pages.dev`;
 
-            if (previewUrl) {
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `✅ プレビューデプロイが完了しました！\n\n[プレビューを表示](${previewUrl})`
-              });
-            }
+            github.rest.issues.createComment({
+              issue_number,
+              owner,
+              repo,
+              body: `🚀 プレビューデプロイが完了しました！\n\n[プレビューURL](${deploymentUrl})`
+            });
