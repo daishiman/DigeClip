@@ -1,9 +1,19 @@
 import OpenAI from 'openai';
+import { isTestEnvironment } from './constants';
 
 // OpenAIクライアントの初期化
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// テスト環境ではAPIキーを使用せずに初期化
+let openai: OpenAI;
+
+if (isTestEnvironment()) {
+  openai = new OpenAI({
+    apiKey: 'dummy-key-for-tests',
+  });
+} else {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 /**
  * テキスト生成のためのヘルパー関数

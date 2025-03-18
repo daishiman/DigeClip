@@ -11,7 +11,7 @@ export const API_BASE_URL =
 
 // テスト環境かどうかを判定する関数
 export const isTestEnvironment = () => {
-  return process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+  return process.env.NODE_ENV === 'test';
 };
 
 // 認証関連のエンドポイント
