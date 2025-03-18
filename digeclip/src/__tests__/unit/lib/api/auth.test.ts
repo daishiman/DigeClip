@@ -1,6 +1,15 @@
 import { authService, LoginRequest, RegisterRequest } from '../../../../lib/api/auth';
 import { apiClient } from '../../../../lib/api/client';
 
+// constantsのモック
+jest.mock('../../../../lib/constants', () => ({
+  AUTH_ENDPOINTS: {
+    REGISTER: '/auth/register',
+    LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
+  },
+}));
+
 // apiClientのモック
 jest.mock('../../../../lib/api/client', () => ({
   apiClient: {

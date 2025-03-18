@@ -1,5 +1,15 @@
-import { sendDiscordNotification, sendErrorNotification } from '../../../lib/discord';
+import { discordService } from '../../../lib/discord';
 import axios from 'axios';
+
+// constantsのモック
+jest.mock('../../../lib/constants', () => ({
+  AUTH_ENDPOINTS: {
+    REGISTER: '/auth/register',
+    LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
+  },
+  API_BASE_URL: 'http://mock-api',
+}));
 
 // axiosのモック
 jest.mock('axios');
@@ -12,7 +22,7 @@ describe('Discord Client', () => {
     jest.clearAllMocks();
     // 環境変数のモック
     process.env = { ...originalEnv };
-    process.env.DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/mock';
+    process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/mock';
 
     // axiosのデフォルトモック
     mockedAxios.post.mockResolvedValue({ status: 204 });
@@ -23,117 +33,108 @@ describe('Discord Client', () => {
     process.env = originalEnv;
   });
 
-  describe('sendDiscordNotification', () => {
-    test('should send notification successfully', async () => {
-      const content = 'Test notification';
-      const result = await sendDiscordNotification(content);
+  describe('sendTextMessage', () => {
+    test('should send text message successfully', async () => {
+      const message = 'Test message';
+      const result = await discordService.sendTextMessage(message);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
       expect(mockedAxios.post).toHaveBeenCalledWith('https://discord.com/api/webhooks/mock', {
-        content,
+        content: message,
         username: 'DigeClip Bot',
-        avatar_url: 'https://i.imgur.com/AfFp7pu.png',
-        embeds: [],
       });
     });
 
-    test('should use custom options when provided', async () => {
-      const content = 'Custom notification';
-      const options = {
-        username: 'Custom Bot',
-        avatar_url: 'https://example.com/avatar.png',
-        embeds: [{ title: 'Test Embed', description: 'Test description' }],
-      };
+    test('should use custom username when provided', async () => {
+      const message = 'Custom message';
+      const username = 'Custom Bot';
 
-      const result = await sendDiscordNotification(content, options);
+      const result = await discordService.sendTextMessage(message, username);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
       expect(mockedAxios.post).toHaveBeenCalledWith('https://discord.com/api/webhooks/mock', {
-        content,
-        ...options,
+        content: message,
+        username,
       });
     });
 
-    test('should return false when webhook URL is not configured', async () => {
+    test('should return error when webhook URL is not configured', async () => {
       // 環境変数をクリア
       process.env = { ...originalEnv };
-      process.env.DISCORD_WEBHOOK_URL = '';
+      process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL = '';
 
-      const result = await sendDiscordNotification('Test');
+      const result = await discordService.sendTextMessage('Test');
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Discord webhook URL is not configured');
       expect(mockedAxios.post).not.toHaveBeenCalled();
     });
 
-    test('should return false when API call fails', async () => {
+    test('should return error when API call fails', async () => {
       // エラーをモック
       mockedAxios.post.mockRejectedValueOnce(new Error('API error'));
 
-      const result = await sendDiscordNotification('Test');
+      const result = await discordService.sendTextMessage('Test');
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('API error');
     });
   });
 
-  describe('sendErrorNotification', () => {
-    test('should send error notification with Error object', async () => {
-      // axiosのモックをリセット
-      mockedAxios.post.mockReset();
-      mockedAxios.post.mockResolvedValue({ status: 204 });
+  describe('sendEmbedMessage', () => {
+    test('should send embed message successfully', async () => {
+      const embed = {
+        title: 'Test Embed',
+        description: 'Test description',
+        color: 0xff0000,
+        fields: [
+          { name: 'Field 1', value: 'Value 1' },
+          { name: 'Field 2', value: 'Value 2' },
+        ],
+      };
 
-      const error = new Error('Test error');
-      error.stack = 'Error: Test error\n    at test.js:1:1';
-      const context = { userId: '123', action: 'test' };
+      const result = await discordService.sendEmbedMessage(embed);
 
-      const result = await sendErrorNotification(error, context);
-
-      expect(result).toBe(true);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://discord.com/api/webhooks/mock',
-        expect.objectContaining({
-          content: '',
-          embeds: expect.arrayContaining([
-            expect.objectContaining({
-              title: '🚨 エラーが発生しました',
-              color: 0xff0000,
-              fields: expect.arrayContaining([
-                { name: 'エラーメッセージ', value: 'Test error' },
-                expect.objectContaining({
-                  name: 'コンテキスト',
-                  value: expect.stringContaining('userId'),
-                }),
-                expect.objectContaining({
-                  name: 'スタックトレース',
-                  value: expect.stringContaining('Error: Test error'),
-                }),
-              ]),
-            }),
-          ]),
-        })
-      );
+      expect(result.success).toBe(true);
+      expect(mockedAxios.post).toHaveBeenCalledWith('https://discord.com/api/webhooks/mock', {
+        embeds: [embed],
+        username: 'DigeClip Bot',
+      });
     });
 
-    test('should send error notification with string error', async () => {
-      // axiosのモックをリセット
-      mockedAxios.post.mockReset();
-      mockedAxios.post.mockResolvedValue({ status: 204 });
+    test('should use custom username when provided', async () => {
+      const embed = { title: 'Test Embed' };
+      const username = 'Custom Bot';
 
-      const result = await sendErrorNotification('String error message');
+      const result = await discordService.sendEmbedMessage(embed, username);
 
-      expect(result).toBe(true);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://discord.com/api/webhooks/mock',
-        expect.objectContaining({
-          content: '',
-          embeds: expect.arrayContaining([
-            expect.objectContaining({
-              fields: expect.arrayContaining([
-                { name: 'エラーメッセージ', value: 'String error message' },
-              ]),
-            }),
-          ]),
-        })
-      );
+      expect(result.success).toBe(true);
+      expect(mockedAxios.post).toHaveBeenCalledWith('https://discord.com/api/webhooks/mock', {
+        embeds: [embed],
+        username,
+      });
+    });
+
+    test('should return error when webhook URL is not configured', async () => {
+      // 環境変数をクリア
+      process.env = { ...originalEnv };
+      process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL = '';
+
+      const result = await discordService.sendEmbedMessage({ title: 'Test' });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Discord webhook URL is not configured');
+      expect(mockedAxios.post).not.toHaveBeenCalled();
+    });
+
+    test('should return error when API call fails', async () => {
+      // エラーをモック
+      mockedAxios.post.mockRejectedValueOnce(new Error('API error'));
+
+      const result = await discordService.sendEmbedMessage({ title: 'Test' });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('API error');
     });
   });
 });

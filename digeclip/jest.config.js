@@ -9,8 +9,10 @@ const config = {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
   },
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/dist/'],
-  // 一時的にすべてのテストをスキップするための設定
-  testMatch: [], // テストファイルを何も検索しないようにする
+  // テストを実行するためにtestMatchを元に戻す
+  testMatch: ['<rootDir>/src/__tests__/unit/**/*.test.{ts,tsx}'],
+  // テスト環境のセットアップファイルを追加
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
 };
 
 module.exports = config;
