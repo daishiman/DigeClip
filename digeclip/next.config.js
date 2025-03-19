@@ -24,7 +24,7 @@ const nextConfig = {
   // ビルド時に特定のページを静的生成から除外
   staticPageGenerationTimeout: 120,
 
-  // サーバーサイドレンダリングを常に使用し、静的生成を無効化する
+  // スタンドアロンモードで出力
   output: 'standalone',
 
   // 環境変数のデフォルト値（ビルド時のみ使用される）
@@ -32,6 +32,9 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL:
       process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xqhoatxccoijvualjzyj.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key',
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy-service-key',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com',
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'dummy-openai-key',
   },
 };
 
