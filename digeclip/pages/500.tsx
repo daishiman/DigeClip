@@ -1,6 +1,7 @@
 import React from 'react';
+import { NextPage } from 'next';
 
-export default function Custom500() {
+const Custom500: NextPage = () => {
   return (
     <div
       style={{
@@ -35,4 +36,6 @@ export default function Custom500() {
       </div>
     </div>
   );
-}
+};
+
+export default Custom500;

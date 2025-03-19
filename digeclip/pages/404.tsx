@@ -1,7 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
+import { NextPage } from 'next';
 
-export default function Custom404() {
+const Custom404: NextPage = () => {
   return (
     <div
       style={{
@@ -36,4 +37,6 @@ export default function Custom404() {
       </div>
     </div>
   );
-}
+};
+
+export default Custom404;
