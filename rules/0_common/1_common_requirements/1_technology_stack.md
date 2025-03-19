@@ -39,7 +39,9 @@
 |------|-----------|------|
 | Next.js | 14.x | フロントエンド＆バックエンドフレームワーク |
 | TypeScript | 5.x | 型安全な開発言語 |
+| Prisma | 5.x | ORM、データベースマイグレーション |
 | Supabase | 最新 | データベース（PostgreSQL）、認証（メール・Googleアカウント） |
+| PostgreSQL | 15.x | リレーショナルデータベース |
 | Cloudflare Pages | 最新 | ホスティング、Edge関数 |
 | ngrok | 最新 | ローカル開発環境の外部公開 |
 
@@ -108,3 +110,40 @@
 3. **Netlify**（代替）
    - 同様に使いやすい
    - フォーム機能などの追加機能
+
+## 6. データベース管理
+
+### データベース技術
+
+1. **PostgreSQL**
+   - リレーショナルデータベース
+   - Supabaseを通じて提供
+   - 多様なデータ型とインデックス機能
+
+2. **Prisma ORM**
+   - 型安全なデータベースアクセス
+   - スキーマ管理とマイグレーション
+   - 自動生成されるクライアントAPI
+
+### マイグレーション管理
+
+1. **環境設定**
+   - 環境変数（`.env`ファイル）でデータベース接続を管理
+   - 開発環境（`.env.development`）、本番環境（`.env.production`）、テスト環境（`.env.test`）で分離
+
+2. **マイグレーションコマンド**
+   - `npx prisma migrate dev`: 開発環境でのスキーマ変更とマイグレーション
+   - `npx prisma migrate deploy`: 本番環境でのマイグレーション適用（`.env`ファイルで接続先を切り替え）
+   - `npx prisma db push`: スキーマを直接データベースに反映（開発初期段階）
+
+### シードデータ
+
+1. **開発環境用シードデータ**
+   - `prisma/seeds/dev_seed.sql`: 開発用テストデータ
+   - 開発環境のみで使用し、本番環境では使用しない
+   - アプリケーションの全モデルに対応するテストデータを含む
+
+2. **適用方法**
+   - Supabaseダッシュボード（SQL Editor）から実行
+   - PostgreSQLコマンドラインから実行：`psql -h localhost -p 5432 -d postgres -U postgres -f ./prisma/seeds/dev_seed.sql`
+   - `package.json`の`seed`スクリプトから実行：`npm run seed`
