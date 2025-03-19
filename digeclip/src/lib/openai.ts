@@ -13,19 +13,25 @@ const initializeOpenAI = () => {
   try {
     // サーバーサイドの場合のみ環境変数にアクセス
     if (typeof window === 'undefined') {
-      // 環境変数が存在するか確認
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
+      try {
+        // 環境変数が存在するか確認
+        if (typeof process !== 'undefined' && process.env) {
+          const apiKey = process.env.OPENAI_API_KEY;
+          if (apiKey) {
+            // 正常なクライアント初期化
+            return new OpenAI({
+              apiKey,
+            });
+          }
+        }
         console.warn('OPENAI_API_KEY is not defined, using placeholder key');
-        // ビルド時にエラーを起こさないためのダミーキー
-        return new OpenAI({
-          apiKey: 'sk-placeholder-key-for-build',
-        });
+      } catch (e) {
+        console.warn('環境変数OPENAI_API_KEYの取得中にエラーが発生しました', e);
       }
 
-      // 正常なクライアント初期化
+      // ビルド時にエラーを起こさないためのダミーキー
       return new OpenAI({
-        apiKey,
+        apiKey: 'sk-placeholder-key-for-build',
       });
     } else {
       // クライアントサイドの場合の処理
@@ -76,15 +82,22 @@ export async function generateText(
 
     // テスト環境の場合は例外をスロー
     // 安全な方法でテスト環境を判定
+    let isTestEnv = false;
     try {
-      if (process.env.NODE_ENV === 'test' || isTestEnvironment()) {
+      if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
+        isTestEnv = true;
+      }
+    } catch (e) {
+      console.warn('process.env.NODE_ENVの取得中にエラーが発生しました', e);
+    }
+
+    // isTestEnvironmentを利用
+    try {
+      if (isTestEnv || isTestEnvironment()) {
         throw error;
       }
-    } catch {
-      // isTestEnvironment()が利用できない場合のフォールバック
-      if (process.env.NODE_ENV === 'test') {
-        throw error;
-      }
+    } catch (e) {
+      console.warn('テスト環境判定中にエラーが発生しました', e);
     }
 
     // 本番環境ではエラーメッセージを返す
