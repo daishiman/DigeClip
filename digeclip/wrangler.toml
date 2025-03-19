@@ -1,0 +1,22 @@
+name = "digeclip"
+compatibility_date = "2023-12-01"
+
+[build]
+command = "npm run build:cf"
+cwd = "."
+watch_dir = "src"
+output_dir = "out"
+node_compat = true
+
+[build.environment]
+NODE_VERSION = "20"
+NPM_VERSION = "10"
+
+[site]
+bucket = "out"
+
+[env.production]
+vars = { NODE_ENV = "production" }
+
+[env.preview]
+vars = { NODE_ENV = "development" }
