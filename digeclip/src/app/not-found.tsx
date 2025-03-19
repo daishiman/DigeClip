@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 
-// 動的レンダリングを強制
-export const dynamicRendering = 'force-dynamic';
+// 静的エクスポートには動的ディレクティブを使用しない
+// export const dynamicRendering = 'force-dynamic';
 
 // クライアントサイドでのみロードされるコンポーネント
 const NotFoundContent = dynamic(() => import('../components/error/NotFoundContent'), {

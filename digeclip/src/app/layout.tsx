@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   description: 'Content Digestion Platform',
 };
 
-// 動的レンダリングを強制
-export const dynamic = 'force-dynamic';
+// 静的エクスポートには動的ディレクティブを使用しない
+// export const dynamic = 'force-dynamic';
 
 export default function RootLayout({
   children,
