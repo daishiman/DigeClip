@@ -1,4 +1,4 @@
-'use client';
+'use client'; // このコンポーネントはクライアントサイドでレンダリングされます
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
