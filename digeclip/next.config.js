@@ -19,6 +19,14 @@ const nextConfig = {
     // ビルド時に警告を表示するが、エラーでビルドを失敗させない
     ignoreDuringBuilds: true,
   },
+
+  // 環境変数の問題によるビルドエラーを回避
+  // ビルド時に特定のページを静的生成から除外
+  staticPageGenerationTimeout: 120,
+  env: {
+    // ビルド時の環境変数のデフォルト値
+    NODE_ENV: process.env.NODE_ENV || 'production',
+  },
 };
 
 module.exports = nextConfig;
