@@ -389,3 +389,35 @@ npm run verify
 - **pre-push**: プッシュ前にすべてのテスト、リント、型チェックを実行します
 
 Gitフックはhuskyを使用して設定されており、自動的に利用できます。
+
+## データベース環境の切り替え
+
+DigeClipでは開発環境と本番環境で異なるデータベースを使用しています。環境を切り替えるには以下のコマンドを使用します。
+
+### 開発環境
+
+```bash
+# 開発環境の設定を有効にする
+npm run use:dev
+
+# 開発環境のデータベースにシードデータを適用する
+npm run seed:dev
+
+# 開発環境のデータベースをPrisma Studioで確認する
+npm run studio:dev
+```
+
+### 本番環境
+
+```bash
+# 本番環境の設定を有効にする
+npm run use:prod
+
+# 本番環境のデータベースにシードデータを適用する
+npm run seed:prod
+
+# 本番環境のデータベースをPrisma Studioで確認する
+npm run studio:prod
+```
+
+各環境の設定は`.env.development`と`.env.production`ファイルで管理されています。

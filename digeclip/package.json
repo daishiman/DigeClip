@@ -16,7 +16,8 @@
     "format:check": "prettier --check .",
     "prepare": "husky",
     "local-ci": "npm run lint && npm run type-check && npm test && npm run format -- --check",
-    "verify": "npm run local-ci"
+    "verify": "npm run local-ci",
+    "seed:dev": "cat ./prisma/seeds/dev_seed.sql | npx prisma db execute --stdin"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
