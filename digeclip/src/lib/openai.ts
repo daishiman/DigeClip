@@ -11,20 +11,29 @@ const initializeOpenAI = () => {
   }
 
   try {
-    // 環境変数が存在するか確認
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      console.warn('OPENAI_API_KEY is not defined, using placeholder key');
-      // ビルド時にエラーを起こさないためのダミーキー
+    // サーバーサイドの場合のみ環境変数にアクセス
+    if (typeof window === 'undefined') {
+      // 環境変数が存在するか確認
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        console.warn('OPENAI_API_KEY is not defined, using placeholder key');
+        // ビルド時にエラーを起こさないためのダミーキー
+        return new OpenAI({
+          apiKey: 'sk-placeholder-key-for-build',
+        });
+      }
+
+      // 正常なクライアント初期化
       return new OpenAI({
-        apiKey: 'sk-placeholder-key-for-build',
+        apiKey,
+      });
+    } else {
+      // クライアントサイドの場合の処理
+      console.warn('OpenAI client initialization attempted in browser environment');
+      return new OpenAI({
+        apiKey: 'sk-placeholder-key-for-client-side',
       });
     }
-
-    // 正常なクライアント初期化
-    return new OpenAI({
-      apiKey,
-    });
   } catch (error) {
     console.error('OpenAIクライアントの初期化に失敗しました:', error);
     // エラーハンドリングのためのフォールバック

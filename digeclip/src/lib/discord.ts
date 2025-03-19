@@ -1,11 +1,12 @@
 import axios from 'axios';
+import { isTestEnvironment as globalIsTestEnvironment } from './constants';
 
 /**
  * テスト環境かどうかを判定する関数
  * テスト実行中かつモック環境で実行されているかどうかをチェック
  */
 const isTestEnvironment = (): boolean => {
-  return process.env.NODE_ENV === 'test';
+  return globalIsTestEnvironment();
 };
 
 /**
@@ -13,6 +14,7 @@ const isTestEnvironment = (): boolean => {
  * 環境変数から設定値を安全に取得
  */
 const getWebhookUrl = (): string => {
+  // NEXT_PUBLIC_で始まる環境変数はクライアントサイドでも安全に使用可能
   return process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL || '';
 };
 

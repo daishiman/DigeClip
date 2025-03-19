@@ -28,12 +28,21 @@ const supabase = initializeSupabase();
 // 管理者向け操作用のクライアント（バックエンドのみで使用）
 export const createAdminClient = () => {
   try {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      console.warn('SUPABASE_SERVICE_ROLE_KEY is not defined, using anonymous key instead');
+    // サーバーサイドかビルド時のみ実行される環境変数のチェック
+    if (typeof window === 'undefined') {
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!serviceRoleKey) {
+        console.warn('SUPABASE_SERVICE_ROLE_KEY is not defined, using anonymous key instead');
+        return createClient(supabaseUrl, supabaseAnonKey);
+      }
+      return createClient(supabaseUrl, serviceRoleKey);
+    } else {
+      // クライアントサイドの場合は通常のキーを使用
+      console.warn(
+        'createAdminClient was called in browser environment, using anonymous key instead'
+      );
       return createClient(supabaseUrl, supabaseAnonKey);
     }
-    return createClient(supabaseUrl, serviceRoleKey);
   } catch (error) {
     console.error('Admin Supabaseクライアントの初期化に失敗しました:', error);
     return createClient('https://placeholder-url.supabase.co', 'placeholder-key');
