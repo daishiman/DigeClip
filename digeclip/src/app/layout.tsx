@@ -15,8 +15,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="app-container">
-      <div className="antialiased">{children}</div>
-    </div>
+    <html lang="ja">
+      <body>
+        <div className="app-container">
+          <div className="antialiased">{children}</div>
+        </div>
+      </body>
+    </html>
   );
 }
