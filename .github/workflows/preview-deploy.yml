@@ -66,15 +66,18 @@ jobs:
             if [ -d "digeclip" ]; then
               cd digeclip
               npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-              npm run build
+              npm i cross-env --save-dev
+              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build:cf || npm run build
             else
-              npm run build
+              npm i cross-env --save-dev
+              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build:cf || npm run build
             fi
           else
             PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
             if [ ! -z "$PKG_DIR" ]; then
               cd $PKG_DIR
-              npm run build
+              npm i cross-env --save-dev
+              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build:cf || npm run build
             else
               echo "package.jsonが見つからないためビルドを実行できません"
               exit 1
