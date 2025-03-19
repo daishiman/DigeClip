@@ -75,8 +75,16 @@ export async function generateText(
     console.error('OpenAI API error:', error);
 
     // テスト環境の場合は例外をスロー
-    if (isTestEnvironment()) {
-      throw error;
+    // 安全な方法でテスト環境を判定
+    try {
+      if (process.env.NODE_ENV === 'test' || isTestEnvironment()) {
+        throw error;
+      }
+    } catch {
+      // isTestEnvironment()が利用できない場合のフォールバック
+      if (process.env.NODE_ENV === 'test') {
+        throw error;
+      }
     }
 
     // 本番環境ではエラーメッセージを返す
