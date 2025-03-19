@@ -55,6 +55,22 @@ jest.mock('axios', () => ({
   get: jest.fn().mockResolvedValue({ status: 200, data: {} }),
 }));
 
+// Supabaseモジュールのモック
+jest.mock('@supabase/supabase-js', () => {
+  return {
+    createClient: jest.fn(() => ({
+      from: jest.fn(() => ({
+        select: jest.fn().mockReturnThis(),
+        match: jest.fn().mockResolvedValue({ data: [], error: null }),
+        insert: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        delete: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ data: null, error: null }),
+      })),
+    })),
+  };
+});
+
 // import '@testing-library/jest-dom';
 
 // Prismaのモック設定
