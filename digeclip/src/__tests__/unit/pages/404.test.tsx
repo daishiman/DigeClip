@@ -10,8 +10,8 @@ jest.mock('next/link', () => {
   };
 });
 
-// 404ページのモックコンポーネント
-const MockCustom404 = () => (
+// not-foundページのモックコンポーネント
+const MockNotFound = () => (
   <div>
     <h1>404 - ページが見つかりません</h1>
     <p>お探しのページは存在しないか、移動した可能性があります。</p>
@@ -19,15 +19,15 @@ const MockCustom404 = () => (
   </div>
 );
 
-// pagesディレクトリの404.tsxをモック
-jest.mock('../../../../pages/404', () => ({
+// appディレクトリのnot-found.tsxをモック
+jest.mock('../../../app/not-found', () => ({
   __esModule: true,
-  default: jest.fn(() => <MockCustom404 />),
+  default: jest.fn(() => <MockNotFound />),
 }));
 
-describe('Custom404', () => {
+describe('NotFound', () => {
   it('404メッセージが表示されること', () => {
-    render(<MockCustom404 />);
+    render(<MockNotFound />);
 
     // 404ページのタイトルが表示されること
     expect(screen.getByText('404 - ページが見つかりません')).toBeInTheDocument();
@@ -38,7 +38,7 @@ describe('Custom404', () => {
   });
 
   it('ホームに戻るリンクが表示されること', () => {
-    render(<MockCustom404 />);
+    render(<MockNotFound />);
 
     // ホームに戻るリンクが表示されること
     expect(screen.getByText('ホームに戻る')).toBeInTheDocument();
