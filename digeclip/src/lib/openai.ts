@@ -1,19 +1,41 @@
 import OpenAI from 'openai';
 import { isTestEnvironment } from './constants';
 
-// OpenAIクライアントの初期化
-// テスト環境ではAPIキーを使用せずに初期化
-let openai: OpenAI;
+// OpenAIクライアントの初期化関数
+const initializeOpenAI = () => {
+  // テスト環境の場合
+  if (isTestEnvironment()) {
+    return new OpenAI({
+      apiKey: 'dummy-key-for-tests',
+    });
+  }
 
-if (isTestEnvironment()) {
-  openai = new OpenAI({
-    apiKey: 'dummy-key-for-tests',
-  });
-} else {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-}
+  try {
+    // 環境変数が存在するか確認
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.warn('OPENAI_API_KEY is not defined, using placeholder key');
+      // ビルド時にエラーを起こさないためのダミーキー
+      return new OpenAI({
+        apiKey: 'sk-placeholder-key-for-build',
+      });
+    }
+
+    // 正常なクライアント初期化
+    return new OpenAI({
+      apiKey,
+    });
+  } catch (error) {
+    console.error('OpenAIクライアントの初期化に失敗しました:', error);
+    // エラーハンドリングのためのフォールバック
+    return new OpenAI({
+      apiKey: 'sk-placeholder-key-for-build',
+    });
+  }
+};
+
+// クライアントを初期化
+const openai = initializeOpenAI();
 
 /**
  * テキスト生成のためのヘルパー関数
@@ -42,7 +64,8 @@ export async function generateText(
     return response.choices[0]?.message?.content || '';
   } catch (error) {
     console.error('OpenAI API error:', error);
-    throw error;
+    // エラー発生時はエラーメッセージの代わりにデフォルトテキストを返す
+    return 'APIリクエストの処理中にエラーが発生しました。';
   }
 }
 
