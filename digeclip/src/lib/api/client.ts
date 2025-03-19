@@ -22,7 +22,8 @@ export interface ApiError {
 }
 
 // APIエラーコード
-export enum ApiErrorCode {
+export enum ApiErrorCode {}
+/* 以下の定数は将来的に使用するため定義しておく
   BAD_REQUEST = 'E400',
   UNAUTHORIZED = 'E401',
   FORBIDDEN = 'E403',
@@ -31,7 +32,7 @@ export enum ApiErrorCode {
   RATE_LIMIT = 'E429',
   SERVER_ERROR = 'E500',
   SERVICE_UNAVAILABLE = 'E503',
-}
+  */
 
 // APIクライアントクラス
 class ApiClient {

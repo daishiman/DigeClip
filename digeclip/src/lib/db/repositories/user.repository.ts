@@ -15,8 +15,8 @@ interface User {
  * 基本的なCRUD操作に加えて、ユーザー固有のメソッドを定義
  */
 export interface UserRepository extends PrismaRepository<User, string> {
-  findByEmail(email: string): Promise<User | null>;
-  findWithSources(id: string): Promise<User | null>;
+  findByEmail(_email: string): Promise<User | null>;
+  findWithSources(_id: string): Promise<User | null>;
 }
 
 /**

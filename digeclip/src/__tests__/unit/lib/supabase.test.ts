@@ -2,25 +2,31 @@
  * @jest-environment jsdom
  */
 import { jest, describe, beforeEach, test, expect } from '@jest/globals';
-import { PostgrestQueryBuilder } from '@supabase/postgrest-js';
-
-// カスタムモックタイプ
-interface MockResponse<T> {
-  data: T | null;
-  error: Error | null;
-}
+// 未使用の型インポートを削除
+// import { PostgrestQueryBuilder } from '@supabase/postgrest-js';
 
 // モジュール内で使用される型を定義
 interface MockSupabaseClient {
   from: jest.Mock;
 }
 
-interface MockQueryResult {
-  [key: string]: any;
+// 必要な型のみ残す
+interface MockReturnValue {
+  select: jest.Mock;
+  match: jest.Mock;
+  insert: jest.Mock;
+  update: jest.Mock;
+  delete: jest.Mock;
+  eq: jest.Mock;
 }
 
+// Jest用のモック関数型定義
+type JestMockFunction = {
+  mockResolvedValue: (_value: unknown) => jest.Mock;
+};
+
 // 型安全なモック関数を作成するためのユーティリティ
-function createMockQueryBuilder() {
+function createMockQueryBuilder(): MockReturnValue {
   return {
     select: jest.fn().mockReturnThis(),
     match: jest.fn().mockReturnThis(),
@@ -39,10 +45,18 @@ jest.mock('../../../lib/supabase', () => {
 
   return {
     supabase: mockSupabase,
-    fetchData: jest.fn(async (table: string, query: Record<string, any>) => {
+    fetchData: jest.fn(async (table: string, query: Record<string, unknown>) => {
       // TypeScriptを満足させるための型アサーション
-      const builder = mockSupabase.from(table) as any;
-      const { data, error } = await builder.select().match(query);
+      const builder = mockSupabase.from(table) as unknown;
+      const { data, error } = await (
+        builder as {
+          select: () => {
+            match: (_q: Record<string, unknown>) => Promise<{ data: unknown; error: Error | null }>;
+          };
+        }
+      )
+        .select()
+        .match(query);
 
       if (error) {
         console.error('Error fetching data:', error);
@@ -50,10 +64,18 @@ jest.mock('../../../lib/supabase', () => {
       }
       return data;
     }),
-    insertData: jest.fn(async (table: string, data: Record<string, any>) => {
+    insertData: jest.fn(async (table: string, data: Record<string, unknown>) => {
       // TypeScriptを満足させるための型アサーション
-      const builder = mockSupabase.from(table) as any;
-      const { data: result, error } = await builder.insert(data).select();
+      const builder = mockSupabase.from(table) as unknown;
+      const { data: result, error } = await (
+        builder as {
+          insert: (_d: Record<string, unknown>) => {
+            select: () => Promise<{ data: unknown; error: Error | null }>;
+          };
+        }
+      )
+        .insert(data)
+        .select();
 
       if (error) {
         console.error('Error inserting data:', error);
@@ -61,10 +83,22 @@ jest.mock('../../../lib/supabase', () => {
       }
       return result;
     }),
-    updateData: jest.fn(async (table: string, id: string, data: Record<string, any>) => {
+    updateData: jest.fn(async (table: string, id: string, data: Record<string, unknown>) => {
       // TypeScriptを満足させるための型アサーション
-      const builder = mockSupabase.from(table) as any;
-      const { data: result, error } = await builder.update(data).eq('id', id).select();
+      const builder = mockSupabase.from(table) as unknown;
+      const { data: result, error } = await (
+        builder as {
+          update: (_d: Record<string, unknown>) => {
+            eq: (
+              _field: string,
+              _value: string
+            ) => { select: () => Promise<{ data: unknown; error: Error | null }> };
+          };
+        }
+      )
+        .update(data)
+        .eq('id', id)
+        .select();
 
       if (error) {
         console.error('Error updating data:', error);
@@ -74,8 +108,16 @@ jest.mock('../../../lib/supabase', () => {
     }),
     deleteData: jest.fn(async (table: string, id: string) => {
       // TypeScriptを満足させるための型アサーション
-      const builder = mockSupabase.from(table) as any;
-      const { error } = await builder.delete().eq('id', id);
+      const builder = mockSupabase.from(table) as unknown;
+      const { error } = await (
+        builder as {
+          delete: () => {
+            eq: (_field: string, _value: string) => Promise<{ error: Error | null }>;
+          };
+        }
+      )
+        .delete()
+        .eq('id', id);
 
       if (error) {
         console.error('Error deleting data:', error);
@@ -104,8 +146,8 @@ describe('Supabase Client', () => {
 
     // モッククエリビルダーを作成
     const queryBuilder = createMockQueryBuilder();
-    // anyを使用してTypeScriptの型チェックをバイパス
-    (queryBuilder.match as any).mockResolvedValue(mockResponse);
+    // 型キャストを使用してTypeScriptの型チェックをバイパス
+    (queryBuilder.match as unknown as JestMockFunction).mockResolvedValue(mockResponse);
 
     // from関数のモック
     (supabase.from as jest.Mock).mockReturnValue(queryBuilder);
@@ -124,8 +166,8 @@ describe('Supabase Client', () => {
 
     // モッククエリビルダーを作成
     const queryBuilder = createMockQueryBuilder();
-    // anyを使用してTypeScriptの型チェックをバイパス
-    (queryBuilder.match as any).mockResolvedValue(mockResponse);
+    // 型キャストを使用してTypeScriptの型チェックをバイパス
+    (queryBuilder.match as unknown as JestMockFunction).mockResolvedValue(mockResponse);
 
     // from関数のモック
     (supabase.from as jest.Mock).mockReturnValue(queryBuilder);
@@ -141,8 +183,8 @@ describe('Supabase Client', () => {
 
     // モッククエリビルダーを作成
     const queryBuilder = createMockQueryBuilder();
-    // anyを使用してTypeScriptの型チェックをバイパス
-    (queryBuilder.select as any).mockResolvedValue(mockResponse);
+    // 型キャストを使用してTypeScriptの型チェックをバイパス
+    (queryBuilder.select as unknown as JestMockFunction).mockResolvedValue(mockResponse);
 
     // from関数のモック
     (supabase.from as jest.Mock).mockReturnValue(queryBuilder);
@@ -160,8 +202,8 @@ describe('Supabase Client', () => {
 
     // モッククエリビルダーを作成
     const queryBuilder = createMockQueryBuilder();
-    // anyを使用してTypeScriptの型チェックをバイパス
-    (queryBuilder.select as any).mockResolvedValue(mockResponse);
+    // 型キャストを使用してTypeScriptの型チェックをバイパス
+    (queryBuilder.select as unknown as JestMockFunction).mockResolvedValue(mockResponse);
 
     // from関数のモック
     (supabase.from as jest.Mock).mockReturnValue(queryBuilder);
@@ -178,8 +220,8 @@ describe('Supabase Client', () => {
 
     // モッククエリビルダーを作成
     const queryBuilder = createMockQueryBuilder();
-    // anyを使用してTypeScriptの型チェックをバイパス
-    (queryBuilder.eq as any).mockResolvedValue(mockResponse);
+    // 型キャストを使用してTypeScriptの型チェックをバイパス
+    (queryBuilder.eq as unknown as JestMockFunction).mockResolvedValue(mockResponse);
 
     // from関数のモック
     (supabase.from as jest.Mock).mockReturnValue(queryBuilder);
@@ -197,8 +239,8 @@ describe('Supabase Client', () => {
 
     // モッククエリビルダーを作成
     const queryBuilder = createMockQueryBuilder();
-    // anyを使用してTypeScriptの型チェックをバイパス
-    (queryBuilder.eq as any).mockResolvedValue(mockResponse);
+    // 型キャストを使用してTypeScriptの型チェックをバイパス
+    (queryBuilder.eq as unknown as JestMockFunction).mockResolvedValue(mockResponse);
 
     // from関数のモック
     (supabase.from as jest.Mock).mockReturnValue(queryBuilder);

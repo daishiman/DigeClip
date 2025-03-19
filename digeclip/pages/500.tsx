@@ -1,20 +1,34 @@
-export default function Custom500() {
-  const handleReload = () => {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  };
+import React from 'react';
 
+export default function Custom500() {
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold">サーバーエラーが発生しました</h1>
-        <p className="mt-4 text-lg">
+    <div
+      style={{
+        display: 'flex',
+        height: '100vh',
+        width: '100%',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>サーバーエラーが発生しました</h1>
+        <p style={{ marginTop: '1rem' }}>
           サーバーでエラーが発生しました。お手数ですが、再度お試しください。
         </p>
         <button
-          className="mt-6 rounded bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
-          onClick={handleReload}
+          style={{
+            marginTop: '1.5rem',
+            padding: '0.5rem 1rem',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            borderRadius: '0.25rem',
+            fontWeight: '600',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+          onClick={() => window.location.reload()}
         >
           再読み込み
         </button>
