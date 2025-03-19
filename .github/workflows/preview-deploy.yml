@@ -65,19 +65,20 @@ jobs:
             # ルートのpackage.jsonがあるが、おそらくdigeclipディレクトリでビルドする必要がある
             if [ -d "digeclip" ]; then
               cd digeclip
-              npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-              npm i cross-env --save-dev
-              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build:cf || npm run build
+              # 依存関係を確実にインストール
+              npm install --no-audit --no-fund
+              # Cloudflare Pages環境向けビルド
+              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build
             else
-              npm i cross-env --save-dev
-              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build:cf || npm run build
+              npm install --no-audit --no-fund
+              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build
             fi
           else
             PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
             if [ ! -z "$PKG_DIR" ]; then
               cd $PKG_DIR
-              npm i cross-env --save-dev
-              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build:cf || npm run build
+              npm install --no-audit --no-fund
+              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build
             else
               echo "package.jsonが見つからないためビルドを実行できません"
               exit 1
