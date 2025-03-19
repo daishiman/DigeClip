@@ -1,14 +1,17 @@
 // jestテスト環境のセットアップファイル
 
 // windowオブジェクトのモック設定
-Object.defineProperty(window, 'localStorage', {
-  value: {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-  },
-  writable: true,
-});
+// windowオブジェクトが存在する場合のみ設定
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', {
+    value: {
+      getItem: jest.fn(),
+      setItem: jest.fn(),
+      removeItem: jest.fn(),
+    },
+    writable: true,
+  });
+}
 
 // 環境変数の設定
 // process.env.NODE_ENVは読み取り専用プロパティなので、Object.definePropertyを使用して設定
@@ -27,10 +30,13 @@ global.console = {
 };
 
 // テスト環境の正しい動作のためのその他の設定
-Object.defineProperty(global, 'fetch', {
-  value: jest.fn(),
-  writable: true,
-});
+// fetchがグローバルに存在しない場合、モックを設定
+if (typeof fetch === 'undefined') {
+  Object.defineProperty(global, 'fetch', {
+    value: jest.fn(),
+    writable: true,
+  });
+}
 
 // SWCバイナリ関連のエラーを無視する設定
 jest.mock(

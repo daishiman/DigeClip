@@ -118,6 +118,60 @@ DigeClipでは、開発環境と本番環境でSupabaseのデータベース（�
 
 Cloudflare Pagesでも、開発環境（`dev`ブランチ）と本番環境（`main`ブランチ）それぞれに適切なSupabase接続情報を環境変数として設定しています。
 
+## データベースマイグレーション
+
+DigeClipではPrismaを使用してデータベースマイグレーションを管理しています。
+
+### マイグレーション手順
+
+#### 開発環境のマイグレーション
+
+1. **スキーマの変更**:
+   `prisma/schema.prisma` ファイルを編集して必要な変更を加えます。
+
+2. **マイグレーションの作成と適用**:
+
+   ```bash
+   # 開発環境の設定を使用
+   cp .env.development .env
+
+   # マイグレーションを作成
+   npx prisma migrate dev --name <マイグレーション名>
+   ```
+
+   このコマンドは以下の処理を実行します:
+
+   - マイグレーションファイルの生成
+   - ローカルデータベースへの適用
+   - Prisma Clientの更新
+
+3. **開発環境Supabaseへの適用**:
+   ```bash
+   # 開発環境にマイグレーションを適用
+   npx prisma migrate deploy
+   ```
+
+#### 本番環境のマイグレーション
+
+1. **本番環境の設定を使用**:
+
+   ```bash
+   cp .env.production .env
+   ```
+
+2. **本番環境にマイグレーションを適用**:
+   ```bash
+   # 事前にバックアップを取得することを強く推奨します
+   npx prisma migrate deploy
+   ```
+
+### 注意事項
+
+- 本番環境へのマイグレーション前に必ずバックアップを取得してください
+- 破壊的変更がある場合は、アプリケーションをメンテナンスモードにすることを検討してください
+- `prisma db push`コマンドは開発環境での一時的な変更のみに使用し、本番環境では使用しないでください
+- マイグレーションは順番に適用する必要があります。開発環境で検証してから本番環境に適用してください
+
 ## 開発ガイド
 
 ### ディレクトリ構造
@@ -165,6 +219,10 @@ Cloudflare Pagesでも、開発環境（`dev`ブランチ）と本番環境（`m
   │       ├─ /unit         # 単体テスト
   │       ├─ /integration  # 統合テスト
   │       └─ /e2e          # E2Eテスト
+  │
+  ├─ /prisma               # Prismaスキーマとマイグレーション
+  │   ├─ schema.prisma     # データベーススキーマ
+  │   └─ /migrations       # マイグレーションファイル
   │
   ├─ .env.local           # 環境変数
   ├─ .eslintrc.js         # ESLint設定
@@ -262,6 +320,7 @@ Next.jsについて詳しく学ぶには、以下のリソースを参照して�
 - [React Query ドキュメント](https://tanstack.com/query/latest) - データフェッチングの方法
 - [Cloudflare Pages ドキュメント](https://developers.cloudflare.com/pages/) - Cloudflare Pagesの使い方
 - [Supabase ドキュメント](https://supabase.com/docs) - Supabaseの使い方
+- [Prisma ドキュメント](https://www.prisma.io/docs) - Prismaの使い方
 
 ## テスト
 

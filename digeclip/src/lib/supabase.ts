@@ -1,6 +1,10 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { isTestEnvironment } from './constants';
 
+// 環境変数から接続情報を取得
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+
 let supabase: SupabaseClient;
 
 // テスト環境の場合はテスト用のモッククライアントを使用
@@ -8,13 +12,18 @@ if (isTestEnvironment()) {
   // テスト用のダミーURLとキーを使用
   supabase = createClient('https://dummy-supabase-url.co', 'dummy-key-for-tests');
 } else {
-  // 環境変数からSupabaseの設定を取得
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
   // Supabaseクライアントの作成
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
+
+// 管理者向け操作用のクライアント（バックエンドのみで使用）
+export const createAdminClient = () => {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+  if (!serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not defined');
+  }
+  return createClient(supabaseUrl, serviceRoleKey);
+};
 
 // クライアントをエクスポート
 export { supabase };
