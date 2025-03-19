@@ -27,12 +27,24 @@ const nextConfig = {
 
   // 環境変数のデフォルト値（ビルド時のみ使用される）
   env: {
+    // Cloudflare Pages環境でのビルドに必要なデフォルト値
     NEXT_PUBLIC_SUPABASE_URL:
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xqhoatxccoijvualjzyj.supabase.co',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key',
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy-service-key',
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com',
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'dummy-openai-key',
+      (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_URL) ||
+      'https://xqhoatxccoijvualjzyj.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      (typeof process !== 'undefined' &&
+        process.env &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
+      'dummy-key',
+    SUPABASE_SERVICE_ROLE_KEY:
+      (typeof process !== 'undefined' && process.env && process.env.SUPABASE_SERVICE_ROLE_KEY) ||
+      'dummy-service-key',
+    NEXT_PUBLIC_API_URL:
+      (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL) ||
+      'https://api.example.com',
+    OPENAI_API_KEY:
+      (typeof process !== 'undefined' && process.env && process.env.OPENAI_API_KEY) ||
+      'dummy-openai-key',
   },
 };
 

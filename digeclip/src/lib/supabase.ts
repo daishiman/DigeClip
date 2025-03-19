@@ -2,8 +2,22 @@ import { createClient } from '@supabase/supabase-js';
 import { isTestEnvironment } from './constants';
 
 // 環境変数の取得とデフォルト値の設定
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-url.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+const getSupabaseUrl = () => {
+  if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL;
+  }
+  return 'https://placeholder-url.supabase.co';
+};
+
+const getSupabaseAnonKey = () => {
+  if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  }
+  return 'placeholder-key';
+};
+
+const supabaseUrl = getSupabaseUrl();
+const supabaseAnonKey = getSupabaseAnonKey();
 
 // 初期化関数を作成 - 環境に応じて適切なクライアントを返す
 const initializeSupabase = () => {
@@ -29,7 +43,7 @@ const supabase = initializeSupabase();
 export const createAdminClient = () => {
   try {
     // サーバーサイドかビルド時のみ実行される環境変数のチェック
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' && typeof process !== 'undefined' && process.env) {
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!serviceRoleKey) {
         console.warn('SUPABASE_SERVICE_ROLE_KEY is not defined, using anonymous key instead');

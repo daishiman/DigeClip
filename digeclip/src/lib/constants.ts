@@ -10,11 +10,13 @@ const DEFAULT_DEV_API_URL = 'http://localhost:3000/api';
 const getNodeEnv = () => {
   try {
     // サーバーサイドかチェック
-    if (typeof window === 'undefined') {
+    if (typeof process !== 'undefined' && process.env && typeof window === 'undefined') {
       return process.env.NODE_ENV || 'development';
     }
     // クライアントサイドの場合はNext.jsの公開環境変数を使用（または開発環境と仮定）
-    return process.env.NEXT_PUBLIC_NODE_ENV || 'development';
+    return typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_NODE_ENV
+      ? process.env.NEXT_PUBLIC_NODE_ENV
+      : 'development';
   } catch {
     return 'development';
   }
@@ -24,7 +26,7 @@ const getNodeEnv = () => {
 const getApiUrl = () => {
   try {
     // Next.jsの公開環境変数は常に安全
-    if (process.env.NEXT_PUBLIC_API_URL) {
+    if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
