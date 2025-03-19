@@ -2,37 +2,37 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-// 500ページのモックコンポーネント
-const MockCustom500 = () => (
+// エラーページのモックコンポーネント
+const MockError = () => (
   <div>
-    <h1>サーバーエラーが発生しました</h1>
-    <p>サーバーでエラーが発生しました。お手数ですが、再度お試しください。</p>
-    <button>再読み込み</button>
+    <h1>エラーが発生しました</h1>
+    <p>予期せぬエラーが発生しました。お手数ですが、再度お試しください。</p>
+    <button>再試行</button>
   </div>
 );
 
-// pagesディレクトリの500.tsxをモック
-jest.mock('../../../../pages/500', () => ({
+// appディレクトリのerror.tsxをモック
+jest.mock('../../../app/error', () => ({
   __esModule: true,
-  default: jest.fn(() => <MockCustom500 />),
+  default: jest.fn(() => <MockError />),
 }));
 
-describe('Custom500', () => {
+describe('Error', () => {
   it('エラーメッセージが表示されること', () => {
-    render(<MockCustom500 />);
+    render(<MockError />);
 
     // エラーページのタイトルが表示されること
-    expect(screen.getByText('サーバーエラーが発生しました')).toBeInTheDocument();
+    expect(screen.getByText('エラーが発生しました')).toBeInTheDocument();
     // 説明メッセージが表示されること
     expect(
-      screen.getByText('サーバーでエラーが発生しました。お手数ですが、再度お試しください。')
+      screen.getByText('予期せぬエラーが発生しました。お手数ですが、再度お試しください。')
     ).toBeInTheDocument();
   });
 
-  it('再読み込みボタンが表示されること', () => {
-    render(<MockCustom500 />);
+  it('再試行ボタンが表示されること', () => {
+    render(<MockError />);
 
-    // 再読み込みボタンが表示されること
-    expect(screen.getByText('再読み込み')).toBeInTheDocument();
+    // 再試行ボタンが表示されること
+    expect(screen.getByText('再試行')).toBeInTheDocument();
   });
 });
