@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
 
