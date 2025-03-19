@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Static exportは無効化
-  // output: 'export',
-  // distDir: 'out',
-  // images: {
-  //   unoptimized: true,
-  // },
+  // Static exportを有効化 (Cloudflare Pages用)
+  output: 'export',
+  distDir: '.vercel/output/static', // Cloudflare Pages用の出力先
+  images: {
+    unoptimized: true,
+  },
   reactStrictMode: true,
 
   // App RouterとPages Routerのハイブリッドモードでの競合を回避
@@ -23,9 +23,6 @@ const nextConfig = {
   // 環境変数の問題によるビルドエラーを回避
   // ビルド時に特定のページを静的生成から除外
   staticPageGenerationTimeout: 120,
-
-  // スタンドアロンモードで出力
-  output: 'standalone',
 
   // 環境変数のデフォルト値（ビルド時のみ使用される）
   env: {
