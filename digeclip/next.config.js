@@ -2,10 +2,10 @@
 const nextConfig = {
   // Static exportを有効化 (Cloudflare Pages用)
   output: 'export',
-  // distDir: '.vercel/output/static', // Cloudflare Pages用の出力先
-  // デフォルトの'out'ディレクトリを使用
+  // Cloudflare Pages用の適切な出力先設定
+  // outDir: 'out', // Next.jsのデフォルトのため不要
   images: {
-    unoptimized: true,
+    unoptimized: true, // Cloudflare Pages用に必須
   },
   reactStrictMode: true,
 
