@@ -64,7 +64,13 @@ export async function generateText(
     return response.choices[0]?.message?.content || '';
   } catch (error) {
     console.error('OpenAI API error:', error);
-    // エラー発生時はエラーメッセージの代わりにデフォルトテキストを返す
+
+    // テスト環境の場合は例外をスロー
+    if (isTestEnvironment()) {
+      throw error;
+    }
+
+    // 本番環境ではエラーメッセージを返す
     return 'APIリクエストの処理中にエラーが発生しました。';
   }
 }
