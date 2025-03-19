@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   description: 'Content Digestion Platform',
 };
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
