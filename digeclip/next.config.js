@@ -1,4 +1,17 @@
 /** @type {import('next').NextConfig} */
+
+// 安全に環境変数を取得する関数
+const safeGetEnv = varName => {
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env[varName] || null;
+    }
+  } catch (e) {
+    console.warn(`環境変数${varName}の取得中にエラーが発生しました`, e);
+  }
+  return null;
+};
+
 const nextConfig = {
   // Static exportを有効化 (Cloudflare Pages用)
   output: 'export',
@@ -29,22 +42,11 @@ const nextConfig = {
   env: {
     // Cloudflare Pages環境でのビルドに必要なデフォルト値
     NEXT_PUBLIC_SUPABASE_URL:
-      (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_URL) ||
-      'https://xqhoatxccoijvualjzyj.supabase.co',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY:
-      (typeof process !== 'undefined' &&
-        process.env &&
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
-      'dummy-key',
-    SUPABASE_SERVICE_ROLE_KEY:
-      (typeof process !== 'undefined' && process.env && process.env.SUPABASE_SERVICE_ROLE_KEY) ||
-      'dummy-service-key',
-    NEXT_PUBLIC_API_URL:
-      (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL) ||
-      'https://api.example.com',
-    OPENAI_API_KEY:
-      (typeof process !== 'undefined' && process.env && process.env.OPENAI_API_KEY) ||
-      'dummy-openai-key',
+      safeGetEnv('NEXT_PUBLIC_SUPABASE_URL') || 'https://xqhoatxccoijvualjzyj.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: safeGetEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || 'dummy-key',
+    SUPABASE_SERVICE_ROLE_KEY: safeGetEnv('SUPABASE_SERVICE_ROLE_KEY') || 'dummy-service-key',
+    NEXT_PUBLIC_API_URL: safeGetEnv('NEXT_PUBLIC_API_URL') || 'https://api.example.com',
+    OPENAI_API_KEY: safeGetEnv('OPENAI_API_KEY') || 'dummy-openai-key',
   },
 };
 

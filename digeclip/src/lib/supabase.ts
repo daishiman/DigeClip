@@ -3,15 +3,29 @@ import { isTestEnvironment } from './constants';
 
 // 環境変数の取得とデフォルト値の設定
 const getSupabaseUrl = () => {
-  if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return process.env.NEXT_PUBLIC_SUPABASE_URL;
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      return process.env.NEXT_PUBLIC_SUPABASE_URL;
+    }
+  } catch (e) {
+    // エラーを捕捉して処理を続行
+    console.warn('環境変数の取得中にエラーが発生しました', e);
   }
   return 'https://placeholder-url.supabase.co';
 };
 
 const getSupabaseAnonKey = () => {
-  if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  try {
+    if (
+      typeof process !== 'undefined' &&
+      process.env &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ) {
+      return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    }
+  } catch (e) {
+    // エラーを捕捉して処理を続行
+    console.warn('環境変数の取得中にエラーが発生しました', e);
   }
   return 'placeholder-key';
 };
@@ -43,13 +57,20 @@ const supabase = initializeSupabase();
 export const createAdminClient = () => {
   try {
     // サーバーサイドかビルド時のみ実行される環境変数のチェック
-    if (typeof window === 'undefined' && typeof process !== 'undefined' && process.env) {
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (!serviceRoleKey) {
-        console.warn('SUPABASE_SERVICE_ROLE_KEY is not defined, using anonymous key instead');
-        return createClient(supabaseUrl, supabaseAnonKey);
+    if (typeof window === 'undefined') {
+      try {
+        if (typeof process !== 'undefined' && process.env) {
+          const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (serviceRoleKey) {
+            return createClient(supabaseUrl, serviceRoleKey);
+          }
+        }
+      } catch (e) {
+        console.warn('環境変数の取得中にエラーが発生しました', e);
       }
-      return createClient(supabaseUrl, serviceRoleKey);
+
+      console.warn('SUPABASE_SERVICE_ROLE_KEY is not defined, using anonymous key instead');
+      return createClient(supabaseUrl, supabaseAnonKey);
     } else {
       // クライアントサイドの場合は通常のキーを使用
       console.warn(

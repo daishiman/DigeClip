@@ -10,14 +10,28 @@ const DEFAULT_DEV_API_URL = 'http://localhost:3000/api';
 const getNodeEnv = () => {
   try {
     // サーバーサイドかチェック
-    if (typeof process !== 'undefined' && process.env && typeof window === 'undefined') {
-      return process.env.NODE_ENV || 'development';
+    if (typeof process !== 'undefined' && typeof window === 'undefined') {
+      try {
+        if (process && process.env) {
+          return process.env.NODE_ENV || 'development';
+        }
+      } catch (e) {
+        console.warn('process.env.NODE_ENVの取得に失敗しました', e);
+      }
     }
+
     // クライアントサイドの場合はNext.jsの公開環境変数を使用（または開発環境と仮定）
-    return typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_NODE_ENV
-      ? process.env.NEXT_PUBLIC_NODE_ENV
-      : 'development';
-  } catch {
+    try {
+      if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_NODE_ENV) {
+        return process.env.NEXT_PUBLIC_NODE_ENV;
+      }
+    } catch (e) {
+      console.warn('NEXT_PUBLIC_NODE_ENVの取得に失敗しました', e);
+    }
+
+    return 'development';
+  } catch (e) {
+    console.warn('getNodeEnv関数でエラーが発生しました', e);
     return 'development';
   }
 };
@@ -26,8 +40,12 @@ const getNodeEnv = () => {
 const getApiUrl = () => {
   try {
     // Next.jsの公開環境変数は常に安全
-    if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
+    try {
+      if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL) {
+        return process.env.NEXT_PUBLIC_API_URL;
+      }
+    } catch (e) {
+      console.warn('NEXT_PUBLIC_API_URLの取得に失敗しました', e);
     }
 
     const env = getNodeEnv();
@@ -35,7 +53,8 @@ const getApiUrl = () => {
       return DEFAULT_PROD_API_URL;
     }
     return DEFAULT_DEV_API_URL;
-  } catch {
+  } catch (e) {
+    console.warn('getApiUrl関数でエラーが発生しました', e);
     // フォールバック: デフォルト開発環境URLを返す
     return DEFAULT_DEV_API_URL;
   }
