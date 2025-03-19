@@ -1,6 +1,16 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function NotFound() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // クライアントサイドレンダリングのみで実行されるようにする
+    setIsClient(true);
+  }, []);
+
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center">
       <div className="text-center">
@@ -12,6 +22,9 @@ export default function NotFound() {
         >
           ホームに戻る
         </Link>
+        {isClient && (
+          <p className="mt-4 text-sm text-gray-500">クライアントサイドでレンダリングされています</p>
+        )}
       </div>
     </div>
   );
