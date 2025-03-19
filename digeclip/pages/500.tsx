@@ -1,7 +1,9 @@
-import { useRouter } from 'next/router';
-
 export default function Custom500() {
-  const router = useRouter();
+  const handleReload = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center">
@@ -12,7 +14,7 @@ export default function Custom500() {
         </p>
         <button
           className="mt-6 rounded bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
-          onClick={() => router.reload()}
+          onClick={handleReload}
         >
           再読み込み
         </button>

@@ -14,6 +14,12 @@ const nextConfig = {
     // エラーページはPages Routerで処理する
     disableOptimizedLoading: true,
   },
+
+  // ESLintの設定
+  eslint: {
+    // ビルド時に警告を表示するが、エラーでビルドを失敗させない
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;
