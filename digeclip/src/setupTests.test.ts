@@ -1,4 +1,5 @@
 // jestテスト環境のセットアップファイル
+import '@testing-library/jest-dom';
 
 // windowオブジェクトのモック設定
 // windowオブジェクトが存在する場合のみ設定
@@ -46,6 +47,15 @@ jest.mock(
   }),
   { virtual: true }
 );
+
+// Reactのモック設定
+jest.mock('react', () => {
+  const originalReact = jest.requireActual('react');
+  return {
+    ...originalReact,
+    useEffect: jest.fn().mockImplementation(callback => callback()),
+  };
+});
 
 // テスト環境の準備完了
 // コンソール出力のlintエラーを避けるため、ログ出力は削除

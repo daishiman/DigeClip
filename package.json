@@ -22,12 +22,14 @@
     "use:prod": "cp .env.production .env",
     "seed:prod": "npm run use:prod && cat ./prisma/seeds/prod_seed.sql | npx prisma db execute --stdin",
     "studio:dev": "npm run use:dev && npx prisma studio",
-    "studio:prod": "npm run use:prod && npx prisma studio"
+    "studio:prod": "npm run use:prod && npx prisma studio",
+    "build:mdc": "ts-node build-mdc.ts"
   },
   "dependencies": {
     "glob": "^11.0.1"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "eslint": "^9.22.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
