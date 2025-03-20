@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "build:cf": "next build",
+    "prebuild": "ts-node --transpile-only -O '{\"module\":\"commonjs\"}' scripts/prepare-config.ts",
+    "build": "npm run prebuild && next build",
+    "build:cf": "NODE_ENV=production npm run prebuild && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
