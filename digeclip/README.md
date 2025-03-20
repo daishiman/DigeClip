@@ -206,7 +206,6 @@ GitHub Actionsを使用したCI/CDパイプラインを構築しています：
 - **環境分離デプロイ**:
   - 開発環境: `dev-digeclip.pages.dev`（`dev` ブランチ）
   - 本番環境: `digeclip.com`（`main` ブランチ）
-  - プレビュー環境: PR作成時に自動生成
 
 これにより、コードの品質を確保しながら効率的な開発サイクルを実現しています。
 
@@ -214,7 +213,6 @@ GitHub Actionsを使用したCI/CDパイプラインを構築しています：
 
 - **開発環境**: `dev-digeclip.pages.dev`（`dev` ブランチ）
 - **本番環境**: `digeclip.com`（`main` ブランチ）
-- **プレビュー環境**: PR毎に自動生成（PR内にURLが表示されます）
 
 ## 学習リソース
 
