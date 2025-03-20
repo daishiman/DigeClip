@@ -6,7 +6,7 @@ import {
   deleteData,
   createAdminClient,
 } from '../../../lib/supabase';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import * as constants from '../../../lib/constants';
 
 // テスト環境かどうかを判定する関数をモック
@@ -150,7 +150,7 @@ describe('Supabase Client', () => {
       const client = createAdminClient();
       expect(client).toBeDefined();
       // createClientが正しい引数で呼ばれたことを確認
-      expect(require('@supabase/supabase-js').createClient).toHaveBeenCalledWith(
+      expect(jest.mocked(createClient)).toHaveBeenCalledWith(
         'https://dummy-supabase-url.co',
         'dummy-admin-key-for-tests'
       );
@@ -167,7 +167,7 @@ describe('Supabase Client', () => {
       const client = createAdminClient();
       expect(client).toBeDefined();
       // createClientが正しい引数で呼ばれたことを確認
-      expect(require('@supabase/supabase-js').createClient).toHaveBeenCalledWith(
+      expect(jest.mocked(createClient)).toHaveBeenCalledWith(
         'https://test-project.supabase.co',
         'test-service-role-key'
       );
