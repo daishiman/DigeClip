@@ -6,7 +6,7 @@
     "dev": "next dev",
     "prebuild": "ts-node --transpile-only -O '{\"module\":\"commonjs\"}' scripts/prepare-config.ts",
     "build": "npm run prebuild && next build",
-    "build:cf": "NODE_ENV=production npm run prebuild && next build",
+    "build:cf": "npm run prebuild && NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
