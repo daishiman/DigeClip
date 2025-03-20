@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 // 静的生成時のエラーを回避
 // Next.js 13.4以降の静的生成環境では非推奨のため変数名を変更
 export const dynamicRendering = 'force-dynamic';
-export const runtime = 'edge'; // エッジランタイムを指定して静的生成から除外
+// Cloudflare Pages静的エクスポートとの互換性のためにruntimeディレクティブを削除
 
 // 基本的なローディング表示コンポーネント
 const LoadingComponent = () => (
