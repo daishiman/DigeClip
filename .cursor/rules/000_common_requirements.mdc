@@ -499,6 +499,79 @@ describe('functionToTest', () => {
 
 このドキュメントでは、プロジェクト全体で使用する標準的なディレクトリ構造を定義します。この構造に従うことで、コードの一貫性と可読性を確保し、新しいメンバーがプロジェクトに参加する際の学習コストを低減します。
 
+## ルートディレクトリ構造
+
+```
+/
+├─ /rules                 # 設計・仕様ドキュメント
+│   ├─ /0_common          # 共通仕様
+│   ├─ /1_business        # ビジネス要件
+│   ├─ /2_backend         # バックエンド仕様
+│   └─ /3_frontend        # フロントエンド仕様
+│
+├─ /digeclip              # メインアプリケーション
+│   ├─ /public            # 静的ファイル
+│   │   ├─ /images        # 画像ファイル
+│   │   ├─ /fonts         # フォントファイル
+│   │   └─ /locales       # 多言語化ファイル
+│   │
+│   ├─ /src               # ソースコード
+│   │   ├─ /app           # App Routerディレクトリ
+│   │   ├─ /components    # コンポーネント
+│   │   ├─ /hooks         # カスタムフック
+│   │   ├─ /lib           # ユーティリティ
+│   │   ├─ /types         # 型定義
+│   │   └─ /__tests__     # テストコード
+│   │
+│   ├─ /seeds             # DBシードデータ
+│   │   ├─ dev_schema.sql # 開発環境用スキーマ
+│   │   └─ dev_seed.sql   # 開発環境用サンプルデータ
+│   │
+│   ├─ /docs              # ドキュメント
+│   │   └─ ENV_SETUP.md   # 環境設定ガイド
+│   │
+│   ├─ /.husky            # Git Hooks
+│   │   ├─ pre-add        # git add前のテスト実行
+│   │   ├─ pre-commit     # コミット前のlint実行
+│   │   └─ pre-push       # プッシュ前の完全検証
+│   │
+│   ├─ package.json       # 依存関係
+│   ├─ next.config.js     # Next.js設定
+│   ├─ tsconfig.json      # TypeScript設定
+│   ├─ .env.development   # 開発環境用環境変数
+│   ├─ .env.production    # 本番環境用環境変数
+│   └─ README.md          # アプリケーションの説明
+│
+├─ /.github               # GitHub設定
+│   ├─ /workflows         # GitHub Actionsワークフロー
+│   │   ├─ ci.yml         # 統合CI
+│   │   ├─ tests.yml      # テスト実行
+│   │   ├─ lint.yml       # リント実行
+│   │   ├─ deploy.yml     # Cloudflareデプロイ
+│   │   ├─ preview-deploy.yml # プレビューデプロイ
+│   │   ├─ pr-review.yml  # PR自動レビュー
+│   │   ├─ supabase-deploy.yml # Supabaseスキーマデプロイ
+│   │   └─ create-release-pr.yml # リリースPR作成
+│   ├─ SETUP.md           # 環境セットアップガイド
+│   ├─ labeler.yml        # 自動ラベル設定
+│   └─ settings.yml       # リポジトリ設定
+│
+├─ /scripts               # ユーティリティスクリプト
+│   ├─ start-ngrok.sh     # ngrok起動スクリプト
+│   └─ local-ci.sh        # ローカルCI実行スクリプト
+│
+├─ /.husky                # Git Hooks設定
+│   ├─ pre-add            # git add前のテスト実行
+│   ├─ pre-commit         # コミット前のlint実行
+│   └─ pre-push           # プッシュ前の完全検証
+│
+├─ /.cursor               # Cursor AI設定
+│   └─ /rules             # Cursor AI用ルール
+│
+├─ package.json           # ルート依存関係
+└─ README.md              # このファイル
+```
+
 ## Next.jsプロジェクトの標準ディレクトリ構造
 
 ```
@@ -703,12 +776,69 @@ describe('functionToTest', () => {
    - テスト用ユーティリティとモックは再利用可能なよう共通ディレクトリに配置
    - テスト間の重複を最小限に抑える
 
+4. **テスト実行の最適化**
+   - `npm test`: すべてのテストを実行
+   - `npm test:watch`: ウォッチモードでのテスト実行
+   - `npm test:coverage`: カバレッジレポート生成
+   - `npm test:related`: 変更されたファイルに関連するテストのみを実行
+
+## CI/CDとGitHubワークフロー構造
+
+プロジェクトではGitHub Actionsを使用して継続的インテグレーション/デプロイを実現しています：
+
+```
+/.github/workflows/
+├─ ci.yml                # 統合CI（テスト、リント、ビルドを実行）
+├─ tests.yml             # テスト実行ワークフロー
+├─ lint.yml              # リント実行ワークフロー
+├─ deploy.yml            # Cloudflare Pagesへのデプロイ
+├─ preview-deploy.yml    # PRごとのプレビューデプロイ
+├─ pr-review.yml         # PR自動レビュー（アクセシビリティとサイズチェック）
+├─ supabase-deploy.yml   # SupabaseスキーマとシードデータのデプロイCron設定
+└─ create-release-pr.yml # リリースPR自動作成
+```
+
+### ブランチ構造とデプロイフロー
+
+- **dev**: 開発環境用のデフォルトブランチ（開発作業の中心）
+- **main**: 本番環境用のブランチ（安定版のみマージ）
+- **feature/\***: 機能開発用ブランチ
+- **fix/\***: バグ修正用ブランチ
+- **hotfix/\***: 緊急修正用ブランチ
+
+デプロイ環境は以下のように対応しています：
+- **開発環境**: `dev-digeclip.pages.dev`（`dev` ブランチ）
+- **本番環境**: `digeclip.com`（`main` ブランチ）
+- **プレビュー環境**: PR作成時に自動生成されるURL
+
+### Git Hooks構造
+
+ローカル開発時の品質確保のために以下のGit Hooksを設定しています：
+
+```
+/.husky/
+├─ pre-add              # git add時：変更ファイルに関連するテストを実行
+├─ pre-commit           # git commit時：lint-stagedで変更ファイルのみチェック
+└─ pre-push             # git push時：すべてのテスト・リント・型チェック実行
+```
+
+### データベース関連ファイル構造
+
+開発環境と本番環境のSupabaseプロジェクトを分離しており、以下のファイルを使用してスキーマとシードデータを管理しています：
+
+```
+/digeclip/seeds/
+├─ dev_schema.sql       # 開発環境用データベーススキーマ定義
+└─ dev_seed.sql         # 開発環境用初期データ
+```
+
 ## 特記事項
 
 - この構造は初心者でも理解しやすいように設計されています
 - Next.js の最新推奨構成に従いつつ、初心者でも迷いにくいフォルダ数に留めています
 - プロジェクトの成長に合わせて、必要に応じて構造を拡張できます
 - テストはJest、React Testing Library、MSW、Cypressなどのツールを使用して実装します
+- GitHub Actionsでは最新のNode.js 20と依存関係キャッシュを活用して高速なCIを実現しています
 
 ## 4_test_strategy/1_strategy.md
 
@@ -898,15 +1028,20 @@ npm run test:coverage
 
 テストは継続的インテグレーション (CI) パイプラインの一部として自動的に実行されます。
 
-1. **プルリクエスト時**:
+1. **ローカル開発時**:
+   - **git add時**: 変更されたファイルに関連するテストのみを実行（`npm run test:related`）
+   - **git commit時**: 変更されたファイルのlintとフォーマットチェック
+   - **git push時**: すべてのテスト、リント、型チェックを実行
+
+2. **プルリクエスト時**:
    - 単体テスト
    - 統合テスト
    - テストカバレッジの測定
 
-2. **マージ前**:
+3. **マージ前**:
    - E2E テスト
 
-3. **定期的なスケジュール**:
+4. **定期的なスケジュール**:
    - 全テスト
    - パフォーマンステスト
 
@@ -1064,6 +1199,39 @@ describe('Button', () => {
 - 行カバレッジ: 75%以上
 
 ただし、これらの数値は目安であり、コードの重要度や複雑さに応じて調整します。
+
+## テスト実行方法
+
+単体テストは以下のコマンドで実行できます：
+
+```bash
+# すべての単体テストを実行
+npm test
+
+# 単体テストをウォッチモードで実行
+npm run test:watch
+
+# 特定のファイルの単体テストのみを実行
+npm test -- path/to/test/file.test.ts
+
+# 変更されたファイルに関連するテストのみを実行
+npm run test:related -- path/to/file.ts
+```
+
+### git add時の関連テスト実行
+
+開発効率を向上させるため、git addする際に変更されたファイルに関連するテストのみを自動実行する仕組みが実装されています。これにより、完全なテストスイートを実行する前に、変更に直接関連する問題を早期に発見できます。
+
+この機能は以下のように動作します：
+
+1. ファイルを`git add`しようとすると、pre-addフックが発動
+2. 追加しようとしているファイルに関連するテストのみを実行
+3. テストが成功すればファイルが追加され、失敗すれば中断される
+
+この方法により、以下のメリットがあります：
+- 素早いフィードバックループの実現
+- 関連するテストのみを実行するため、テスト時間の短縮
+- 問題が小さいうちに発見できるため、修正が容易
 
 ## 1_test_types/2_integration_tests.md
 
