@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
-import { API_BASE_URL, isTestEnvironment } from '../constants';
+import { API_URL, isTestEnvironment } from '../constants';
 
 // レスポンスの型定義
 export interface ApiResponse<T> {
@@ -47,7 +47,7 @@ class ApiClient {
     }
 
     this.client = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: API_URL,
       headers: {
         'Content-Type': 'application/json',
       },
