@@ -100,12 +100,23 @@
 
 3. **環境管理**
    - **環境分離**:
-     - 開発環境: ローカル PostgreSQL または開発用 Supabase プロジェクト
-     - テスト環境: 必要に応じて別 Supabase プロジェクト
-     - 本番環境: 本番用 Supabase プロジェクト
-   - **環境変数**:
-     - 各環境の `DATABASE_URL` を `.env` ファイルで管理
-     - 本番環境変数は安全に管理（Vercel の Environment Variables など）
+     - 開発環境: 開発用Supabaseプロジェクト (`digeclip-dev`)
+     - テスト環境: モックまたは一時データベース (テスト用)
+     - 本番環境: 本番用Supabaseプロジェクト (`digeclip-prod`)
+   - **環境変数管理**:
+     - 開発環境: `.env.development` ファイルで管理
+     - 本番環境: `.env.production` ファイルで管理
+     - テスト環境: `jest.setup.js` 内のモック設定
+   - **環境切替**:
+     - `npm run use:dev`: 開発環境に切り替え
+     - `npm run use:prod`: 本番環境に切り替え
+   - **環境検出**:
+     - `constants.ts` の関数で環境を自動判別
+     - `supabase.ts` で環境に応じた接続先を選択
+   - **CI/CD連携**:
+     - GitHub Actionsワークフローでシークレットとして環境変数を管理
+     - 開発環境: `DEV_SUPABASE_URL`, `DEV_SUPABASE_ANON_KEY`
+     - 本番環境: `PROD_SUPABASE_URL`, `PROD_SUPABASE_ANON_KEY`
 
 4. **セキュリティ管理**
    - **APIキー管理**:
