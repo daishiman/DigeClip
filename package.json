@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "cd digeclip && npm run dev",
     "build": "cd digeclip && npm run build",
+    "build:cf": "cd digeclip && npm run build",
     "start": "cd digeclip && npm run start",
     "lint": "cd digeclip && npm run lint",
     "test": "cd digeclip && npm test",
@@ -16,6 +17,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.0.14",
     "glob": "^11.0.1"
   },
   "devDependencies": {
