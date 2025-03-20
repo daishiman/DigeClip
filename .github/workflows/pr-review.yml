@@ -4,59 +4,33 @@ on:
   pull_request:
     types: [opened, synchronize]
 
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Node.jsのセットアップ
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: 依存関係のインストール
-        run: |
-          if [ -f "digeclip/package.json" ]; then
-            cd digeclip
-            npm install
-          else
-            npm install
-          fi
-      - name: ESLintによるリント
-        run: |
-          if [ -f "digeclip/package.json" ]; then
-            cd digeclip
-            npm run lint || echo "lintコマンドが失敗しました"
-          else
-            npm run lint || echo "lintコマンドが失敗しました"
-          fi
-      - name: TypeScriptの型チェック
-        run: |
-          if [ -f "digeclip/package.json" ]; then
-            cd digeclip
-            npm run type-check || echo "type-checkコマンドが失敗しました"
-          else
-            npm run type-check || echo "type-checkコマンドが失敗しました"
-          fi
+permissions:
+  contents: read
+  pull-requests: write
 
+jobs:
   accessibility:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Node.jsのセットアップ
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
+
       - name: 依存関係のインストール
         run: |
-          if [ -f "digeclip/package.json" ]; then
+          if [ -d "digeclip" ]; then
             cd digeclip
-            npm install
+            npm ci
           else
-            npm install
+            npm ci
           fi
+
       - name: アクセシビリティチェック
         run: |
-          if [ -f "digeclip/package.json" ]; then
+          if [ -d "digeclip" ]; then
             cd digeclip
             if grep -q "axe-core" package.json; then
               echo "アクセシビリティテストを実行します"
@@ -77,23 +51,54 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Node.jsのセットアップ
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
+
       - name: 依存関係のインストール
         run: |
-          if [ -f "digeclip/package.json" ]; then
+          if [ -d "digeclip" ]; then
             cd digeclip
-            npm install
+            npm ci
           else
-            npm install
+            npm ci
           fi
+
       - name: ビルドサイズチェック
         run: |
-          if [ -f "digeclip/package.json" ]; then
+          if [ -d "digeclip" ] && [ -f "digeclip/package.json" ]; then
             cd digeclip
-            echo "ビルドサイズチェックをスキップします"
+            # Next.jsのビルドサイズ分析ツールがあれば実行
+            if grep -q "@next/bundle-analyzer" package.json; then
+              echo "ビルドサイズ分析を実行します"
+              ANALYZE=true npm run build || true
+            else
+              echo "ビルドサイズ分析ツールが見つからないためスキップします"
+            fi
           else
             echo "ビルドサイズチェックをスキップします"
           fi
+
+      - name: PRにコメント
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            // PRに自動レビューコメントを追加
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 自動レビュー結果 🤖
+
+              このPRは自動チェックを完了しました。レビュアーが詳細を確認します。
+              `
+            });

@@ -1,4 +1,4 @@
-name: 'Preview Deploy'
+name: プレビューデプロイ
 
 on:
   pull_request:
@@ -15,110 +15,80 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          repository: ${{ github.repository }}
 
-      - uses: actions/setup-node@v3
+      - name: Node.js のセットアップ
+        uses: actions/setup-node@v3
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'digeclip/package-lock.json'
 
-      - name: Install root dependencies (package-lock generation)
+      - name: 環境設定
+        id: env_setup
         run: |
-          if [ -f "package.json" ]; then
-            npm install --package-lock-only --no-audit --no-fund
+          if [[ "${{ github.base_ref }}" == "dev" ]]; then
+            echo "PROJECT_NAME=dev-digeclip" >> $GITHUB_OUTPUT
+            echo "ENV_FILE=.env.development" >> $GITHUB_OUTPUT
+            echo "環境: 開発環境プレビュー (dev)" >> $GITHUB_STEP_SUMMARY
           else
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              cd $PKG_DIR
-              npm install --package-lock-only --no-audit --no-fund
-            fi
+            echo "PROJECT_NAME=digeclip" >> $GITHUB_OUTPUT
+            echo "ENV_FILE=.env.development" >> $GITHUB_OUTPUT
+            echo "環境: 本番環境プレビュー (main)" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Prepare build directories and install dependencies
+          # PRの情報を取得してブランチ名をエスケープ
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          ESCAPED_BRANCH=$(echo $BRANCH | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+          echo "PR_BRANCH=$ESCAPED_BRANCH" >> $GITHUB_OUTPUT
+
+      - name: 環境変数ファイルの準備
         run: |
-          echo "PR プレビュー用にビルドします"
-          if [ -f "package.json" ]; then
-            npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+          cp digeclip/${{ steps.env_setup.outputs.ENV_FILE }} digeclip/.env.production.local
+          echo "プレビュー用の環境変数を準備しました" >> $GITHUB_STEP_SUMMARY
+
+      - name: 依存関係のインストール
+        working-directory: ./digeclip
+        run: npm ci
+
+      - name: ビルド
+        working-directory: ./digeclip
+        env:
+          NODE_ENV: development
+        run: npm run build
+
+      - name: ビルド出力確認
+        id: check_build
+        run: |
+          if [ -d "digeclip/out" ]; then
+            echo "BUILD_DIR=digeclip/out" >> $GITHUB_OUTPUT
+            echo "ビルド出力ディレクトリ: digeclip/out" >> $GITHUB_STEP_SUMMARY
           else
-            echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
-            find . -name "package.json" -type f
-
-            # package.jsonが見つかった場所に移動
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              echo "package.jsonが見つかりました: $PKG_DIR"
-              cd $PKG_DIR
-              npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-            fi
-          fi
-
-      - name: Install Tailwind CSS dependencies
-        run: |
-          if [ -d "digeclip" ]; then
-            cd digeclip
-            npm install autoprefixer postcss @tailwindcss/postcss --save
-          fi
-
-      - name: Build application
-        run: |
-          if [ -f "package.json" ]; then
-            # ルートのpackage.jsonがあるが、おそらくdigeclipディレクトリでビルドする必要がある
-            if [ -d "digeclip" ]; then
-              cd digeclip
-              npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-              npm run build
-            else
-              npm run build
-            fi
-          else
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              cd $PKG_DIR
-              npm run build
-            else
-              echo "package.jsonが見つからないためビルドを実行できません"
-              exit 1
-            fi
-          fi
-
-      - name: Verify build output and prepare for deployment
-        run: |
-          # ビルド出力ディレクトリが存在するか確認
-          if [ -d "out" ]; then
-            echo "ルートディレクトリにoutディレクトリがあります"
-          elif [ -d "digeclip/out" ]; then
-            echo "digeclip/outディレクトリが見つかりました。ルートにコピーします"
-            cp -r digeclip/out ./out
-          elif [ -d "digeclip/.next" ]; then
-            echo "digeclip/.nextディレクトリが見つかりました。outディレクトリを作成します"
-            mkdir -p out
-            echo "<meta http-equiv=\"refresh\" content=\"0;url=digeclip/\">" > out/index.html
-          else
-            echo "警告: ビルド出力ディレクトリが見つかりませんでした"
-            find . -type d -name "out" -o -name ".next" | grep -v "node_modules"
+            echo "警告: ビルド出力ディレクトリが見つかりません"
+            find digeclip -type d -name "out" -o -name ".next" | grep -v "node_modules"
             exit 1
           fi
 
-      - name: Deploy to Cloudflare Pages
+      - name: Cloudflare Pages へデプロイ
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: digeclip
-          directory: out
+          projectName: ${{ steps.env_setup.outputs.PROJECT_NAME }}
+          directory: ${{ steps.check_build.outputs.BUILD_DIR }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.head_ref || github.ref_name }}
+          branch: ${{ steps.env_setup.outputs.PR_BRANCH }}
           wranglerVersion: '3'
 
-      - name: "URL の設定"
+      - name: PR にプレビューURL追加
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const branch = context.payload.pull_request.head.ref.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-            const url = `https://${branch}.digeclip.pages.dev`;
+            const branch = '${{ steps.env_setup.outputs.PR_BRANCH }}';
+            const projectName = '${{ steps.env_setup.outputs.PROJECT_NAME }}';
+            const url = `https://${branch}.${projectName}.pages.dev`;
 
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
