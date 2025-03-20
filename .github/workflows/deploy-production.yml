@@ -1,36 +1,33 @@
-name: 'Preview Deploy'
+name: Deploy to Cloudflare Pages (Production)
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   push:
     branches:
-      - development
-      - dev
-      - 'feature/**'
+      - production
+      - main
 
 # 権限設定
 permissions:
   contents: read
   deployments: write
-  pull-requests: write
 
 jobs:
-  deploy-preview:
+  deploy:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.DEV_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
       NEXT_PUBLIC_IS_CLOUDFLARE_PAGES: 'true'
-      NEXT_PUBLIC_APP_ENV: 'development'
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          repository: ${{ github.repository }}
+      NEXT_PUBLIC_APP_ENV: 'production'
 
-      - uses: actions/setup-node@v3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'digeclip/package-lock.json'
 
@@ -41,10 +38,10 @@ jobs:
       - name: Create environment file
         working-directory: digeclip
         run: |
-          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.DEV_SUPABASE_URL }}" > .env
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.DEV_SUPABASE_ANON_KEY }}" >> .env
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL }}" > .env
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.PROD_SUPABASE_ANON_KEY }}" >> .env
           echo "NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true" >> .env
-          echo "NEXT_PUBLIC_APP_ENV=development" >> .env
+          echo "NEXT_PUBLIC_APP_ENV=production" >> .env
           echo "NODE_ENV=production" >> .env
 
       - name: Build application
@@ -72,21 +69,5 @@ jobs:
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref || github.ref_name }}
           wranglerVersion: '3'
-          # 開発環境を指定
-          environmentName: 'development'
-
-      - name: "PRコメントにURLを追加"
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const branch = context.payload.pull_request.head.ref.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-            const url = `https://${branch}.digeclip.pages.dev`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🚀 プレビューがデプロイされました！ [こちらからアクセス](${url})`
-            });
+          # 本番環境を指定
+          environmentName: 'production'

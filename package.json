@@ -1,13 +1,18 @@
 {
-  "name": "digeclip-root",
+  "name": "digeclip",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cd digeclip && npm run dev",
-    "build": "cd digeclip && npm run build",
-    "start": "cd digeclip && npm run start",
+    "dev": "node scripts/environment-switch.js dev && cd digeclip && npm run dev",
+    "dev:prod": "node scripts/environment-switch.js prod && cd digeclip && npm run dev",
+    "build": "node scripts/environment-switch.js dev && cd digeclip && npm run build",
+    "build:prod": "node scripts/environment-switch.js prod && cd digeclip && npm run build",
+    "build:cf:dev": "node scripts/environment-switch.js dev && cd digeclip && npm run build:cf",
+    "build:cf:prod": "node scripts/environment-switch.js prod && cd digeclip && npm run build:cf",
+    "use:dev": "node scripts/environment-switch.js dev",
+    "use:prod": "node scripts/environment-switch.js prod",
     "lint": "cd digeclip && npm run lint",
-    "test": "cd digeclip && npm test",
+    "test": "cd digeclip && npm run test",
     "verify": "bash scripts/local-ci.sh",
     "local-ci": "bash scripts/local-ci.sh",
     "type-check": "cd digeclip && npm run type-check",
@@ -30,5 +35,8 @@
       "cd digeclip && npx eslint --fix",
       "cd digeclip && npx prettier --write"
     ]
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
