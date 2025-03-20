@@ -19,6 +19,23 @@ if (isTestEnvironment()) {
 // クライアントをエクスポート
 export { supabase };
 
+// 管理者向け操作用のクライアント（バックエンドのみで使用）
+export const createAdminClient = () => {
+  // テスト環境の場合はテスト用のモッククライアントを返す
+  if (isTestEnvironment()) {
+    return createClient('https://dummy-supabase-url.co', 'dummy-admin-key-for-tests');
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+
+  if (!serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not defined');
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
+};
+
 // データベース操作のためのヘルパー関数
 export async function fetchData(table: string, query: Record<string, unknown> = {}) {
   const { data, error } = await supabase.from(table).select().match(query);

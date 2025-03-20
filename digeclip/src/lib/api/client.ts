@@ -21,18 +21,6 @@ export interface ApiError {
   };
 }
 
-// APIエラーコード
-export enum ApiErrorCode {
-  BAD_REQUEST = 'E400',
-  UNAUTHORIZED = 'E401',
-  FORBIDDEN = 'E403',
-  NOT_FOUND = 'E404',
-  CONFLICT = 'E409',
-  RATE_LIMIT = 'E429',
-  SERVER_ERROR = 'E500',
-  SERVICE_UNAVAILABLE = 'E503',
-}
-
 // APIクライアントクラス
 class ApiClient {
   private client: AxiosInstance;

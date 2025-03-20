@@ -1,0 +1,59 @@
+name: Supabase デプロイ
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - 'digeclip/seeds/**'
+      - '.github/workflows/supabase-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-supabase:
+    name: Supabase スキーマデプロイ
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v3
+
+      - name: Supabase CLI をインストール
+        run: npm install -g supabase
+
+      - name: 環境変数を設定
+        id: set-env
+        run: |
+          if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
+            echo "SUPABASE_PROJECT_ID=${{ secrets.DEV_SUPABASE_PROJECT_ID }}" >> $GITHUB_ENV
+            echo "SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}" >> $GITHUB_ENV
+            echo "APPLY_SEED=true" >> $GITHUB_ENV
+            echo "環境: 開発環境 (シードデータ適用あり)" >> $GITHUB_STEP_SUMMARY
+          elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+            echo "SUPABASE_PROJECT_ID=${{ secrets.PROD_SUPABASE_PROJECT_ID }}" >> $GITHUB_ENV
+            echo "SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}" >> $GITHUB_ENV
+            echo "APPLY_SEED=false" >> $GITHUB_ENV
+            echo "環境: 本番環境 (スキーマのみ適用、シードデータなし)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: スキーマをデプロイ
+        run: |
+          # 両環境ともにスキーマを適用
+          cat digeclip/seeds/dev_schema.sql | supabase db execute --project-ref $SUPABASE_PROJECT_ID
+
+          if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
+            echo "開発環境用スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+          elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+            echo "本番環境用スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 開発環境にシードデータを適用
+        if: env.APPLY_SEED == 'true'
+        run: |
+          echo "開発環境用シードデータを適用します"
+          cat digeclip/seeds/dev_seed.sql | supabase db execute --project-ref $SUPABASE_PROJECT_ID
+          echo "開発環境用シードデータを適用しました" >> $GITHUB_STEP_SUMMARY

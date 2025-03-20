@@ -1,11 +1,14 @@
-name: Cloudflare Pagesデプロイ
+name: Cloudflare Pages デプロイ
 
 on:
   push:
-    branches: [ development, production ]
+    branches: [ dev, main ]
+  pull_request:
+    types: [ closed ]
+    branches: [ dev, main ]
   workflow_dispatch:
 
-# 権限設定を追加
+# 権限設定
 permissions:
   contents: read
   deployments: write
@@ -13,70 +16,77 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # PRがマージされた場合のみ実行
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.base_ref == 'dev' || github.base_ref == 'main'))
     steps:
       - uses: actions/checkout@v3
 
-      - name: Node.jsのセットアップ
+      - name: Node.js のセットアップ
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'digeclip/package-lock.json'
 
-      - name: 環境変数の設定
-        id: set_env_vars
+      - name: 環境設定
+        id: env_setup
         run: |
-          if [[ $GITHUB_REF == *"development"* ]]; then
+          if [[ $GITHUB_REF == *"dev"* ]]; then
             echo "ENVIRONMENT=development" >> $GITHUB_OUTPUT
-          elif [[ $GITHUB_REF == *"production"* ]]; then
+            echo "PROJECT_NAME=dev-digeclip" >> $GITHUB_OUTPUT
+            echo "ENV_FILE=.env.development" >> $GITHUB_OUTPUT
+            echo "環境: 開発環境 (dev)" >> $GITHUB_STEP_SUMMARY
+          elif [[ $GITHUB_REF == *"main"* ]]; then
             echo "ENVIRONMENT=production" >> $GITHUB_OUTPUT
+            echo "PROJECT_NAME=digeclip" >> $GITHUB_OUTPUT
+            echo "ENV_FILE=.env.production" >> $GITHUB_OUTPUT
+            echo "環境: 本番環境 (main)" >> $GITHUB_STEP_SUMMARY
           else
             echo "ENVIRONMENT=preview" >> $GITHUB_OUTPUT
+            echo "PROJECT_NAME=digeclip" >> $GITHUB_OUTPUT
+            echo "ENV_FILE=.env.development" >> $GITHUB_OUTPUT
+            echo "環境: プレビュー環境" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 環境変数ファイルの準備
+        run: |
+          if [ -f "digeclip/${{ steps.env_setup.outputs.ENV_FILE }}" ]; then
+            cp digeclip/${{ steps.env_setup.outputs.ENV_FILE }} digeclip/.env.production.local
+            echo "${{ steps.env_setup.outputs.ENVIRONMENT }}環境用の環境変数をコピーしました" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "警告: 環境変数ファイル digeclip/${{ steps.env_setup.outputs.ENV_FILE }} が見つかりません" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: 依存関係のインストール
-        run: |
-          echo "現在のディレクトリ構造を確認"
-          ls -la
-
-          if [ -f "package.json" ]; then
-            npm ci
-          else
-            echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
-            find . -name "package.json" -type f
-
-            # package.jsonが見つかった場所に移動
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              echo "package.jsonが見つかりました: $PKG_DIR"
-              cd $PKG_DIR
-              npm ci
-            fi
-          fi
+        working-directory: ./digeclip
+        run: npm ci
 
       - name: ビルド
+        working-directory: ./digeclip
         env:
-          ENVIRONMENT: ${{ steps.set_env_vars.outputs.ENVIRONMENT }}
+          ENVIRONMENT: ${{ steps.env_setup.outputs.ENVIRONMENT }}
+          NODE_ENV: production
         run: |
-          if [ -f "package.json" ]; then
-            npm run build
-            echo "環境: $ENVIRONMENT"
+          npm run build:cf
+          echo "環境: $ENVIRONMENT でビルドしました"
+
+      - name: ビルド出力確認
+        id: check_build
+        run: |
+          if [ -d "digeclip/out" ]; then
+            echo "BUILD_DIR=digeclip/out" >> $GITHUB_OUTPUT
+            echo "ビルド出力ディレクトリ: digeclip/out" >> $GITHUB_STEP_SUMMARY
           else
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              cd $PKG_DIR
-              npm run build
-              echo "環境: $ENVIRONMENT"
-            else
-              echo "package.jsonが見つからないためビルドを実行できません"
-              exit 1
-            fi
+            echo "警告: ビルド出力ディレクトリが見つかりません"
+            find digeclip -type d -name "out" -o -name ".next" | grep -v "node_modules"
+            exit 1
           fi
 
-      - name: Cloudflare Pagesへデプロイ
+      - name: Cloudflare Pages へデプロイ
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: digeclip
-          directory: ./out
-          # 本番環境の場合は production フラグを設定
-          deploymentEnvironment: ${{ steps.set_env_vars.outputs.ENVIRONMENT }}
+          projectName: ${{ steps.env_setup.outputs.PROJECT_NAME }}
+          directory: ${{ steps.check_build.outputs.BUILD_DIR }}
+          deploymentEnvironment: ${{ steps.env_setup.outputs.ENVIRONMENT }}
