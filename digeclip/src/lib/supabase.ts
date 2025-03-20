@@ -92,19 +92,14 @@ export { supabase };
 
 // データベース操作のためのヘルパー関数
 export async function fetchData(table: string, query: Record<string, unknown> = {}) {
-  try {
-    const { data, error } = await supabase.from(table).select().match(query);
+  const { data, error } = await supabase.from(table).select().match(query);
 
-    if (error) {
-      console.error('Error fetching data:', error);
-      throw error;
-    }
-
-    return data;
-  } catch (error) {
-    console.error('データの取得に失敗しました:', error);
-    return [];
+  if (error) {
+    console.error('Error fetching data:', error);
+    throw error;
   }
+
+  return data;
 }
 
 export async function insertData(table: string, data: Record<string, unknown>) {
