@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { isTestEnvironment } from './constants';
+import { isTestEnvironment, isProdEnvironment, isDevEnvironment } from './constants';
 
 // 環境変数の取得とデフォルト値の設定
 const getSupabaseUrl = () => {
@@ -11,7 +11,12 @@ const getSupabaseUrl = () => {
     // エラーを捕捉して処理を続行
     console.warn('環境変数の取得中にエラーが発生しました', e);
   }
-  return 'https://placeholder-url.supabase.co';
+
+  // 環境によってデフォルト値を変える
+  if (isProdEnvironment()) {
+    return 'https://xuelsazvjarxkdtwqxzj.supabase.co'; // 本番環境のプレースホルダー
+  }
+  return 'https://xqhoatxccoijvualjzyj.supabase.co'; // 開発環境のプレースホルダー
 };
 
 const getSupabaseAnonKey = () => {
@@ -33,15 +38,26 @@ const getSupabaseAnonKey = () => {
 const supabaseUrl = getSupabaseUrl();
 const supabaseAnonKey = getSupabaseAnonKey();
 
+// 環境情報をコンソールに出力（デバッグ用）
+if (isDevEnvironment()) {
+  console.warn(`Supabase URL: ${supabaseUrl.split('.')[0]}... (dev環境)`);
+}
+
 // 初期化関数を作成 - 環境に応じて適切なクライアントを返す
 const initializeSupabase = () => {
   // テスト環境ではモッククライアントを返す
   if (isTestEnvironment()) {
+    console.warn('テスト環境用Supabaseクライアントを初期化しています');
     return createClient('https://dummy-supabase-url.co', 'dummy-key-for-tests');
   }
 
   // 本番環境ではSupabaseクライアントを初期化
   try {
+    if (isProdEnvironment()) {
+      console.warn('本番環境用Supabaseクライアントを初期化しています');
+    } else {
+      console.warn('開発環境用Supabaseクライアントを初期化しています');
+    }
     return createClient(supabaseUrl, supabaseAnonKey);
   } catch (error) {
     console.error('Supabaseクライアントの初期化に失敗しました:', error);
@@ -81,6 +97,17 @@ export const createAdminClient = () => {
   } catch (error) {
     console.error('Admin Supabaseクライアントの初期化に失敗しました:', error);
     return createClient('https://placeholder-url.supabase.co', 'placeholder-key');
+  }
+};
+
+// 環境情報取得関数
+export const getSupabaseEnvironmentInfo = () => {
+  if (isTestEnvironment()) {
+    return 'test';
+  } else if (isProdEnvironment()) {
+    return 'production';
+  } else {
+    return 'development';
   }
 };
 

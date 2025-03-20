@@ -3,6 +3,10 @@ name: 'Preview Deploy'
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - development
+      - 'feature/**'
 
 # 権限設定
 permissions:
@@ -13,6 +17,10 @@ permissions:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.DEV_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_IS_CLOUDFLARE_PAGES: 'true'
     steps:
       - uses: actions/checkout@v3
         with:
@@ -21,82 +29,30 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'digeclip/package-lock.json'
 
-      - name: Install root dependencies (package-lock generation)
+      - name: Install dependencies
+        working-directory: digeclip
+        run: npm ci
+
+      - name: Create environment file
+        working-directory: digeclip
         run: |
-          if [ -f "package.json" ]; then
-            npm install --package-lock-only --no-audit --no-fund
-          else
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              cd $PKG_DIR
-              npm install --package-lock-only --no-audit --no-fund
-            fi
-          fi
-
-      - name: Prepare build directories and install dependencies
-        run: |
-          echo "PR プレビュー用にビルドします"
-          if [ -f "package.json" ]; then
-            npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-          else
-            echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
-            find . -name "package.json" -type f
-
-            # package.jsonが見つかった場所に移動
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              echo "package.jsonが見つかりました: $PKG_DIR"
-              cd $PKG_DIR
-              npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-            fi
-          fi
-
-      - name: Install Tailwind CSS dependencies
-        run: |
-          if [ -d "digeclip" ]; then
-            cd digeclip
-            npm install autoprefixer postcss @tailwindcss/postcss --save
-          fi
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.DEV_SUPABASE_URL }}" > .env
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.DEV_SUPABASE_ANON_KEY }}" >> .env
+          echo "NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true" >> .env
+          echo "NODE_ENV=development" >> .env
 
       - name: Build application
-        run: |
-          if [ -f "package.json" ]; then
-            # ルートのpackage.jsonがあるが、おそらくdigeclipディレクトリでビルドする必要がある
-            if [ -d "digeclip" ]; then
-              cd digeclip
-              # 依存関係を確実にインストール
-              npm install --no-audit --no-fund
-              # Cloudflare Pages環境向けビルド
-              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build
-            else
-              npm install --no-audit --no-fund
-              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build
-            fi
-          else
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              cd $PKG_DIR
-              npm install --no-audit --no-fund
-              NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true npm run build
-            else
-              echo "package.jsonが見つからないためビルドを実行できません"
-              exit 1
-            fi
-          fi
+        working-directory: digeclip
+        run: npm run build:cf
 
-      - name: Verify build output and prepare for deployment
+      - name: Verify build output
         run: |
           # ビルド出力ディレクトリが存在するか確認
-          if [ -d "out" ]; then
-            echo "ルートディレクトリにoutディレクトリがあります"
-          elif [ -d "digeclip/out" ]; then
-            echo "digeclip/outディレクトリが見つかりました。ルートにコピーします"
-            cp -r digeclip/out ./out
-          elif [ -d "digeclip/.next" ]; then
-            echo "digeclip/.nextディレクトリが見つかりました。outディレクトリを作成します"
-            mkdir -p out
-            echo "<meta http-equiv=\"refresh\" content=\"0;url=digeclip/\">" > out/index.html
+          if [ -d "digeclip/out" ]; then
+            echo "digeclip/outディレクトリが見つかりました"
           else
             echo "警告: ビルド出力ディレクトリが見つかりませんでした"
             find . -type d -name "out" -o -name ".next" | grep -v "node_modules"
@@ -108,19 +64,20 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: digeclip
-          directory: out
+          projectName: digeclip-dev
+          directory: digeclip/out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref || github.ref_name }}
           wranglerVersion: '3'
 
-      - name: "URL の設定"
+      - name: "PRコメントにURLを追加"
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const branch = context.payload.pull_request.head.ref.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-            const url = `https://${branch}.digeclip.pages.dev`;
+            const url = `https://${branch}.digeclip-dev.pages.dev`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,

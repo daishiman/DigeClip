@@ -1,72 +1,26 @@
 -- 開発環境用シードデータ
+-- 注意: このファイルは開発環境専用です。本番環境では使用しないでください。
 
--- テストユーザーの作成
-INSERT INTO users (id, email, name, "createdAt", "updatedAt")
+-- ユーザーテーブルのサンプルデータ
+INSERT INTO "users" (id, email, name, created_at, updated_at)
 VALUES
-  ('00000000-0000-0000-0000-000000000002', 'test-prod@example.com', 'テストユーザー', NOW(), NOW());
+  ('1f8c3d4e-5b6a-7c8d-9e0f-1a2b3c4d5e6f', 'test@example.com', 'テストユーザー', NOW(), NOW()),
+  ('2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d', 'dev@example.com', '開発者ユーザー', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
--- テストソースの作成
-INSERT INTO sources (id, name, url, type, active, "userId", "createdAt", "updatedAt")
+-- ソーステーブルのサンプルデータ
+INSERT INTO "sources" (id, name, description, url, created_at, updated_at, user_id)
 VALUES
-  ('10000000-0000-0000-0000-000000000002', 'テスト YouTube チャンネル', 'https://www.youtube.com/channel/test', 'youtube', true, '00000000-0000-0000-0000-000000000002', NOW(), NOW()),
-  ('10000000-0000-0000-0000-000000000003', 'テスト RSS フィード', 'https://example.com/feed', 'rss', true, '00000000-0000-0000-0000-000000000002', NOW(), NOW()),
-  ('10000000-0000-0000-0000-000000000004', 'テスト arXiv', 'https://arxiv.org/search', 'arxiv', true, '00000000-0000-0000-0000-000000000002', NOW(), NOW());
+  ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'テスト記事', 'テスト用の記事ソース', 'https://example.com/article1', NOW(), NOW(), '1f8c3d4e-5b6a-7c8d-9e0f-1a2b3c4d5e6f'),
+  ('b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', '開発ドキュメント', '開発用のドキュメントソース', 'https://example.com/dev-docs', NOW(), NOW(), '2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d')
+ON CONFLICT (id) DO NOTHING;
 
--- YouTubeソース特有の情報
-INSERT INTO youtube_sources (id, "channelId")
+-- コンテンツテーブルのサンプルデータ
+INSERT INTO "contents" (id, title, body, source_id, created_at, updated_at, user_id)
 VALUES
-  ('10000000-0000-0000-0000-000000000002', 'UCxxxxxxxxxxxxxxxxxxxxxxx');
+  ('c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f', 'テスト要約', 'これはテスト記事の要約です。テスト用に作成されました。', 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', NOW(), NOW(), '1f8c3d4e-5b6a-7c8d-9e0f-1a2b3c4d5e6f'),
+  ('d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a', '開発ドキュメント要約', 'これは開発ドキュメントの要約です。開発環境のテスト用に作成されました。', 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e', NOW(), NOW(), '2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d')
+ON CONFLICT (id) DO NOTHING;
 
--- RSSソース特有の情報
-INSERT INTO rss_sources (id, "feedUrl")
-VALUES
-  ('10000000-0000-0000-0000-000000000003', 'https://example.com/feed.xml');
-
--- arXivソース特有の情報
-INSERT INTO arxiv_sources (id, category, query)
-VALUES
-  ('10000000-0000-0000-0000-000000000004', 'cs.AI', 'machine learning');
-
--- テストコンテンツの作成
-INSERT INTO contents (id, title, description, url, "publishedAt", "fetchedAt", "sourceId")
-VALUES
-  ('20000000-0000-0000-0000-000000000002', 'テスト動画', 'これはテスト用の動画説明です', 'https://www.youtube.com/watch?v=test1', NOW() - INTERVAL '2 days', NOW(), '10000000-0000-0000-0000-000000000002'),
-  ('20000000-0000-0000-0000-000000000003', 'テスト記事', 'これはテスト用の記事説明です', 'https://example.com/article1', NOW() - INTERVAL '1 day', NOW(), '10000000-0000-0000-0000-000000000003'),
-  ('20000000-0000-0000-0000-000000000004', 'テスト論文', 'これはテスト用の論文説明です', 'https://arxiv.org/abs/xxxx.xxxxx', NOW(), NOW(), '10000000-0000-0000-0000-000000000004');
-
--- AIモデルの作成
-INSERT INTO ai_models (id, name, provider, version, "createdAt", "updatedAt")
-VALUES
-  ('30000000-0000-0000-0000-000000000002', 'GPT-4', 'OpenAI', '4.0', NOW(), NOW()),
-  ('30000000-0000-0000-0000-000000000003', 'Claude', 'Anthropic', '3.0', NOW(), NOW());
-
--- サマリーデータの作成
-INSERT INTO summaries (id, "contentId", "aiModelId", summary, stage, "createdAt", "updatedAt")
-VALUES
-  ('40000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'この動画は人工知能についての概要を説明しています。', 'published', NOW(), NOW()),
-  ('40000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000003', 'この記事はプログラミング技術について解説しています。', 'published', NOW(), NOW());
-
--- タグの作成
-INSERT INTO tags (id, name, "createdAt", "updatedAt")
-VALUES
-  ('50000000-0000-0000-0000-000000000002', 'AI', NOW(), NOW()),
-  ('50000000-0000-0000-0000-000000000003', 'プログラミング', NOW(), NOW()),
-  ('50000000-0000-0000-0000-000000000004', '研究', NOW(), NOW());
-
--- コンテンツとタグの関連付け
-INSERT INTO content_tags ("contentId", "tagId", "createdAt")
-VALUES
-  ('20000000-0000-0000-0000-000000000002', '50000000-0000-0000-0000-000000000002', NOW()),
-  ('20000000-0000-0000-0000-000000000003', '50000000-0000-0000-0000-000000000003', NOW()),
-  ('20000000-0000-0000-0000-000000000004', '50000000-0000-0000-0000-000000000002', NOW()),
-  ('20000000-0000-0000-0000-000000000004', '50000000-0000-0000-0000-000000000004', NOW());
-
--- アプリ設定
-INSERT INTO app_settings (id, "userId", theme, language, notifications, "createdAt", "updatedAt")
-VALUES
-  ('60000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', 'dark', 'ja', true, NOW(), NOW());
-
--- 通知データ
-INSERT INTO notifications (id, "userId", type, message, read, "createdAt")
-VALUES
-  ('70000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', 'new_content', '新しいコンテンツが追加されました', false, NOW());
+-- メモ：実際のスキーマに合わせて適宜調整してください。
+-- テーブル名やカラム名はPrismaスキーマに合わせる必要があります。

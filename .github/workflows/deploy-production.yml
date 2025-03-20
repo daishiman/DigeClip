@@ -1,0 +1,69 @@
+name: Deploy to Cloudflare Pages (Production)
+
+on:
+  push:
+    branches:
+      - production
+      - main
+
+# 権限設定
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_IS_CLOUDFLARE_PAGES: 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'digeclip/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: digeclip
+        run: npm ci
+
+      - name: Create environment file
+        working-directory: digeclip
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL }}" > .env
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.PROD_SUPABASE_ANON_KEY }}" >> .env
+          echo "NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true" >> .env
+          echo "NODE_ENV=production" >> .env
+
+      - name: Build application
+        working-directory: digeclip
+        run: npm run build:cf
+
+      - name: Verify build output
+        run: |
+          # ビルド出力ディレクトリが存在するか確認
+          if [ -d "digeclip/out" ]; then
+            echo "digeclip/outディレクトリが見つかりました"
+          else
+            echo "警告: ビルド出力ディレクトリが見つかりませんでした"
+            find . -type d -name "out" -o -name ".next" | grep -v "node_modules"
+            exit 1
+          fi
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: digeclip
+          directory: digeclip/out
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref || github.ref_name }}
+          wranglerVersion: '3'

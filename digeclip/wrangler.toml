@@ -2,7 +2,7 @@ name = "digeclip"
 compatibility_date = "2023-12-01"
 
 [build]
-command = "npm install && npm run build:cf"
+command = "npm install && NODE_OPTIONS='--max-old-space-size=4096' npm run build:cf"
 cwd = "."
 watch_dir = "src"
 output_dir = "out"
@@ -11,13 +11,15 @@ node_compat = true
 [build.environment]
 NODE_VERSION = "20"
 NPM_VERSION = "10"
+NODE_ENV = "production"
+NEXT_PUBLIC_IS_CLOUDFLARE_PAGES = "true"
 
 [site]
 bucket = "out"
 pages_build_output_dir = "out"
 
 [env.production]
-vars = { NODE_ENV = "production" }
+vars = { NODE_ENV = "production", NEXT_PUBLIC_IS_CLOUDFLARE_PAGES = "true" }
 
 [env.preview]
-vars = { NODE_ENV = "development" }
+vars = { NODE_ENV = "development", NEXT_PUBLIC_IS_CLOUDFLARE_PAGES = "true" }

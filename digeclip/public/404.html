@@ -1,68 +1,91 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>404 - ページが見つかりません</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - ページが見つかりません | DigeClip</title>
     <style>
-      body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        background-color: #f9fafb;
-        color: #111827;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-      }
-      .container {
-        text-align: center;
-        padding: 2rem;
-        max-width: 600px;
-      }
-      h1 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-      }
-      p {
-        font-size: 1.125rem;
-        color: #4b5563;
-        margin-bottom: 2rem;
-      }
-      .home-link {
-        display: inline-block;
-        background-color: #3b82f6;
-        color: white;
-        font-weight: 600;
-        padding: 0.75rem 1.25rem;
-        border-radius: 0.375rem;
-        text-decoration: none;
-        transition: background-color 0.15s ease;
-      }
-      .home-link:hover {
-        background-color: #2563eb;
-      }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            color: #666;
+        }
+        .home-button {
+            display: inline-block;
+            background-color: #3B82F6;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .home-button:hover {
+            background-color: #2563EB;
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 2rem;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a1a;
+                color: #f0f0f0;
+            }
+            p {
+                color: #b0b0b0;
+            }
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="container">
-      <h1>404 - ページが見つかりません</h1>
-      <p>お探しのページは存在しないか、移動した可能性があります。</p>
-      <a href="/" class="home-link">ホームに戻る</a>
+        <h1>404 - ページが見つかりません</h1>
+        <p>お探しのページは存在しないか、移動した可能性があります。</p>
+        <a href="/" class="home-button" id="homeButton">ホームに戻る</a>
     </div>
-
     <script>
-      // スタティックな404ページでのリダイレクト処理
-      document.addEventListener('DOMContentLoaded', function () {
-        // ホームへのリンクがクリックされたときの処理
-        const homeLink = document.querySelector('.home-link');
-        homeLink.addEventListener('click', function (e) {
-          e.preventDefault();
-          window.location.href = '/';
+        // ホームページへのリダイレクトを処理
+        document.getElementById('homeButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/';
         });
-      });
+
+        // 404エラーがビルドエラーによる場合を検出して対応
+        document.addEventListener('DOMContentLoaded', function() {
+            // URLパスがアプリケーションのルートと一致しない場合、ホームにリダイレクト
+            if (window.location.pathname !== '/' &&
+                !window.location.pathname.startsWith('/_next') &&
+                !window.location.pathname.startsWith('/api')) {
+
+                console.log('不明なパスを検出: ' + window.location.pathname + ' - ホームにリダイレクトします');
+
+                // 5秒後に自動的にホームページにリダイレクト
+                setTimeout(function() {
+                    window.location.href = '/';
+                }, 5000);
+            }
+        });
     </script>
-  </body>
+</body>
 </html>

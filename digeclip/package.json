@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "cross-env NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true next build",
+    "build:cf": "next build && next export -o out",
+    "build:static": "cross-env NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true NEXT_PUBLIC_STATIC_EXPORT=true NODE_OPTIONS='--max-old-space-size=4096' next build",
     "clean": "rm -rf .next",
     "clean:build": "npm run clean && npm run build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint --ext .js,.ts,.tsx .",
     "lint:fix": "next lint --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -20,7 +21,15 @@
     "prepare": "husky",
     "local-ci": "npm run lint && npm run type-check && npm test && npm run format -- --check",
     "verify": "npm run local-ci",
-    "seed:dev": "cat ./prisma/seeds/dev_seed.sql | npx prisma db execute --stdin"
+    "seed:dev": "cat ./prisma/seeds/dev_seed.sql | npx prisma db execute --stdin",
+    "use:dev": "node scripts/environment-switch.js dev",
+    "use:prod": "node scripts/environment-switch.js prod",
+    "studio:dev": "cp .env.development .env && npx prisma studio",
+    "studio:prod": "cp .env.production .env && npx prisma studio",
+    "seed:prod": "cp .env.production .env && cat ./prisma/seeds/prod_seed.sql | npx prisma db execute --stdin",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

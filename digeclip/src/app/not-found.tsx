@@ -5,8 +5,9 @@ import dynamic from 'next/dynamic';
 
 // 明示的にサーバーサイドでのレンダリングを防止
 // 静的生成時のエラーを回避
-// 注: 変数名を変えてTypeScriptエラーを回避
+// Next.js 13.4以降の静的生成環境では非推奨のため変数名を変更
 export const dynamicRendering = 'force-dynamic';
+export const runtime = 'edge'; // エッジランタイムを指定して静的生成から除外
 
 // 基本的なローディング表示コンポーネント
 const LoadingComponent = () => (
@@ -17,10 +18,10 @@ const LoadingComponent = () => (
   </div>
 );
 
-// クライアントサイドでのみロードされるコンポーネント
-// fallbackコンポーネントを明示的に定義して再利用
+// 環境変数アクセスに依存しないように修正
+// クライアントサイドでのみロードされるコンポーネントを使用
 const NotFoundContent = dynamic(() => import('../components/error/NotFoundContent'), {
-  ssr: false,
+  ssr: false, // サーバーサイドレンダリングを無効化
   loading: () => <LoadingComponent />,
 });
 
@@ -29,6 +30,7 @@ export default function NotFound() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // クライアントサイドでのみ実行
     setMounted(true);
   }, []);
 

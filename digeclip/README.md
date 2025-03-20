@@ -379,3 +379,32 @@ digeclip/src/
 - サービスレイヤー: 80%以上
 - React Queryフック: 80%以上
 - UIコンポーネント: 70%以上
+
+## 環境
+
+DigeClipは複数の環境をサポートしています：
+
+- **開発環境**: ローカル開発とテスト用
+
+  - Supabase: `digeclip-dev` プロジェクト
+  - デプロイ: `development` ブランチから自動デプロイ
+  - URL: https://digeclip-dev.pages.dev/
+
+- **本番環境**: 実際のユーザー向け本番サービス
+  - Supabase: `digeclip-prod` プロジェクト
+  - デプロイ: `production` ブランチから自動デプロイ
+  - URL: https://digeclip.pages.dev/
+
+### 環境の切り替え
+
+開発と本番環境を切り替えるには以下のコマンドを使用します：
+
+```bash
+# 開発環境に切り替え
+npm run use:dev
+
+# 本番環境に切り替え
+npm run use:prod
+```
+
+詳細は [環境設定ガイド](./docs/environment-setup.md) を参照してください。

@@ -1,10 +1,13 @@
-name: テスト
+name: テスト実行
 
 on:
+  push:
+    branches: [ main, develop, development ]
   pull_request:
     types: [opened, synchronize]
+    branches: [ main, develop, development ]
 
-# 権限設定を追加
+# 権限設定
 permissions:
   contents: read
   pull-requests: read
@@ -19,55 +22,22 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'digeclip/package-lock.json'
 
       - name: 依存関係のインストール
-        run: |
-          echo "現在のディレクトリ構造を確認"
-          ls -la
-
-          if [ -f "digeclip/package.json" ]; then
-            cd digeclip
-            npm install
-          else
-            if [ -f "package.json" ]; then
-              npm install
-            else
-              echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
-              find . -name "package.json" -type f
-            fi
-          fi
+        working-directory: digeclip
+        run: npm ci
 
       - name: テストの実行
         id: run_test
+        working-directory: digeclip
         run: |
           TEST_SUCCESS=0
-          if [ -f "digeclip/package.json" ]; then
-            cd digeclip
-            if grep -q '"test":' package.json; then
-              npm test && TEST_SUCCESS=1 || echo "テストスクリプトの実行に失敗しました"
-            else
-              echo "警告: package.jsonにテストスクリプトが定義されていません"
-            fi
+          if grep -q '"test":' package.json; then
+            npm test -- --coverage && TEST_SUCCESS=1 || echo "テストスクリプトの実行に失敗しました"
           else
-            if [ -f "package.json" ]; then
-              if grep -q '"test":' package.json; then
-                npm test && TEST_SUCCESS=1 || echo "テストスクリプトの実行に失敗しました"
-              else
-                echo "警告: package.jsonにテストスクリプトが定義されていません"
-              fi
-            else
-              PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-              if [ ! -z "$PKG_DIR" ]; then
-                cd $PKG_DIR
-                if grep -q '"test":' package.json; then
-                  npm test && TEST_SUCCESS=1 || echo "テストスクリプトの実行に失敗しました"
-                else
-                  echo "警告: package.jsonにテストスクリプトが定義されていません"
-                fi
-              else
-                echo "package.jsonが見つからないためテストを実行できません"
-              fi
-            fi
+            echo "警告: package.jsonにテストスクリプトが定義されていません"
           fi
           echo "test_success=$TEST_SUCCESS" >> $GITHUB_OUTPUT
 

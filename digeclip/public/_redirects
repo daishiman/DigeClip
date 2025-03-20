@@ -1,1 +1,12 @@
 /* /index.html 200
+
+# 特定のパスを除外（静的アセットは直接提供）
+/images/* /images/:splat 200
+/fonts/* /fonts/:splat 200
+/assets/* /assets/:splat 200
+
+# APIリクエストは404に転送（サーバーレス関数が処理する）
+/api/* /404.html 404
+
+# 404エラーハンドリング
+/* /404.html 404

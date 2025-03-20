@@ -47,6 +47,9 @@ const nextConfig = {
   // エラーページを静的生成から除外
   excludeDefaultMomentLocales: true,
 
+  // 静的生成に関する問題があるページをスキップ
+  skipTrailingSlashRedirect: true,
+
   // 静的生成をスキップする特殊ページ設定
   // Cloudflare Pages環境でのビルドエラーを回避するため
   pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'md', 'mdx'].filter(
@@ -54,7 +57,16 @@ const nextConfig = {
   ),
 
   // 静的エクスポート時に特定のページを除外
-  trailingSlash: true, // URLの末尾にスラッシュを追加（静的エクスポート時の整合性向上）
+  trailingSlash: true,
+
+  // 特定のページを静的生成から除外する設定
+  exportPathMap: async function () {
+    return {
+      '/': { page: '/' },
+      // not-foundページを明示的に除外
+      // 他の静的に生成するパスをここに追加可能
+    };
+  },
 
   // 環境変数のデフォルト値（ビルド時のみ使用される）
   env: {

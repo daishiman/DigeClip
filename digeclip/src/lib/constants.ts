@@ -2,36 +2,28 @@
  * API関連の定数
  */
 
-// デフォルトのAPI URL
-const DEFAULT_PROD_API_URL = 'https://api.digeclip.com/api';
-const DEFAULT_DEV_API_URL = 'http://localhost:3000/api';
-
-// 安全にNODE_ENVにアクセス
-const getNodeEnv = () => {
+// 環境変数の安全な取得
+export const safeGetEnv = (key: string, defaultValue: string = ''): string => {
   try {
-    // サーバーサイドかチェック
-    if (typeof process !== 'undefined' && typeof window === 'undefined') {
-      try {
-        if (process && process.env) {
-          return process.env.NODE_ENV || 'development';
-        }
-      } catch (e) {
-        console.warn('process.env.NODE_ENVの取得に失敗しました', e);
-      }
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env[key] || defaultValue;
     }
-
-    // クライアントサイドの場合はNext.jsの公開環境変数を使用（または開発環境と仮定）
-    try {
-      if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_NODE_ENV) {
-        return process.env.NEXT_PUBLIC_NODE_ENV;
-      }
-    } catch (e) {
-      console.warn('NEXT_PUBLIC_NODE_ENVの取得に失敗しました', e);
-    }
-
-    return 'development';
   } catch (e) {
-    console.warn('getNodeEnv関数でエラーが発生しました', e);
+    console.warn(`環境変数${key}の取得中にエラーが発生しました`, e);
+  }
+  return defaultValue;
+};
+
+// デフォルトのAPI URL
+export const DEFAULT_DEV_API_URL = 'http://localhost:3000/api';
+export const DEFAULT_PROD_API_URL = 'https://digeclip.com/api';
+
+// Node環境を安全に取得
+export const getNodeEnv = (): string => {
+  try {
+    return safeGetEnv('NODE_ENV', 'development');
+  } catch (e) {
+    console.warn('NODE_ENVの取得に失敗しました', e);
     return 'development';
   }
 };
@@ -60,17 +52,63 @@ const getApiUrl = () => {
   }
 };
 
-// APIのベースURL
-export const API_BASE_URL = getApiUrl();
+// 環境識別関数
+export const isDevEnvironment = (): boolean => {
+  try {
+    const env = getNodeEnv();
+    return env === 'development';
+  } catch {
+    // デフォルトでfalseを返す（本番環境と仮定）
+    return false;
+  }
+};
+
+export const isProdEnvironment = (): boolean => {
+  try {
+    const env = getNodeEnv();
+    return env === 'production';
+  } catch {
+    // デフォルトでtrueを返す（本番環境と仮定）
+    return true;
+  }
+};
 
 // テスト環境かどうかを判定する関数
-export const isTestEnvironment = () => {
+export const isTestEnvironment = (): boolean => {
   try {
-    return getNodeEnv() === 'test';
+    // 複数の条件で判定（Jest, Vitest等のテスト環境をカバー）
+    if (
+      getNodeEnv() === 'test' ||
+      (typeof process !== 'undefined' &&
+        (process.env.JEST_WORKER_ID !== undefined ||
+          process.env.VITEST !== undefined ||
+          process.env.NODE_ENV === 'test'))
+    ) {
+      return true;
+    }
+
+    // グローバル変数でJestの存在を確認
+    if (typeof global !== 'undefined' && (global as Record<string, unknown>).jest) {
+      return true;
+    }
+
+    return false;
   } catch {
     return false;
   }
 };
+
+// Cloudflare Pages環境かどうかを判定する関数
+export const isCloudflarePages = (): boolean => {
+  try {
+    return safeGetEnv('NEXT_PUBLIC_IS_CLOUDFLARE_PAGES', 'false') === 'true';
+  } catch {
+    return false;
+  }
+};
+
+// API URLをエクスポート
+export const API_URL = getApiUrl();
 
 // 認証関連のエンドポイント
 export const AUTH_ENDPOINTS = {
