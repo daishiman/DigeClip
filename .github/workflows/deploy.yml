@@ -33,7 +33,7 @@ jobs:
         run: |
           if [[ $GITHUB_REF == *"dev"* ]]; then
             echo "ENVIRONMENT=development" >> $GITHUB_OUTPUT
-            echo "PROJECT_NAME=digeclip-dev" >> $GITHUB_OUTPUT
+            echo "PROJECT_NAME=digeclip" >> $GITHUB_OUTPUT
             echo "ENV_FILE=.env.development" >> $GITHUB_OUTPUT
             echo "環境: 開発環境 (dev)" >> $GITHUB_STEP_SUMMARY
           elif [[ $GITHUB_REF == *"main"* ]]; then
