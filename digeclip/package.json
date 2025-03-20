@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "next build --output-export",
+    "build:cf": "next build",
     "build:static": "cross-env NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=true NEXT_PUBLIC_STATIC_EXPORT=true NODE_OPTIONS='--max-old-space-size=4096' next build",
     "clean": "rm -rf .next",
     "clean:build": "npm run clean && npm run build",
