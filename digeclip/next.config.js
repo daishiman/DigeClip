@@ -59,15 +59,6 @@ const nextConfig = {
   // 静的エクスポート時に特定のページを除外
   trailingSlash: true,
 
-  // 特定のページを静的生成から除外する設定
-  exportPathMap: async function () {
-    return {
-      '/': { page: '/' },
-      // not-foundページを明示的に除外
-      // 他の静的に生成するパスをここに追加可能
-    };
-  },
-
   // 環境変数のデフォルト値（ビルド時のみ使用される）
   env: {
     // Cloudflare Pages環境でのビルドに必要なデフォルト値
