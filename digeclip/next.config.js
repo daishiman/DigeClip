@@ -52,9 +52,7 @@ const nextConfig = {
 
   // 静的生成をスキップする特殊ページ設定
   // Cloudflare Pages環境でのビルドエラーを回避するため
-  pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'md', 'mdx'].filter(
-    ext => !ext.includes('not-found') && !ext.includes('error')
-  ),
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'md', 'mdx'],
 
   // 静的エクスポート時に特定のページを除外
   trailingSlash: true,
