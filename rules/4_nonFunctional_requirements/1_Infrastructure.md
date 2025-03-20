@@ -123,17 +123,39 @@
 
 3. **認証情報とAPI接続**
    - 環境ごとに異なるAPI URL、APIキー（anon key, service_role key）を使用
-   - 環境変数を使い分け（`.env.development`、`.env.production`）
-   - Cloudflare Pagesの環境変数設定で、開発/本番環境ごとに適切なSupabase接続情報を設定
+   - 環境変数設定：
+     - `.env.development`: 開発環境接続情報
+     - `.env.production`: 本番環境接続情報
+   - Cloudflare Pagesの環境変数設定：
+     - 開発環境: `DEV_SUPABASE_URL`, `DEV_SUPABASE_ANON_KEY` シークレット
+     - 本番環境: `PROD_SUPABASE_URL`, `PROD_SUPABASE_ANON_KEY` シークレット
 
-4. **テストデータ**
+4. **環境切り替えの実装**
+   - `constants.ts` で環境検出関数を実装：
+     - `isDevEnvironment()`: 開発環境かどうかを判定
+     - `isProdEnvironment()`: 本番環境かどうかを判定
+   - `supabase.ts` で環境に応じた接続先を自動選択：
+     - 開発環境: 開発用Supabaseプロジェクトに接続
+     - 本番環境: 本番用Supabaseプロジェクトに接続
+     - テスト環境: モッククライアントを使用
+   - 環境切替コマンド：
+     - `npm run use:dev`: 開発環境設定をアクティブに
+     - `npm run use:prod`: 本番環境設定をアクティブに
+
+5. **テストデータ**
    - 開発環境には、アプリケーションテスト用のサンプルデータを投入可能
    - 本番環境のデータは実際のユーザーデータのみを含み、テストデータは混入させない
    - 必要に応じて、本番データのサニタイズ版を開発環境にインポート（個人情報は除去）
 
-5. **セキュリティ対策**
+6. **GitHub ActionsによるCI/CD連携**
+   - 開発環境デプロイ時: `preview-deploy.yml` ワークフローで `DEV_SUPABASE_*` シークレットを使用
+   - 本番環境デプロイ時: `deploy-production.yml` ワークフローで `PROD_SUPABASE_*` シークレットを使用
+   - 環境変数の自動設定により、デプロイ先に応じた接続先を設定
+
+7. **セキュリティ対策**
    - 本番環境のデータベースアクセスは特に厳格に管理（限定された管理者のみアクセス可能）
    - 開発環境も基本的にはチーム内のみアクセス可能とし、外部公開しない
+   - 環境変数はGitHub Secretsで管理し、リポジトリに直接記載しない
 
 この環境分離により、開発者は安全に機能開発・実験ができ、本番環境のデータやサービス提供に影響を与えることなく迅速な開発サイクルを実現する。
 
