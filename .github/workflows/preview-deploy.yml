@@ -64,7 +64,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: digeclip-dev
+          projectName: digeclip
           directory: digeclip/out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref || github.ref_name }}
@@ -77,7 +77,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const branch = context.payload.pull_request.head.ref.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-            const url = `https://${branch}.digeclip-dev.pages.dev`;
+            const url = `https://${branch}.digeclip.pages.dev`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
