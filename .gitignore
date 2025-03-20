@@ -1,0 +1,26 @@
+# .env系ファイル（実際のAPIキー情報を含むファイル）
+.env
+.env.local
+.env.backup
+*.env.development.backup
+*.env.production.backup
+*.env.temp
+
+# Digeclip内のenv系ファイル
+digeclip/.env
+digeclip/.env.local
+digeclip/.env.backup
+digeclip/.env.development.backup
+digeclip/.env.production.backup
+digeclip/.env.temp
+
+# 個人設定など
+.DS_Store
+.vscode
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Node.js
+node_modules/
