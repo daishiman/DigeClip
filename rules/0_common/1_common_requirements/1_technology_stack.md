@@ -128,13 +128,25 @@
 ### マイグレーション管理
 
 1. **環境設定**
-   - 環境変数（`.env`ファイル）でデータベース接続を管理
-   - 開発環境（`.env.development`）、本番環境（`.env.production`）、テスト環境（`.env.test`）で分離
+   - 環境変数管理：
+     - `.env.development`: 開発環境設定（開発用Supabaseプロジェクト接続情報）
+     - `.env.production`: 本番環境設定（本番用Supabaseプロジェクト接続情報）
+     - `.env.test`: テスト環境設定（テスト用モック設定）
+   - 環境切替コマンド：
+     - `npm run use:dev`: 開発環境に切り替え
+     - `npm run use:prod`: 本番環境に切り替え
 
 2. **マイグレーションコマンド**
    - `npx prisma migrate dev`: 開発環境でのスキーマ変更とマイグレーション
-   - `npx prisma migrate deploy`: 本番環境でのマイグレーション適用（`.env`ファイルで接続先を切り替え）
+   - `npx prisma migrate deploy`: 本番環境でのマイグレーション適用
    - `npx prisma db push`: スキーマを直接データベースに反映（開発初期段階）
+
+3. **環境検出ロジック**
+   - `constants.ts` 内の関数で環境を自動検出：
+     - `isDevEnvironment()`: 開発環境かどうかを判定
+     - `isProdEnvironment()`: 本番環境かどうかを判定
+     - `isTestEnvironment()`: テスト環境かどうかを判定
+   - これらの関数を使用して、環境に応じた接続先を自動選択
 
 ### シードデータ
 
