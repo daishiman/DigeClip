@@ -76,7 +76,7 @@ jobs:
 
           # スキーマを適用
           echo "psqlコマンドを実行中..."
-          PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 -4 "sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_schema.sql
+          PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_schema.sql
           echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
 
           # シードデータの適用（開発環境のみ）
@@ -87,6 +87,6 @@ jobs:
             fi
 
             echo "シードデータを適用しています..."
-            PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 -4 "sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_seed.sql
+            PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_seed.sql
             echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
           fi
