@@ -22,68 +22,71 @@ jobs:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
 
-      - name: Supabase CLI をインストール
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
       - name: PostgreSQLクライアントをインストール
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: 環境変数を設定
-        id: set-env
+      - name: データベースデプロイ
         run: |
+          # 環境変数を設定
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
-            # GitHub Secretsから開発環境のプロジェクトIDを設定
-            echo "SUPABASE_PROJECT_ID=${{ secrets.DEV_SUPABASE_PROJECT_ID }}" >> $GITHUB_ENV
-            echo "SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}" >> $GITHUB_ENV
-            echo "DB_USER=${{ secrets.DEV_DB_USER }}" >> $GITHUB_ENV
-            echo "DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}" >> $GITHUB_ENV
-            echo "APPLY_SEED=true" >> $GITHUB_ENV
+            # 開発環境の設定
+            DB_HOST="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
+            DB_HOST="${DB_HOST#https://}"  # URLからhttps://を削除
+            DB_HOST="db.${DB_HOST}"       # dbプレフィックスを追加
+            DB_USER="${{ secrets.DEV_DB_USER }}"
+            DB_PASSWORD="${{ secrets.DEV_DB_PASSWORD }}"
+            APPLY_SEED=true
             echo "環境: 開発環境 (シードデータ適用あり)" >> $GITHUB_STEP_SUMMARY
-            echo "Supabase Project ID: ${{ secrets.DEV_SUPABASE_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
           elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
-            # GitHub Secretsから本番環境のプロジェクトIDを設定
-            echo "SUPABASE_PROJECT_ID=${{ secrets.PROD_SUPABASE_PROJECT_ID }}" >> $GITHUB_ENV
-            echo "SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}" >> $GITHUB_ENV
-            echo "DB_USER=${{ secrets.PROD_DB_USER }}" >> $GITHUB_ENV
-            echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> $GITHUB_ENV
-            echo "APPLY_SEED=false" >> $GITHUB_ENV
-            echo "環境: 本番環境 (スキーマのみ適用、シードデータなし)" >> $GITHUB_STEP_SUMMARY
-            echo "Supabase Project ID: ${{ secrets.PROD_SUPABASE_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
+            # 本番環境の設定
+            DB_HOST="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
+            DB_HOST="${DB_HOST#https://}"  # URLからhttps://を削除
+            DB_HOST="db.${DB_HOST}"       # dbプレフィックスを追加
+            DB_USER="${{ secrets.PROD_DB_USER }}"
+            DB_PASSWORD="${{ secrets.PROD_DB_PASSWORD }}"
+            APPLY_SEED=false
+            echo "環境: 本番環境 (スキーマのみ適用)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "サポートされていないブランチです: $GITHUB_REF"
+            exit 1
           fi
 
-      - name: スキーマをデプロイ
-        run: |
           # スキーマファイルの存在確認
           if [[ ! -f "digeclip/seeds/dev_schema.sql" ]]; then
             echo "Error: digeclip/seeds/dev_schema.sql ファイルが見つかりません。"
             exit 1
           fi
 
-          # 両環境ともにスキーマを適用
-          CONNECTION_STRING="postgresql://${DB_USER}:${DB_PASSWORD}@db.${SUPABASE_PROJECT_ID}.supabase.co:5432/postgres"
-          # ここでpsqlコマンドを使用してSQLファイルを実行
-          PGPASSWORD="${DB_PASSWORD}" psql "sslmode=require hostname-type=ip4 host=db.${SUPABASE_PROJECT_ID}.supabase.co port=5432 user=${DB_USER} dbname=postgres" -f digeclip/seeds/dev_schema.sql
+          # IPv4強制のために接続文字列を調整
+          echo "スキーマを適用しています..."
+          export PGPASSWORD="$DB_PASSWORD"
 
-          if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
-            echo "開発環境用スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
-          elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
-            echo "本番環境用スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+          # 接続情報をログに出力（パスワードは除く）
+          echo "データベース接続情報: ホスト=$DB_HOST, ユーザー=$DB_USER"
+
+          # ホスト名をIPアドレスに解決（IPv4を強制）
+          DB_IP=$(getent ahostsv4 "$DB_HOST" | head -n 1 | awk '{print $1}')
+          if [ -z "$DB_IP" ]; then
+            echo "警告: IPv4アドレスを解決できません。ホスト名を直接使用します。"
+          else
+            echo "ホスト名を解決: $DB_HOST → $DB_IP"
+            # IPアドレスを使用
+            DB_HOST="$DB_IP"
           fi
 
-      - name: 開発環境にシードデータを適用
-        if: env.APPLY_SEED == 'true'
-        run: |
-          # シードファイルの存在確認
-          if [[ ! -f "digeclip/seeds/dev_seed.sql" ]]; then
-            echo "Error: digeclip/seeds/dev_seed.sql ファイルが見つかりません。"
-            exit 1
-          fi
+          # スキーマを適用
+          echo "psqlコマンドを実行中..."
+          PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 -4 "sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_schema.sql
+          echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
 
-          echo "開発環境用シードデータを適用します"
-          # ここでpsqlコマンドを使用してシードSQLファイルを実行
-          PGPASSWORD="${DB_PASSWORD}" psql "sslmode=require hostname-type=ip4 host=db.${SUPABASE_PROJECT_ID}.supabase.co port=5432 user=${DB_USER} dbname=postgres" -f digeclip/seeds/dev_seed.sql
-          echo "開発環境用シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
+          # シードデータの適用（開発環境のみ）
+          if [[ "$APPLY_SEED" == "true" ]]; then
+            if [[ ! -f "digeclip/seeds/dev_seed.sql" ]]; then
+              echo "Error: digeclip/seeds/dev_seed.sql ファイルが見つかりません。"
+              exit 1
+            fi
+
+            echo "シードデータを適用しています..."
+            PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 -4 "sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_seed.sql
+            echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
+          fi
