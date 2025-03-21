@@ -2,7 +2,7 @@
 
 ## プロジェクト概要
 
-DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブログなど）の新着情報を自動的に収集し、複数のAIモデル（OpenAI、Claude、Geminiなど）を用いて要約を生成し、Discordに通知するとともに、アプリ上でも閲覧できるシステムです
+DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブログなど）の新着情報を自動的に収集し、複数のAIモデル（OpenAI、Claude、Geminiなど）を用いて要約を生成し、Discordに通知するとともに、アプリ上でも閲覧できるシステムです。
 
 ### 目的
 
@@ -21,8 +21,9 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 ## 技術スタック
 
 ### フロントエンド
-- **Next.js 14**: Reactベースのフルスタックフレームワーク（App Router採用）
-- **TypeScript 5.x**: 型安全なJavaScript
+
+- **Next.js**: Reactベースのフルスタックフレームワーク
+- **TypeScript**: 型安全なJavaScript
 - **Tailwind CSS**: ユーティリティファーストのCSSフレームワーク
 - **Shadcn UI**: Tailwind CSSベースのコンポーネントライブラリ
 - **React Hook Form**: フォーム管理
@@ -33,14 +34,16 @@ DigeClipは、YouTubeチャンネルや外部コンテンツ（論文、ブロ�
 - **Next Intl**: 国際化
 
 ### バックエンド
+
 - **Next.js API Routes**: サーバーサイド機能
-- **Supabase**: PostgreSQLデータベース（無料枠）、認証（メール・Google）
+- **Supabase**: PostgreSQLデータベース（無料枠）、認証（メール・Googleアカウント）
 - **Cloudflare Pages**: ホスティングとEdge Functions
 - **ngrok**: ローカル開発環境の外部公開
 
 ## 始め方
 
 ### 必要条件
+
 - Node.js 18.18.0以上
 - npm 8.19.3以上
 - ngrok（認証コールバックテスト用）
@@ -60,6 +63,48 @@ npm run dev
 ```
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開くと、アプリケーションが表示されます。
+
+## ローカル開発環境の公開
+
+外部からローカル開発環境にアクセスするには、ngrokを使用します。
+
+### ngrokのインストールと設定
+
+1. ngrokをインストール:
+   ```bash
+   npm install -g ngrok
+   ```
+
+2. ngrokアカウントを作成し、認証トークンを取得:
+   - [ngrokダッシュボード](https://dashboard.ngrok.com/signup)にサインアップ
+   - 「Your Authtoken」ページで認証トークンを確認
+   - トークンを設定:
+   ```bash
+   ngrok config add-authtoken your_auth_token_here
+   ```
+
+### ローカル環境の公開手順
+
+1. ローカル開発サーバーを起動:
+   ```bash
+   npm run dev
+   ```
+
+2. 別のターミナルでngrokを起動:
+   ```bash
+   npm run ngrok
+   ```
+
+3. 表示されたURLを使って外部からアクセス可能
+   例: `https://1a2b3c4d.ngrok.io`
+
+4. Supabaseの認証リダイレクトURLに、表示されたngrok URLを一時的に追加：
+   `https://1a2b3c4d.ngrok.io/api/auth/callback`
+
+5. `.env.development.local`ファイルを更新:
+   ```
+   NEXT_PUBLIC_URL=https://1a2b3c4d.ngrok.io
+   ```
 
 ### 環境変数の設定
 
@@ -144,15 +189,6 @@ npm run build:mdc
 3. カテゴリごとにMDCファイルを生成
 4. `.cursor/available_instructions.txt` ファイルを生成
 
-生成されるMDCファイル：
-- `000_common_requirements.mdc`: 共通要件
-- `001_business_requirements.mdc`: ビジネス要件
-- `002_backend_requirements.mdc`: バックエンド機能要件
-- `003_frontend_requirements.mdc`: フロントエンド機能要件
-- `004_nonFunctional_requirements.mdc`: 非機能要件
-- `005_development_process.mdc`: 開発プロセス
-- `006_risk_and_release_plan.mdc`: リスクとリリース計画
-
 ## テスト実行
 
 プロジェクトでは、Jest、React Testing Library、Cypressを使用してテストを実施しています。
@@ -176,19 +212,32 @@ npm run test:e2e
 npm run test:all
 ```
 
-### テスト戦略
+## 開発ワークフロー
 
-プロジェクトでは以下のテストレベルを採用しています：
+### ローカルCI実行
 
-1. **単体テスト**: 個々の関数、メソッド、コンポーネントをテスト
-2. **統合テスト**: 複数のモジュール間の連携をテスト
-3. **E2Eテスト**: アプリケーション全体のフローをテスト
+PRを作成する前に、ローカルでGitHubのCIと同じチェックを実行することができます。これにより、PRを作成する前に問題を修正することができます。
 
-詳細なテスト戦略は `.cursor/rules/000_common_requirements.mdc` ファイルに定義されています。
+```bash
+# すべてのチェック（lint、型チェック、テスト、フォーマット）を実行
+npm run verify
 
-## デプロイとCI/CD
+# または、スクリプトを直接実行
+./scripts/local-ci.sh
+```
 
-プロジェクトではCloudflare Pagesを使用して、開発環境と本番環境を分離した自動デプロイを実装しています。
+### Git Hooks
+
+以下のGit Hooksが設定されています：
+
+- **pre-add**: addする前に変更されたファイルに関連するテストを実行します
+- **pre-commit**: コミット前に変更されたファイルのみをチェックします（digeclipディレクトリ内）
+- **pre-push**: プッシュ前にすべてのテスト、リント、型チェックを実行します
+
+この段階的な検証アプローチにより、以下のメリットがあります：
+- **迅速なフィードバック**: 変更を加えるたびに即座に関連テストだけを実行
+- **効率的な開発**: 全テスト実行の前に問題を早期発見
+- **品質の確保**: コミット前の基本チェックとプッシュ前の完全検証
 
 ## ブランチ戦略とデプロイフロー
 
@@ -232,8 +281,6 @@ GitHub Actionsにより、以下のワークフローが自動化されていま
 - 依存関係のキャッシュによる実行時間短縮
 - 明示的なディレクトリ構造認識
 - ブランチ名に基づく自動環境設定
-
-詳細なワークフロー設定は、リポジトリのルートディレクトリにある `.github/workflows` フォルダをご確認ください。
 
 ## 貢献
 

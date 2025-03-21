@@ -7,6 +7,7 @@ Some rules may be automatically attached to the conversation if the user attache
 000_common_requirements: 共通要件
 000_common_tech_stack: 共通技術スタック
 000_common_test_strategy: テスト戦略
+000_common_ngrok_development: ngrokによるローカル開発環境の公開設定
 001_business_requirements: ビジネス要件の定義
 002_backend_requirements: バックエンド機能要件
 003_frontend_requirements: フロントエンド機能要件

@@ -45,6 +45,14 @@ const mdcConfigurations = [
     sortBy: "name",
   },
   {
+    output: ".cursor/rules/000_common_ngrok_development.mdc",
+    sourceDir: "rules/0_common/5_development_environment",
+    header:
+      '---\ndescription: ngrokによるローカル開発環境の公開設定\nglobs: ["**/scripts/start-ngrok.sh", "**/package.json", "**/.env.*.local"]\nalwaysApply: false\n---\n# ngrokによるローカル開発環境の公開設定\n\n',
+    filePattern: "**/*.md",
+    sortBy: "name",
+  },
+  {
     output: ".cursor/rules/001_business_requirements.mdc",
     sourceDir: "rules/1_business_requirements",
     header:
