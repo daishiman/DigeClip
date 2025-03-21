@@ -30,7 +30,7 @@ jobs:
           # 環境変数を設定
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             # 開発環境の設定
-            DB_HOST="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
+            DB_HOST="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_DEV }}"
             DB_HOST="${DB_HOST#https://}"  # URLからhttps://を削除
             DB_HOST="db.${DB_HOST}"       # dbプレフィックスを追加
             DB_USER="${{ secrets.DEV_DB_USER }}"
@@ -39,7 +39,7 @@ jobs:
             echo "環境: 開発環境 (シードデータ適用あり)" >> $GITHUB_STEP_SUMMARY
           elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
             # 本番環境の設定
-            DB_HOST="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
+            DB_HOST="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}"
             DB_HOST="${DB_HOST#https://}"  # URLからhttps://を削除
             DB_HOST="db.${DB_HOST}"       # dbプレフィックスを追加
             DB_USER="${{ secrets.PROD_DB_USER }}"
