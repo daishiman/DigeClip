@@ -32,41 +32,38 @@ jobs:
           which psql || echo "psqlコマンドが見つかりません"
           psql --version || echo "psqlのバージョン取得に失敗"
 
-          # デバッグ: PostgreSQLクライアントのバイナリディレクトリをリスト
-          ls -la /usr/bin/psql || echo "/usr/bin/psql が存在しません"
-          ls -la /usr/lib/postgresql/ || echo "/usr/lib/postgresql/ ディレクトリが存在しません"
-
-          # psqlコマンドへのシンボリックリンクを作成（必要に応じて）
-          if [ ! -f /usr/bin/psql ]; then
-            echo "psqlコマンドが見つからないため、シンボリックリンクを作成します"
-            PSQL_PATH=$(find /usr/lib/postgresql -name psql -type f | head -n 1)
-            if [ -n "$PSQL_PATH" ]; then
-              sudo ln -s $PSQL_PATH /usr/bin/psql
-              echo "シンボリックリンクを作成しました: $PSQL_PATH -> /usr/bin/psql"
-            else
-              echo "psqlコマンドが見つかりません。インストールに失敗した可能性があります。"
-            fi
-          fi
-
       - name: Supabase CLI をインストール
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
+      - name: Supabase CLIバージョンを確認
+        run: |
+          # Supabase CLIのバージョン確認
+          supabase --version
+          # 利用可能なコマンドの確認
+          supabase -h
+
       - name: 環境変数を設定
         id: set-env
         run: |
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
-            # GitHub Secretsから開発環境のプロジェクトIDを設定
+            # GitHub Secretsから開発環境の設定を使用
             echo "SUPABASE_PROJECT_ID=${{ secrets.DEV_SUPABASE_PROJECT_ID }}" >> $GITHUB_ENV
             echo "SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}" >> $GITHUB_ENV
+            echo "SUPABASE_DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}" >> $GITHUB_ENV
+            echo "SUPABASE_DB_HOST=db.${{ secrets.DEV_SUPABASE_PROJECT_ID }}.supabase.co" >> $GITHUB_ENV
+            echo "SUPABASE_DB_USER=postgres" >> $GITHUB_ENV
             echo "APPLY_SEED=true" >> $GITHUB_ENV
             echo "環境: 開発環境 (シードデータ適用あり)" >> $GITHUB_STEP_SUMMARY
             echo "Supabase Project ID: ${{ secrets.DEV_SUPABASE_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
           elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
-            # GitHub Secretsから本番環境のプロジェクトIDを設定
+            # GitHub Secretsから本番環境の設定を使用
             echo "SUPABASE_PROJECT_ID=${{ secrets.PROD_SUPABASE_PROJECT_ID }}" >> $GITHUB_ENV
             echo "SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}" >> $GITHUB_ENV
+            echo "SUPABASE_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> $GITHUB_ENV
+            echo "SUPABASE_DB_HOST=db.${{ secrets.PROD_SUPABASE_PROJECT_ID }}.supabase.co" >> $GITHUB_ENV
+            echo "SUPABASE_DB_USER=postgres" >> $GITHUB_ENV
             echo "APPLY_SEED=false" >> $GITHUB_ENV
             echo "環境: 本番環境 (スキーマのみ適用、シードデータなし)" >> $GITHUB_STEP_SUMMARY
             echo "Supabase Project ID: ${{ secrets.PROD_SUPABASE_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
@@ -75,11 +72,17 @@ jobs:
           # デバッグ: 設定された環境変数の確認（機密情報は除く）
           echo "GITHUB_REF: $GITHUB_REF"
           echo "APPLY_SEED: $APPLY_SEED"
+          echo "SUPABASE_DB_HOST: $SUPABASE_DB_HOST"
+          echo "SUPABASE_DB_USER: $SUPABASE_DB_USER"
 
       - name: 接続情報の検証
         run: |
           # Supabase CLIの接続テスト
           echo "Supabase CLIの接続テスト中..."
+          # ドキュメント通りに必要な環境変数が設定されているか確認
+          echo "必要な環境変数: SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_ID, SUPABASE_DB_PASSWORD"
+
+          # プロジェクト一覧を取得して接続テスト
           supabase projects list --debug > cli_test.log 2>&1
 
           if [ $? -ne 0 ]; then
@@ -102,9 +105,13 @@ jobs:
           echo "スキーマファイルの確認（最初の10行）:"
           head -n 10 digeclip/seeds/dev_schema.sql
 
-          # 両環境ともにスキーマを適用
-          echo "Supabase CLIを使用してスキーマを適用中..."
-          cat digeclip/seeds/dev_schema.sql | supabase db query --project-ref $SUPABASE_PROJECT_ID
+          # psqlでの接続と実行テスト
+          echo "psqlの接続テスト..."
+          PGPASSWORD=$SUPABASE_DB_PASSWORD psql -h $SUPABASE_DB_HOST -U $SUPABASE_DB_USER -p 5432 -d postgres -c "SELECT current_database(), current_user" || echo "psql接続テストに失敗しました"
+
+          # スキーマを適用
+          echo "psqlを使用してスキーマを適用しています..."
+          PGPASSWORD=$SUPABASE_DB_PASSWORD psql -h $SUPABASE_DB_HOST -U $SUPABASE_DB_USER -p 5432 -d postgres -f digeclip/seeds/dev_schema.sql
 
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             echo "開発環境用スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
@@ -126,11 +133,14 @@ jobs:
           head -n 10 digeclip/seeds/dev_seed.sql
 
           echo "開発環境用シードデータを適用します"
-          cat digeclip/seeds/dev_seed.sql | supabase db query --project-ref $SUPABASE_PROJECT_ID
+          # psqlを使用してシードデータを適用
+          PGPASSWORD=$SUPABASE_DB_PASSWORD psql -h $SUPABASE_DB_HOST -U $SUPABASE_DB_USER -p 5432 -d postgres -f digeclip/seeds/dev_seed.sql
+
           echo "開発環境用シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
 
       - name: デプロイ結果の確認
         run: |
           echo "デプロイ処理が完了しました"
           echo "日時: $(date)"
+          echo "環境: $([[ $GITHUB_REF == 'refs/heads/dev' ]] && echo '開発環境' || echo '本番環境')"
           echo "GitHub Action 実行URL: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
