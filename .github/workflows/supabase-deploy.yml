@@ -27,6 +27,11 @@ jobs:
         with:
           version: latest
 
+      - name: PostgreSQLクライアントをインストール
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
       - name: 環境変数を設定
         id: set-env
         run: |
@@ -60,7 +65,8 @@ jobs:
 
           # 両環境ともにスキーマを適用
           CONNECTION_STRING="postgresql://${DB_USER}:${DB_PASSWORD}@db.${SUPABASE_PROJECT_ID}.supabase.co:5432/postgres"
-          supabase db execute -f digeclip/seeds/dev_schema.sql --connection-string "$CONNECTION_STRING"
+          # ここでpsqlコマンドを使用してSQLファイルを実行
+          PGPASSWORD="${DB_PASSWORD}" psql "sslmode=require host=db.${SUPABASE_PROJECT_ID}.supabase.co port=5432 user=${DB_USER} dbname=postgres" -f digeclip/seeds/dev_schema.sql
 
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             echo "開発環境用スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
@@ -78,6 +84,6 @@ jobs:
           fi
 
           echo "開発環境用シードデータを適用します"
-          CONNECTION_STRING="postgresql://${DB_USER}:${DB_PASSWORD}@db.${SUPABASE_PROJECT_ID}.supabase.co:5432/postgres"
-          supabase db execute -f digeclip/seeds/dev_seed.sql --connection-string "$CONNECTION_STRING"
+          # ここでpsqlコマンドを使用してシードSQLファイルを実行
+          PGPASSWORD="${DB_PASSWORD}" psql "sslmode=require host=db.${SUPABASE_PROJECT_ID}.supabase.co port=5432 user=${DB_USER} dbname=postgres" -f digeclip/seeds/dev_seed.sql
           echo "開発環境用シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
