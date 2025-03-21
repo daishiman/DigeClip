@@ -8,9 +8,18 @@
 /
 ├─ /rules                 # 設計・仕様ドキュメント
 │   ├─ /0_common          # 共通仕様
-│   ├─ /1_business        # ビジネス要件
-│   ├─ /2_backend         # バックエンド仕様
-│   └─ /3_frontend        # フロントエンド仕様
+│   │   ├─ /1_common_requirements  # 共通要件
+│   │   ├─ /2_coding_conventions   # コーディング規約
+│   │   ├─ /3_directory_structure  # ディレクトリ構造
+│   │   ├─ /4_test_strategy        # テスト戦略
+│   │   └─ /5_development_environment # 開発環境設定
+│   │
+│   ├─ /1_business_requirements    # ビジネス要件
+│   ├─ /2_backend_functional_requirements  # バックエンド仕様
+│   ├─ /3_frontend_functional_requirements # フロントエンド仕様
+│   ├─ /4_nonFunctional_requirements       # 非機能要件
+│   ├─ /5_development_process              # 開発プロセス
+│   └─ /6_risk_and_release_plan            # リスクとリリース計画
 │
 ├─ /digeclip              # メインアプリケーション
 │   ├─ /public            # 静的ファイル

@@ -60,6 +60,48 @@ npm run dev
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開くと、アプリケーションが表示されます。
 
+## ローカル開発環境の公開
+
+外部からローカル開発環境にアクセスするには、ngrokを使用します。
+
+### ngrokのインストールと設定
+
+1. ngrokをインストール:
+   ```bash
+   npm install -g ngrok
+   ```
+
+2. ngrokアカウントを作成し、認証トークンを取得:
+   - [ngrokダッシュボード](https://dashboard.ngrok.com/signup)にサインアップ
+   - 「Your Authtoken」ページで認証トークンを確認
+   - トークンを設定:
+   ```bash
+   ngrok config add-authtoken your_auth_token_here
+   ```
+
+### ローカル環境の公開手順
+
+1. ローカル開発サーバーを起動:
+   ```bash
+   npm run dev
+   ```
+
+2. 別のターミナルでngrokを起動:
+   ```bash
+   npm run ngrok
+   ```
+
+3. 表示されたURLを使って外部からアクセス可能
+   例: `https://1a2b3c4d.ngrok.io`
+
+4. Supabaseの認証リダイレクトURLに、表示されたngrok URLを一時的に追加：
+   `https://1a2b3c4d.ngrok.io/api/auth/callback`
+
+5. `.env.development.local`ファイルを更新:
+   ```
+   NEXT_PUBLIC_URL=https://1a2b3c4d.ngrok.io
+   ```
+
 ### 環境変数の設定
 
 `.env.local` ファイルを作成し、以下の環境変数を設定してください：

@@ -1,0 +1,101 @@
+---
+description: ngrokによるローカル開発環境の公開設定
+globs: ["**/scripts/start-ngrok.sh", "**/package.json", "**/.env.*.local"]
+alwaysApply: false
+---
+# ngrokによるローカル開発環境の公開設定
+
+## 5_development_environment/1_ngrok_setup.md
+
+# ngrokを使用したローカル開発環境の公開
+
+> **目的**:
+> - ローカル開発環境を一時的に外部からアクセス可能にし、認証コールバックや外部サービス連携をテストする
+> - Supabase認証フローをローカル環境でも完全にテストできるようにする
+> - モバイルデバイスやタブレットからのアクセステストを可能にする
+
+---
+
+## 1. ngrokの概要と役割
+
+- **ngrok**: ローカルで稼働しているアプリケーションに対して、インターネット経由でアクセス可能なURLを提供するツール
+- **主なユースケース**:
+  - OAuth認証コールバックフローのテスト
+  - モバイルデバイスからのローカル開発環境へのアクセス
+  - WebhookやAPIコールバックのテスト
+  - クロスドメインアクセスの検証
+
+## 2. セットアップと使用方法
+
+### 2.1 インストール
+
+```bash
+# グローバルインストール（推奨）
+npm install -g ngrok
+
+# または、HomebrewでインストールするMac OSXユーザー向け
+brew install ngrok
+```
+
+### 2.2 認証設定
+
+1. ngrokアカウントの作成
+   - [ngrokダッシュボード](mdc:https:/dashboard.ngrok.com/signup)にサインアップ
+   - 無料プランでも十分に開発テスト可能
+
+2. 認証トークンの設定
+   ```bash
+   # ngrokダッシュボードで表示される認証トークンを設定
+   ngrok config add-authtoken YOUR_AUTH_TOKEN
+   ```
+
+### 2.3 使用方法
+
+1. プロジェクトのルートディレクトリで次のコマンドを実行:
+   ```bash
+   # scripts/start-ngrok.shを使用する（推奨）
+   npm run ngrok
+
+   # または直接ngrokを実行する場合
+   ngrok http 3000  # 3000ポートを公開
+   ```
+
+2. 表示されたURLをコピー（例: `https://1a2b3c4d.ngrok.io`）
+
+## 3. 認証フローとの連携
+
+### 3.1 Supabase認証設定
+
+1. [Supabaseダッシュボード](mdc:https:/app.supabase.io)にログイン
+2. プロジェクトの「Authentication」→「URL Configuration」に移動
+3. 「Redirect URLs」に一時的にngrokのURLを追加:
+   ```
+   https://your-ngrok-url.ngrok.io/api/auth/callback
+   ```
+
+### 3.2 環境変数の設定
+
+`.env.development.local`ファイルを作成し、次の内容を追加:
+```
+# ngrokで生成されたURLで更新する
+NEXT_PUBLIC_URL=https://your-ngrok-url.ngrok.io
+```
+
+## 4. セキュリティ上の注意点
+
+- ngrokセッションは一時的なものとして扱う（本番環境では使用しない）
+- 機密情報や本番環境に近いデータを含む場合は注意する
+- ngrokの無料プランでは認証なしで誰でもアクセス可能なため、公開したくない開発中の機能に注意
+- セッション終了後はSupabaseのリダイレクトURLから削除することを推奨
+
+## 5. トラブルシューティング
+
+- **ポートが既に使用されている**: 別のプロセスが同じポートを使用していないか確認
+- **認証エラー**: 認証トークンが正しく設定されているか確認
+- **接続エラー**: ローカル開発サーバーが起動しているか確認
+- **コールバックエラー**: Supabaseに正しいリダイレクトURLが設定されているか確認
+
+## まとめ
+
+ngrokを使用することで、ローカル開発環境でも認証フローやWebhookなどの外部連携機能を完全にテストできます。特にOAuth認証やサードパーティサービスとの連携開発において、実際のURLが必要な場合に非常に有用です。セットアップは簡単で、`npm run ngrok`コマンド一つで外部公開できるため、開発ワークフローに容易に組み込むことができます。
+

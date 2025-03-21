@@ -14,7 +14,8 @@
     "type-check": "cd digeclip && npm run type-check",
     "format": "cd digeclip && npm run format",
     "build:mdc": "ts-node build-mdc.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "ngrok": "bash scripts/start-ngrok.sh"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.14",
