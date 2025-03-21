@@ -130,7 +130,13 @@ GEMINI_API_KEY=your_gemini_api_key
   │       ├─ /integration  # 統合テスト
   │       └─ /e2e          # E2Eテスト
   │
+  ├─ /seeds               # DBシードデータ
+  │   ├─ dev_schema.sql    # 開発環境用スキーマ
+  │   └─ dev_seed.sql      # 開発環境用サンプルデータ
+  │
   ├─ .env.local           # 環境変数
+  ├─ .env.development     # 開発環境用環境変数
+  ├─ .env.production      # 本番環境用環境変数
   ├─ .eslintrc.js         # ESLint設定
   ├─ next.config.js       # Next.js設定
   ├─ package.json         # パッケージ設定
@@ -159,12 +165,19 @@ npm run verify
 ./scripts/local-ci.sh
 ```
 
-### Git フック
+### Git Hooks
 
-以下のGitフックが設定されています：
+以下のGit Hooksが設定されています：
 
+- **pre-add**: addする前に変更されたファイルに関連するテストを実行します
 - **pre-commit**: コミット前にlint-stagedを実行して、変更されたファイルのみをチェックします
 - **pre-push**: プッシュ前にすべてのテスト、リント、型チェックを実行します
+
+この3段階の検証プロセスにより、開発効率と品質のバランスを最適化しています：
+
+- **git add時**: 変更に直接関連するテストのみ実行（高速フィードバック）
+- **git commit時**: コードスタイルと基本的な品質確保
+- **git push時**: 共有前の完全な検証
 
 Gitフックはhuskyを使用して設定されており、自動的に利用できます。
 
@@ -172,60 +185,34 @@ Gitフックはhuskyを使用して設定されており、自動的に利用で
 
 プロジェクトでは以下のブランチ戦略を採用しています：
 
-- **development**: 開発環境用のデフォルトブランチ
-- **production**: 本番環境用のブランチ
+- **dev**: 開発環境用のデフォルトブランチ
+- **main**: 本番環境用のブランチ
 - **feature/\***、**fix/\***: 各機能開発、バグ修正用のブランチ
 
-### デプロイプロセス
+以下のデプロイフローに従って開発が進められます：
 
-1. **開発サイクル**:
+1. **開発サイクル**: feature/fixブランチ→devブランチ→開発環境に自動デプロイ
+2. **リリースプロセス**: dev→mainへのPR→本番環境に自動デプロイ
+3. **ホットフィックス**: 緊急修正の場合はhotfixブランチから両環境にマージ
 
-   - `feature/*` や `fix/*` ブランチで機能開発
-   - `development` ブランチにPRを作成
-   - コードレビュー後、`development` にマージ
-   - 自動的に開発環境にデプロイ
+## CI/CD パイプライン
 
-2. **リリースプロセス**:
+GitHub Actionsを使用したCI/CDパイプラインを構築しています：
 
-   - `development` から `production` へのPR作成（毎週月曜日に自動作成、または手動で作成可）
-   - QAと最終チェック
-   - `production` へマージで本番環境に自動デプロイ
+- **テスト実行**: PR作成時に自動的にテスト、リント、型チェックを実行
+- **PR自動レビュー**: アクセシビリティとビルドサイズを自動チェック
+- **環境変数の自動設定**: ブランチ名に応じて環境変数ファイルを自動選択
+- **ビルドの最適化**: Node.js 20と依存関係キャッシュによる高速ビルド
+- **環境分離デプロイ**:
+  - 開発環境: `dev-digeclip.pages.dev`（`dev` ブランチ）
+  - 本番環境: `digeclip.com`（`main` ブランチ）
 
-3. **ホットフィックス**:
-   - 緊急修正が必要な場合は `hotfix/*` ブランチを使用
-   - 修正後、`development` と `production` 両方にマージ
-
-### ローカル開発とngrok
-
-認証機能やWebhookのテストなど、ローカル環境を外部から接続する必要がある場合：
-
-```bash
-# 開発サーバーを起動
-npm run dev
-
-# 別のターミナルでngrokを実行
-../scripts/start-ngrok.sh
-```
-
-表示されるngrokのURLを使用して外部サービス（Supabase、OAuth、Webhook）などのコールバックURLに設定できます。
-
-## CI/CD (GitHub Actions)
-
-GitHub Actionsにより、以下のワークフローが自動化されています：
-
-- **PR検証**: PR作成時にLint、型チェック、テストを実行
-- **プレビューデプロイ**: PR作成時にプレビュー環境にデプロイ（URLがPRにコメントされます）
-- **開発環境デプロイ**: `development` へのマージで開発環境に自動デプロイ
-- **本番環境デプロイ**: `production` へのマージで本番環境に自動デプロイ
-- **リリースPR作成**: 毎週月曜日に開発→本番へのリリースPRを自動作成
-
-詳細なワークフロー設定は、リポジトリのルートディレクトリにある `.github/workflows` フォルダをご確認ください。
+これにより、コードの品質を確保しながら効率的な開発サイクルを実現しています。
 
 ## デプロイ環境
 
-- **開発環境**: `dev-digeclip.pages.dev`（`development` ブランチ）
-- **本番環境**: `digeclip.com`（`production` ブランチ）
-- **プレビュー環境**: PR毎に自動生成（PR内にURLが表示されます）
+- **開発環境**: `dev-digeclip.pages.dev`（`dev` ブランチ）
+- **本番環境**: `digeclip.com`（`main` ブランチ）
 
 ## 学習リソース
 
@@ -298,3 +285,57 @@ digeclip/src/
 - サービスレイヤー: 80%以上
 - React Queryフック: 80%以上
 - UIコンポーネント: 70%以上
+
+## データベース環境
+
+### 開発環境と本番環境のSupabase DB分離セットアップ
+
+DigeClipでは、開発環境と本番環境でSupabaseのプロジェクトを分離しています。これにより、開発作業が本番データに影響を与えることなく、安全に開発を進めることができます。
+
+#### セットアップ済み項目
+
+- [x] Supabaseアカウントの作成
+- [x] 開発環境用Supabaseプロジェクト（`DigeClip-dev`）の作成
+- [x] 本番環境用Supabaseプロジェクト（`DigeClip`）の作成
+- [x] API認証情報の取得と保存
+- [x] 環境変数ファイルの設定（`.env.development`、`.env.production`）
+- [x] Cloudflare Pages環境変数の設定
+
+#### データベーススキーマの適用方法
+
+1. Supabaseダッシュボード（https://app.supabase.io）にログイン
+2. 開発環境プロジェクト（`DigeClip-dev`）を選択
+3. 左側のナビゲーションから「SQL Editor」を選択
+4. 「+ New Query」ボタンをクリック
+5. `seeds/dev_schema.sql`の内容をコピーして貼り付け
+6. 「Run」ボタンをクリックしてSQLを実行
+7. 同様の手順で本番環境にも適用
+
+#### 開発環境用シードデータの適用方法（オプション）
+
+1. 開発環境プロジェクトの「SQL Editor」で新しいクエリを作成
+2. `seeds/dev_seed.sql`の内容をコピーして貼り付け
+3. 「Run」ボタンをクリックしてシードデータを適用
+
+#### 環境の切り替え方法
+
+##### ローカル開発環境
+
+開発環境で開発する場合:
+
+```bash
+# 開発環境用の環境変数を使用
+cp .env.development .env.local
+```
+
+本番環境で開発する場合:
+
+```bash
+# 本番環境用の環境変数を使用
+cp .env.production .env.local
+```
+
+##### Cloudflare Pages
+
+- 開発ブランチ（dev）のデプロイは開発環境のSupabaseに自動的に接続
+- 本番ブランチ（main）のデプロイは本番環境のSupabaseに自動的に接続

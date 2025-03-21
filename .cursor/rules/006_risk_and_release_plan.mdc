@@ -61,7 +61,6 @@ alwaysApply: false
 
 ## 6_risk_and_release_plan/2_Release_Schedule.md
 
-```markdown
 # リリース計画
 
 > **前提:**
@@ -90,7 +89,7 @@ alwaysApply: false
 
 1. **ステージングデプロイ**
    - 新機能や修正を**GitHubブランチ**で開発
-   - Pull Request → Vercel の Preview Deploy で確認
+   - Pull Request → 開発環境（dev）で確認
    - 主要機能が揃ったら**ステージング用環境**にデプロイ（環境変数はステージング用に設定）
 
 2. **テスト/承認**

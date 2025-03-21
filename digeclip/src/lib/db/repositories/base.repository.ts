@@ -6,10 +6,10 @@ import { prisma } from '../db';
  */
 export interface BaseRepository<T, ID> {
   findAll(): Promise<T[]>;
-  findById(id: ID): Promise<T | null>;
-  create(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T>;
-  update(id: ID, data: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>): Promise<T>;
-  delete(id: ID): Promise<void>;
+  findById(_id: ID): Promise<T | null>;
+  create(_data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T>;
+  update(_id: ID, _data: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>): Promise<T>;
+  delete(_id: ID): Promise<void>;
 }
 
 /**
