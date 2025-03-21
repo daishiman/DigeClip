@@ -66,7 +66,7 @@ jobs:
           # 両環境ともにスキーマを適用
           CONNECTION_STRING="postgresql://${DB_USER}:${DB_PASSWORD}@db.${SUPABASE_PROJECT_ID}.supabase.co:5432/postgres"
           # ここでpsqlコマンドを使用してSQLファイルを実行
-          PGPASSWORD="${DB_PASSWORD}" psql "sslmode=require host=db.${SUPABASE_PROJECT_ID}.supabase.co port=5432 user=${DB_USER} dbname=postgres" -f digeclip/seeds/dev_schema.sql
+          PGPASSWORD="${DB_PASSWORD}" psql "sslmode=require hostname-type=ip4 host=db.${SUPABASE_PROJECT_ID}.supabase.co port=5432 user=${DB_USER} dbname=postgres" -f digeclip/seeds/dev_schema.sql
 
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             echo "開発環境用スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
@@ -85,5 +85,5 @@ jobs:
 
           echo "開発環境用シードデータを適用します"
           # ここでpsqlコマンドを使用してシードSQLファイルを実行
-          PGPASSWORD="${DB_PASSWORD}" psql "sslmode=require host=db.${SUPABASE_PROJECT_ID}.supabase.co port=5432 user=${DB_USER} dbname=postgres" -f digeclip/seeds/dev_seed.sql
+          PGPASSWORD="${DB_PASSWORD}" psql "sslmode=require hostname-type=ip4 host=db.${SUPABASE_PROJECT_ID}.supabase.co port=5432 user=${DB_USER} dbname=postgres" -f digeclip/seeds/dev_seed.sql
           echo "開発環境用シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
