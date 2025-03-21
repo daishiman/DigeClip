@@ -29,7 +29,9 @@ jobs:
           cache: 'npm'
 
       - name: Supabase CLIをインストール
-        run: npm install -g supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: 環境変数の設定と適用
         run: |
