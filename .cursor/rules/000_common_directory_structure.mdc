@@ -14,7 +14,7 @@ alwaysApply: false
 ## Next.jsプロジェクトの標準ディレクトリ構造
 
 ```
-/src
+/digeclip/src
   ├─ /app                          # Next.jsのApp Routerディレクトリ
   │   ├─ /page.tsx                 # ダッシュボード画面
   │   ├─ /sources/page.tsx         # ソース一覧
@@ -221,4 +221,3 @@ alwaysApply: false
 - Next.js の最新推奨構成に従いつつ、初心者でも迷いにくいフォルダ数に留めています
 - プロジェクトの成長に合わせて、必要に応じて構造を拡張できます
 - テストはJest、React Testing Library、MSW、Cypressなどのツールを使用して実装します
-

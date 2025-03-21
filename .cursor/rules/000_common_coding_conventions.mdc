@@ -1,4 +1,9 @@
 ---
+description: 
+globs: 
+alwaysApply: false
+---
+---
 description: コーディング規約
 globs: ["**/*.{tsx,jsx,ts,js}"]
 alwaysApply: false
@@ -151,7 +156,7 @@ function getUser(id) {
 テストコードは以下のディレクトリ構造に従って配置します：
 
 ```
-/src
+/digeclip/src
   ├─ /lib                          # ユーティリティと共通関数
   │   ├─ /openai.ts                # OpenAI関連機能
   │   ├─ /discord.ts               # Discord関連機能
@@ -225,4 +230,3 @@ describe('functionToTest', () => {
 ## まとめ
 
 これらの規約は、コードの品質を維持しながらも、初心者が参加しやすい環境を作るために設計されています。プロジェクトの進行に合わせて、必要に応じて規約を更新していきます。
-

@@ -1,11 +1,14 @@
-name: Cloudflare Pagesデプロイ
+name: Cloudflare Pages デプロイ
 
 on:
   push:
-    branches: [ development, production ]
+    branches: [dev, main]
+  pull_request:
+    types: [closed]
+    branches: [dev, main]
   workflow_dispatch:
 
-# 権限設定を追加
+# 権限設定
 permissions:
   contents: read
   deployments: write
@@ -13,70 +16,158 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # PRがマージされた場合のみ実行
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.base_ref == 'dev' || github.base_ref == 'main'))
     steps:
       - uses: actions/checkout@v3
 
-      - name: Node.jsのセットアップ
+      - name: Node.js のセットアップ
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'digeclip/package-lock.json'
 
-      - name: 環境変数の設定
-        id: set_env_vars
+      - name: 環境設定
+        id: env_setup
         run: |
-          if [[ $GITHUB_REF == *"development"* ]]; then
+          if [[ $GITHUB_REF == *"dev"* ]]; then
             echo "ENVIRONMENT=development" >> $GITHUB_OUTPUT
-          elif [[ $GITHUB_REF == *"production"* ]]; then
+            echo "PROJECT_NAME=digeclip" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_SUPABASE_URL_DEV=${{ secrets.NEXT_PUBLIC_SUPABASE_URL_DEV }}" >> $GITHUB_OUTPUT
+            echo "DEV_SUPABASE_ANON_KEY=${{ secrets.DEV_SUPABASE_ANON_KEY }}" >> $GITHUB_OUTPUT
+            echo "DEV_SUPABASE_SERVICE_ROLE_KEY=${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_OUTPUT
+            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_OUTPUT
+            echo "DB_USER=${{ secrets.DEV_DB_USER }}" >> $GITHUB_OUTPUT
+            echo "DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}" >> $GITHUB_OUTPUT
+            echo "環境: 開発環境 (dev)" >> $GITHUB_STEP_SUMMARY
+          elif [[ $GITHUB_REF == *"main"* ]]; then
             echo "ENVIRONMENT=production" >> $GITHUB_OUTPUT
+            echo "PROJECT_NAME=digeclip" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_SUPABASE_URL_PROD=${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}" >> $GITHUB_OUTPUT
+            echo "PROD_SUPABASE_ANON_KEY=${{ secrets.PROD_SUPABASE_ANON_KEY }}" >> $GITHUB_OUTPUT
+            echo "PROD_SUPABASE_SERVICE_ROLE_KEY=${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_OUTPUT
+            echo "DB_USER=${{ secrets.PROD_DB_USER }}" >> $GITHUB_OUTPUT
+            echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> $GITHUB_OUTPUT
+            echo "環境: 本番環境 (main)" >> $GITHUB_STEP_SUMMARY
           else
             echo "ENVIRONMENT=preview" >> $GITHUB_OUTPUT
+            echo "PROJECT_NAME=digeclip" >> $GITHUB_OUTPUT
+            echo "NEXT_PUBLIC_SUPABASE_URL_DEV=${{ secrets.NEXT_PUBLIC_SUPABASE_URL_DEV }}" >> $GITHUB_OUTPUT
+            echo "DEV_SUPABASE_ANON_KEY=${{ secrets.DEV_SUPABASE_ANON_KEY }}" >> $GITHUB_OUTPUT
+            echo "DEV_SUPABASE_SERVICE_ROLE_KEY=${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_OUTPUT
+            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_OUTPUT
+            echo "環境: プレビュー環境" >> $GITHUB_STEP_SUMMARY
           fi
+
+      - name: 環境変数ファイルの生成
+        run: |
+          if [[ "${{ steps.env_setup.outputs.ENVIRONMENT }}" == "development" ]]; then
+            # 開発環境用のSUPABASE_HOSTを設定
+            SUPABASE_URL="${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_DEV }}"
+            SUPABASE_HOST="${SUPABASE_URL#https://}"
+            DB_URL="postgresql://${{ steps.env_setup.outputs.DB_USER }}:${{ steps.env_setup.outputs.DB_PASSWORD }}@db.${SUPABASE_HOST}:5432/postgres"
+
+            # 開発環境用の環境変数ファイルの生成（ヒアドキュメントを使わない方法）
+            echo "# 環境設定（実行環境を指定）" > digeclip/.env.production.local
+            echo "NODE_ENV=\"${{ steps.env_setup.outputs.ENVIRONMENT }}\"" >> digeclip/.env.production.local
+            echo "NODE_VERSION=\"20\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Supabase設定" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_SUPABASE_URL_DEV=\"${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_DEV }}\"" >> digeclip/.env.production.local
+            echo "DEV_SUPABASE_ANON_KEY=\"${{ steps.env_setup.outputs.DEV_SUPABASE_ANON_KEY }}\"" >> digeclip/.env.production.local
+            echo "DEV_SUPABASE_SERVICE_ROLE_KEY=\"${{ steps.env_setup.outputs.DEV_SUPABASE_SERVICE_ROLE_KEY }}\"" >> digeclip/.env.production.local
+            echo "SUPABASE_SERVICE_ROLE_KEY=\"${{ steps.env_setup.outputs.SUPABASE_SERVICE_ROLE_KEY }}\"" >> digeclip/.env.production.local
+            echo "SUPABASE_ACCESS_TOKEN=\"${{ secrets.SUPABASE_ACCESS_TOKEN }}\"" >> digeclip/.env.production.local
+            echo "DATABASE_URL=\"${DB_URL}\"" >> digeclip/.env.production.local
+            echo "DEV_DB_USER=\"${{ steps.env_setup.outputs.DB_USER }}\"" >> digeclip/.env.production.local
+            echo "DEV_DB_PASSWORD=\"${{ steps.env_setup.outputs.DB_PASSWORD }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Cloudflare Pages設定" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=\"true\"" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_STATIC_EXPORT=\"true\"" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_APP_ENV=\"${{ steps.env_setup.outputs.ENVIRONMENT }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# OpenAI API設定" >> digeclip/.env.production.local
+            echo "OPENAI_API_KEY=\"${{ secrets.OPENAI_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Google Gemini API設定" >> digeclip/.env.production.local
+            echo "GEMINI_API_KEY=\"${{ secrets.GEMINI_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Anthropic Claude API設定" >> digeclip/.env.production.local
+            echo "CLAUDE_API_KEY=\"${{ secrets.CLAUDE_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Discord通知設定" >> digeclip/.env.production.local
+            echo "DISCORD_WEBHOOK_URL=\"${{ secrets.DISCORD_WEBHOOK_URL }}\"" >> digeclip/.env.production.local
+          else
+            # 本番環境用のSUPABASE_HOSTを設定
+            SUPABASE_URL="${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_PROD }}"
+            SUPABASE_HOST="${SUPABASE_URL#https://}"
+            DB_URL="postgresql://${{ steps.env_setup.outputs.DB_USER }}:${{ steps.env_setup.outputs.DB_PASSWORD }}@db.${SUPABASE_HOST}:5432/postgres"
+
+            # 本番環境用の環境変数ファイルの生成（ヒアドキュメントを使わない方法）
+            echo "# 環境設定（実行環境を指定）" > digeclip/.env.production.local
+            echo "NODE_ENV=\"${{ steps.env_setup.outputs.ENVIRONMENT }}\"" >> digeclip/.env.production.local
+            echo "NODE_VERSION=\"20\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Supabase設定" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_SUPABASE_URL_PROD=\"${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_PROD }}\"" >> digeclip/.env.production.local
+            echo "PROD_SUPABASE_ANON_KEY=\"${{ steps.env_setup.outputs.PROD_SUPABASE_ANON_KEY }}\"" >> digeclip/.env.production.local
+            echo "PROD_SUPABASE_SERVICE_ROLE_KEY=\"${{ steps.env_setup.outputs.PROD_SUPABASE_SERVICE_ROLE_KEY }}\"" >> digeclip/.env.production.local
+            echo "SUPABASE_ACCESS_TOKEN=\"${{ secrets.SUPABASE_ACCESS_TOKEN }}\"" >> digeclip/.env.production.local
+            echo "DATABASE_URL=\"${DB_URL}\"" >> digeclip/.env.production.local
+            echo "PROD_DB_USER=\"${{ steps.env_setup.outputs.DB_USER }}\"" >> digeclip/.env.production.local
+            echo "PROD_DB_PASSWORD=\"${{ steps.env_setup.outputs.DB_PASSWORD }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Cloudflare Pages設定" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=\"true\"" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_STATIC_EXPORT=\"true\"" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_APP_ENV=\"${{ steps.env_setup.outputs.ENVIRONMENT }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# OpenAI API設定" >> digeclip/.env.production.local
+            echo "OPENAI_API_KEY=\"${{ secrets.OPENAI_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Google Gemini API設定" >> digeclip/.env.production.local
+            echo "GEMINI_API_KEY=\"${{ secrets.GEMINI_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Anthropic Claude API設定" >> digeclip/.env.production.local
+            echo "CLAUDE_API_KEY=\"${{ secrets.CLAUDE_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Discord通知設定" >> digeclip/.env.production.local
+            echo "DISCORD_WEBHOOK_URL=\"${{ secrets.DISCORD_WEBHOOK_URL }}\"" >> digeclip/.env.production.local
+          fi
+          echo "${{ steps.env_setup.outputs.ENVIRONMENT }}環境用の環境変数を生成しました" >> $GITHUB_STEP_SUMMARY
 
       - name: 依存関係のインストール
-        run: |
-          echo "現在のディレクトリ構造を確認"
-          ls -la
-
-          if [ -f "package.json" ]; then
-            npm ci
-          else
-            echo "package.jsonが見つかりません。ディレクトリ構造を確認します。"
-            find . -name "package.json" -type f
-
-            # package.jsonが見つかった場所に移動
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              echo "package.jsonが見つかりました: $PKG_DIR"
-              cd $PKG_DIR
-              npm ci
-            fi
-          fi
+        working-directory: ./digeclip
+        run: npm ci
 
       - name: ビルド
+        working-directory: ./digeclip
         env:
-          ENVIRONMENT: ${{ steps.set_env_vars.outputs.ENVIRONMENT }}
+          ENVIRONMENT: ${{ steps.env_setup.outputs.ENVIRONMENT }}
+          NODE_ENV: production
         run: |
-          if [ -f "package.json" ]; then
-            npm run build
-            echo "環境: $ENVIRONMENT"
+          npm run build:cf
+          echo "環境: $ENVIRONMENT でビルドしました"
+
+      - name: ビルド出力確認
+        id: check_build
+        run: |
+          if [ -d "digeclip/out" ]; then
+            echo "BUILD_DIR=digeclip/out" >> $GITHUB_OUTPUT
+            echo "ビルド出力ディレクトリ: digeclip/out" >> $GITHUB_STEP_SUMMARY
           else
-            PKG_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-            if [ ! -z "$PKG_DIR" ]; then
-              cd $PKG_DIR
-              npm run build
-              echo "環境: $ENVIRONMENT"
-            else
-              echo "package.jsonが見つからないためビルドを実行できません"
-              exit 1
-            fi
+            echo "警告: ビルド出力ディレクトリが見つかりません"
+            find digeclip -type d -name "out" -o -name ".next" | grep -v "node_modules"
+            exit 1
           fi
 
-      - name: Cloudflare Pagesへデプロイ
+      - name: Cloudflare Pages へデプロイ
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: digeclip
-          directory: ./out
-          # 本番環境の場合は production フラグを設定
-          deploymentEnvironment: ${{ steps.set_env_vars.outputs.ENVIRONMENT }}
+          projectName: ${{ steps.env_setup.outputs.PROJECT_NAME }}
+          directory: ${{ steps.check_build.outputs.BUILD_DIR }}
+          branch: ${{ (github.ref == 'refs/heads/main' && 'main') || 'dev' }}

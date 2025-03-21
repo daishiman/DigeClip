@@ -18,7 +18,7 @@ permissions:
 jobs:
   create-release-pr:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/development'
+    if: github.ref == 'refs/heads/dev'
     steps:
       - uses: actions/checkout@v3
         with:
@@ -27,12 +27,12 @@ jobs:
       - name: リリースするコミットを確認
         id: check_changes
         run: |
-          git fetch origin production
-          COMMITS_AHEAD=$(git rev-list --count origin/production..origin/development)
+          git fetch origin main
+          COMMITS_AHEAD=$(git rev-list --count origin/main..origin/dev)
           echo "commits_ahead=$COMMITS_AHEAD" >> $GITHUB_OUTPUT
           if [ "$COMMITS_AHEAD" -gt 0 ]; then
             echo "リリース可能なコミットが $COMMITS_AHEAD 件見つかりました"
-            CHANGES=$(git log --pretty=format:"- %s" origin/production..origin/development)
+            CHANGES=$(git log --pretty=format:"- %s" origin/main..origin/dev)
             echo "changes<<EOF" >> $GITHUB_OUTPUT
             echo "$CHANGES" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
@@ -55,8 +55,8 @@ jobs:
             const existingPRs = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              head: 'development',
-              base: 'production',
+              head: 'dev',
+              base: 'main',
               state: 'open'
             });
 
@@ -89,8 +89,8 @@ ${changes}
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: releaseTitle,
-                head: 'development',
-                base: 'production',
+                head: 'dev',
+                base: 'main',
                 body: `## 本番環境へのリリース
 
 ### 変更内容

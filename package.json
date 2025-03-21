@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "cd digeclip && npm run dev",
     "build": "cd digeclip && npm run build",
+    "build:cf": "cd digeclip && npm run build",
     "start": "cd digeclip && npm run start",
     "lint": "cd digeclip && npm run lint",
     "test": "cd digeclip && npm test",
@@ -12,16 +13,19 @@
     "local-ci": "bash scripts/local-ci.sh",
     "type-check": "cd digeclip && npm run type-check",
     "format": "cd digeclip && npm run format",
+    "build:mdc": "ts-node build-mdc.ts",
     "prepare": "husky"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.0.14",
     "glob": "^11.0.1"
   },
   "devDependencies": {
+    "eslint": "^9.22.0",
     "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.0",
-    "lint-staged": "^15.5.0"
+    "typescript": "^5.0.0"
   },
   "lint-staged": {
     "digeclip/**/*.{js,jsx,ts,tsx}": [

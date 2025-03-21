@@ -1,4 +1,9 @@
 ---
+description: 
+globs: 
+alwaysApply: false
+---
+---
 description: リスクとリリース計画
 globs: ["**/config/constants.ts", "**/config/routes.ts", "**/lib/middleware/**/*.ts"]
 alwaysApply: false
@@ -61,7 +66,6 @@ alwaysApply: false
 
 ## 6_risk_and_release_plan/2_Release_Schedule.md
 
-```markdown
 # リリース計画
 
 > **前提:**
@@ -90,7 +94,7 @@ alwaysApply: false
 
 1. **ステージングデプロイ**
    - 新機能や修正を**GitHubブランチ**で開発
-   - Pull Request → Vercel の Preview Deploy で確認
+   - Pull Request → 開発環境（dev）で確認
    - 主要機能が揃ったら**ステージング用環境**にデプロイ（環境変数はステージング用に設定）
 
 2. **テスト/承認**
@@ -274,4 +278,3 @@ alwaysApply: false
 - **初心者でも**参加しやすい運用を意識し、**段階的に機能拡張**しながらシステムを成熟させる
 
 これにより、**運用開始後に発生する問題**を**迅速に検知・対応**し、**常にユーザーにとって有用な状態**を保ちつつ、**長期的にシステムが安定稼働**できるようになります。
-
