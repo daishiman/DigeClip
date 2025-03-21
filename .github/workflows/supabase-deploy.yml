@@ -23,25 +23,21 @@ jobs:
         uses: actions/checkout@v3
 
       - name: PostgreSQLクライアントをインストール
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client dnsutils
 
       - name: データベースデプロイ
         run: |
           # 環境変数を設定
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             # 開発環境の設定
-            DB_HOST="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_DEV }}"
-            DB_HOST="${DB_HOST#https://}"  # URLからhttps://を削除
-            DB_HOST="db.${DB_HOST}"       # dbプレフィックスを追加
+            SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_DEV }}"
             DB_USER="${{ secrets.DEV_DB_USER }}"
             DB_PASSWORD="${{ secrets.DEV_DB_PASSWORD }}"
             APPLY_SEED=true
             echo "環境: 開発環境 (シードデータ適用あり)" >> $GITHUB_STEP_SUMMARY
           elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
             # 本番環境の設定
-            DB_HOST="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}"
-            DB_HOST="${DB_HOST#https://}"  # URLからhttps://を削除
-            DB_HOST="db.${DB_HOST}"       # dbプレフィックスを追加
+            SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}"
             DB_USER="${{ secrets.PROD_DB_USER }}"
             DB_PASSWORD="${{ secrets.PROD_DB_PASSWORD }}"
             APPLY_SEED=false
@@ -51,33 +47,73 @@ jobs:
             exit 1
           fi
 
+          # URLからホスト名を抽出
+          HOST=$(echo "${SUPABASE_URL#https://}")
+          DB_HOST="db.${HOST}"
+
           # スキーマファイルの存在確認
           if [[ ! -f "digeclip/seeds/dev_schema.sql" ]]; then
             echo "Error: digeclip/seeds/dev_schema.sql ファイルが見つかりません。"
             exit 1
           fi
 
-          # IPv4強制のために接続文字列を調整
-          echo "スキーマを適用しています..."
+          # パスワードを設定
           export PGPASSWORD="$DB_PASSWORD"
 
           # 接続情報をログに出力（パスワードは除く）
           echo "データベース接続情報: ホスト=$DB_HOST, ユーザー=$DB_USER"
 
-          # ホスト名をIPアドレスに解決（IPv4を強制）
-          DB_IP=$(getent ahostsv4 "$DB_HOST" | head -n 1 | awk '{print $1}')
-          if [ -z "$DB_IP" ]; then
-            echo "警告: IPv4アドレスを解決できません。ホスト名を直接使用します。"
+          # DNSによるIPv4アドレス解決を試みる
+          echo "DNSルックアップを実行中..."
+          IP_ADDRESSES=$(dig +short $DB_HOST A)
+
+          if [ -n "$IP_ADDRESSES" ]; then
+            # 最初のIPv4アドレスを使用
+            DB_IP=$(echo "$IP_ADDRESSES" | head -n 1)
+            echo "IPv4アドレスを解決しました: $DB_HOST → $DB_IP"
+
+            # リトライロジックを使用して接続確認
+            MAX_RETRIES=3
+            for ((i=1; i<=$MAX_RETRIES; i++)); do
+              echo "接続試行 $i/$MAX_RETRIES..."
+              if PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "sslmode=require host=$DB_IP port=5432 user=$DB_USER dbname=postgres" -c '\conninfo' &> /dev/null; then
+                echo "接続成功！"
+                CONNECTION_SUCCESSFUL=true
+                break
+              else
+                echo "接続に失敗しました。"
+                sleep 2
+              fi
+            done
+
+            if [ "$CONNECTION_SUCCESSFUL" != "true" ]; then
+              echo "警告: IPv4アドレスでの接続に失敗しました。ホスト名を使用します。"
+              DB_IP=$DB_HOST
+            fi
           else
-            echo "ホスト名を解決: $DB_HOST → $DB_IP"
-            # IPアドレスを使用
-            DB_HOST="$DB_IP"
+            echo "警告: IPv4アドレスを解決できません。ホスト名を直接使用します。"
+            DB_IP=$DB_HOST
           fi
 
           # スキーマを適用
           echo "psqlコマンドを実行中..."
-          PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_schema.sql
-          echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+          MAX_RETRIES=3
+          for ((i=1; i<=$MAX_RETRIES; i++)); do
+            echo "スキーマ適用試行 $i/$MAX_RETRIES..."
+            if PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "sslmode=require hostaddr=$DB_IP host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_schema.sql; then
+              echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+              SCHEMA_APPLIED=true
+              break
+            else
+              echo "スキーマ適用に失敗しました。"
+              sleep 3
+            fi
+          done
+
+          if [ "$SCHEMA_APPLIED" != "true" ]; then
+            echo "エラー: スキーマの適用に${MAX_RETRIES}回失敗しました。"
+            exit 1
+          fi
 
           # シードデータの適用（開発環境のみ）
           if [[ "$APPLY_SEED" == "true" ]]; then
@@ -87,6 +123,21 @@ jobs:
             fi
 
             echo "シードデータを適用しています..."
-            PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_seed.sql
-            echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
+            MAX_RETRIES=3
+            for ((i=1; i<=$MAX_RETRIES; i++)); do
+              echo "シードデータ適用試行 $i/$MAX_RETRIES..."
+              if PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "sslmode=require hostaddr=$DB_IP host=$DB_HOST port=5432 user=$DB_USER dbname=postgres" -f digeclip/seeds/dev_seed.sql; then
+                echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
+                SEED_APPLIED=true
+                break
+              else
+                echo "シードデータ適用に失敗しました。"
+                sleep 3
+              fi
+            done
+
+            if [ "$SEED_APPLIED" != "true" ]; then
+              echo "エラー: シードデータの適用に${MAX_RETRIES}回失敗しました。"
+              exit 1
+            fi
           fi

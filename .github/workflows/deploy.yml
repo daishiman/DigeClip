@@ -2,10 +2,10 @@ name: Cloudflare Pages デプロイ
 
 on:
   push:
-    branches: [ dev, main ]
+    branches: [dev, main]
   pull_request:
-    types: [ closed ]
-    branches: [ dev, main ]
+    types: [closed]
+    branches: [dev, main]
   workflow_dispatch:
 
 # 権限設定
@@ -66,77 +66,75 @@ jobs:
             # 開発環境用のSUPABASE_HOSTを設定
             SUPABASE_URL="${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_DEV }}"
             SUPABASE_HOST="${SUPABASE_URL#https://}"
+            DB_URL="postgresql://${{ steps.env_setup.outputs.DB_USER }}:${{ steps.env_setup.outputs.DB_PASSWORD }}@db.${SUPABASE_HOST}:5432/postgres"
 
-            # 開発環境用の環境変数ファイル
-            cat > digeclip/.env.production.local << EOL
-            # 環境設定（実行環境を指定）
-            NODE_ENV="${{ steps.env_setup.outputs.ENVIRONMENT }}"
-            NODE_VERSION="20"
-
-            # Supabase設定
-            NEXT_PUBLIC_SUPABASE_URL_DEV="${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_DEV }}"
-            DEV_SUPABASE_ANON_KEY="${{ steps.env_setup.outputs.DEV_SUPABASE_ANON_KEY }}"
-            DEV_SUPABASE_SERVICE_ROLE_KEY="${{ steps.env_setup.outputs.DEV_SUPABASE_SERVICE_ROLE_KEY }}"
-            SUPABASE_SERVICE_ROLE_KEY="${{ steps.env_setup.outputs.SUPABASE_SERVICE_ROLE_KEY }}"
-            SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}"
-            DATABASE_URL="postgresql://${{ steps.env_setup.outputs.DB_USER }}:${{ steps.env_setup.outputs.DB_PASSWORD }}@db.${SUPABASE_HOST}:5432/postgres"
-            DEV_DB_USER="${{ steps.env_setup.outputs.DB_USER }}"
-            DEV_DB_PASSWORD="${{ steps.env_setup.outputs.DB_PASSWORD }}"
-
-            # Cloudflare Pages設定
-            NEXT_PUBLIC_IS_CLOUDFLARE_PAGES="true"
-            NEXT_PUBLIC_STATIC_EXPORT="true"
-            NEXT_PUBLIC_APP_ENV="${{ steps.env_setup.outputs.ENVIRONMENT }}"
-
-            # OpenAI API設定
-            OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
-
-            # Google Gemini API設定
-            GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
-
-            # Anthropic Claude API設定
-            CLAUDE_API_KEY="${{ secrets.CLAUDE_API_KEY }}"
-
-            # Discord通知設定
-            DISCORD_WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL }}"
-            EOL
+            # 開発環境用の環境変数ファイルの生成（ヒアドキュメントを使わない方法）
+            echo "# 環境設定（実行環境を指定）" > digeclip/.env.production.local
+            echo "NODE_ENV=\"${{ steps.env_setup.outputs.ENVIRONMENT }}\"" >> digeclip/.env.production.local
+            echo "NODE_VERSION=\"20\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Supabase設定" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_SUPABASE_URL_DEV=\"${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_DEV }}\"" >> digeclip/.env.production.local
+            echo "DEV_SUPABASE_ANON_KEY=\"${{ steps.env_setup.outputs.DEV_SUPABASE_ANON_KEY }}\"" >> digeclip/.env.production.local
+            echo "DEV_SUPABASE_SERVICE_ROLE_KEY=\"${{ steps.env_setup.outputs.DEV_SUPABASE_SERVICE_ROLE_KEY }}\"" >> digeclip/.env.production.local
+            echo "SUPABASE_SERVICE_ROLE_KEY=\"${{ steps.env_setup.outputs.SUPABASE_SERVICE_ROLE_KEY }}\"" >> digeclip/.env.production.local
+            echo "SUPABASE_ACCESS_TOKEN=\"${{ secrets.SUPABASE_ACCESS_TOKEN }}\"" >> digeclip/.env.production.local
+            echo "DATABASE_URL=\"${DB_URL}\"" >> digeclip/.env.production.local
+            echo "DEV_DB_USER=\"${{ steps.env_setup.outputs.DB_USER }}\"" >> digeclip/.env.production.local
+            echo "DEV_DB_PASSWORD=\"${{ steps.env_setup.outputs.DB_PASSWORD }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Cloudflare Pages設定" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=\"true\"" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_STATIC_EXPORT=\"true\"" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_APP_ENV=\"${{ steps.env_setup.outputs.ENVIRONMENT }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# OpenAI API設定" >> digeclip/.env.production.local
+            echo "OPENAI_API_KEY=\"${{ secrets.OPENAI_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Google Gemini API設定" >> digeclip/.env.production.local
+            echo "GEMINI_API_KEY=\"${{ secrets.GEMINI_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Anthropic Claude API設定" >> digeclip/.env.production.local
+            echo "CLAUDE_API_KEY=\"${{ secrets.CLAUDE_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Discord通知設定" >> digeclip/.env.production.local
+            echo "DISCORD_WEBHOOK_URL=\"${{ secrets.DISCORD_WEBHOOK_URL }}\"" >> digeclip/.env.production.local
           else
             # 本番環境用のSUPABASE_HOSTを設定
             SUPABASE_URL="${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_PROD }}"
             SUPABASE_HOST="${SUPABASE_URL#https://}"
+            DB_URL="postgresql://${{ steps.env_setup.outputs.DB_USER }}:${{ steps.env_setup.outputs.DB_PASSWORD }}@db.${SUPABASE_HOST}:5432/postgres"
 
-            # 本番環境用の環境変数ファイル
-            cat > digeclip/.env.production.local << EOL
-            # 環境設定（実行環境を指定）
-            NODE_ENV="${{ steps.env_setup.outputs.ENVIRONMENT }}"
-            NODE_VERSION="20"
-
-            # Supabase設定
-            NEXT_PUBLIC_SUPABASE_URL_PROD="${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_PROD }}"
-            PROD_SUPABASE_ANON_KEY="${{ steps.env_setup.outputs.PROD_SUPABASE_ANON_KEY }}"
-            PROD_SUPABASE_SERVICE_ROLE_KEY="${{ steps.env_setup.outputs.PROD_SUPABASE_SERVICE_ROLE_KEY }}"
-            SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}"
-            DATABASE_URL="postgresql://${{ steps.env_setup.outputs.DB_USER }}:${{ steps.env_setup.outputs.DB_PASSWORD }}@db.${SUPABASE_HOST}:5432/postgres"
-            PROD_DB_USER="${{ steps.env_setup.outputs.DB_USER }}"
-            PROD_DB_PASSWORD="${{ steps.env_setup.outputs.DB_PASSWORD }}"
-
-            # Cloudflare Pages設定
-            NEXT_PUBLIC_IS_CLOUDFLARE_PAGES="true"
-            NEXT_PUBLIC_STATIC_EXPORT="true"
-            NEXT_PUBLIC_APP_ENV="${{ steps.env_setup.outputs.ENVIRONMENT }}"
-
-            # OpenAI API設定
-            OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
-
-            # Google Gemini API設定
-            GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
-
-            # Anthropic Claude API設定
-            CLAUDE_API_KEY="${{ secrets.CLAUDE_API_KEY }}"
-
-            # Discord通知設定
-            DISCORD_WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL }}"
-            EOL
+            # 本番環境用の環境変数ファイルの生成（ヒアドキュメントを使わない方法）
+            echo "# 環境設定（実行環境を指定）" > digeclip/.env.production.local
+            echo "NODE_ENV=\"${{ steps.env_setup.outputs.ENVIRONMENT }}\"" >> digeclip/.env.production.local
+            echo "NODE_VERSION=\"20\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Supabase設定" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_SUPABASE_URL_PROD=\"${{ steps.env_setup.outputs.NEXT_PUBLIC_SUPABASE_URL_PROD }}\"" >> digeclip/.env.production.local
+            echo "PROD_SUPABASE_ANON_KEY=\"${{ steps.env_setup.outputs.PROD_SUPABASE_ANON_KEY }}\"" >> digeclip/.env.production.local
+            echo "PROD_SUPABASE_SERVICE_ROLE_KEY=\"${{ steps.env_setup.outputs.PROD_SUPABASE_SERVICE_ROLE_KEY }}\"" >> digeclip/.env.production.local
+            echo "SUPABASE_ACCESS_TOKEN=\"${{ secrets.SUPABASE_ACCESS_TOKEN }}\"" >> digeclip/.env.production.local
+            echo "DATABASE_URL=\"${DB_URL}\"" >> digeclip/.env.production.local
+            echo "PROD_DB_USER=\"${{ steps.env_setup.outputs.DB_USER }}\"" >> digeclip/.env.production.local
+            echo "PROD_DB_PASSWORD=\"${{ steps.env_setup.outputs.DB_PASSWORD }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Cloudflare Pages設定" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_IS_CLOUDFLARE_PAGES=\"true\"" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_STATIC_EXPORT=\"true\"" >> digeclip/.env.production.local
+            echo "NEXT_PUBLIC_APP_ENV=\"${{ steps.env_setup.outputs.ENVIRONMENT }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# OpenAI API設定" >> digeclip/.env.production.local
+            echo "OPENAI_API_KEY=\"${{ secrets.OPENAI_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Google Gemini API設定" >> digeclip/.env.production.local
+            echo "GEMINI_API_KEY=\"${{ secrets.GEMINI_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Anthropic Claude API設定" >> digeclip/.env.production.local
+            echo "CLAUDE_API_KEY=\"${{ secrets.CLAUDE_API_KEY }}\"" >> digeclip/.env.production.local
+            echo "" >> digeclip/.env.production.local
+            echo "# Discord通知設定" >> digeclip/.env.production.local
+            echo "DISCORD_WEBHOOK_URL=\"${{ secrets.DISCORD_WEBHOOK_URL }}\"" >> digeclip/.env.production.local
           fi
           echo "${{ steps.env_setup.outputs.ENVIRONMENT }}環境用の環境変数を生成しました" >> $GITHUB_STEP_SUMMARY
 
