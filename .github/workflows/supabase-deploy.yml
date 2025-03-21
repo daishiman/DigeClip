@@ -28,6 +28,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: PostgreSQLクライアントのインストール
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
       - name: Supabase CLIをインストール
         uses: supabase/setup-cli@v1
         with:
@@ -40,61 +45,101 @@ jobs:
             # 開発環境の設定
             SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_DEV }}"
             SUPABASE_KEY="${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}"
-            APPLY_SEED=true
+            SUPABASE_PROJECT_ID=$(echo $SUPABASE_URL | sed 's|https://||' | sed 's|.supabase.co||')
             echo "環境: 開発環境 (シードデータ適用あり)" >> $GITHUB_STEP_SUMMARY
-
-            # プロジェクト参照IDを抽出
-            PROJECT_REF=$(echo $SUPABASE_URL | sed 's|https://||' | sed 's|.supabase.co||')
-            echo "Supabase プロジェクト参照ID: $PROJECT_REF"
+            echo "Supabase プロジェクトID: $SUPABASE_PROJECT_ID"
 
             # スキーマを適用
             echo "開発環境のスキーマを適用しています..."
-            SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
-            SUPABASE_DB_PASSWORD="${{ secrets.DEV_DB_PASSWORD }}" \
-            supabase db execute --project-ref $PROJECT_REF -f digeclip/seeds/dev_schema.sql
+            export SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}"
+            export PGPASSWORD="${{ secrets.DEV_DB_PASSWORD }}"
+
+            # CLIの接続テスト
+            echo "Supabase CLI 接続テスト中..."
+            supabase projects list --debug > cli_test.log 2>&1
+
+            if [ $? -ne 0 ]; then
+              echo "Supabase CLI接続テストに失敗しました。詳細:"
+              grep -v "password\|token" cli_test.log
+              exit 1
+            else
+              echo "Supabase CLI接続テスト成功"
+            fi
+
+            # スキーマ適用
+            echo "スキーマファイルを適用しています..."
+            supabase db push \
+              --debug \
+              --db-url "postgresql://postgres:${{ secrets.DEV_DB_PASSWORD }}@$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" \
+              --dry-run > schema_dryrun.log 2>&1
+
+            echo "ドライラン結果:"
+            grep -v "password\|token" schema_dryrun.log | tail -n 20
+
+            # 実際の適用
+            supabase db push \
+              --db-url "postgresql://postgres:${{ secrets.DEV_DB_PASSWORD }}@$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" > schema_apply.log 2>&1
 
             if [ $? -eq 0 ]; then
               echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+              echo "適用結果サマリー:"
+              grep -v "password\|token" schema_apply.log | tail -n 10
             else
-              echo "スキーマ適用に失敗しました"
+              echo "スキーマ適用に失敗しました。エラー詳細:"
+              grep -v "password\|token" schema_apply.log
               exit 1
             fi
 
-            # シードデータを適用（開発環境のみ）
-            if [ "$APPLY_SEED" == "true" ]; then
-              echo "シードデータを適用しています..."
-              SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
-              SUPABASE_DB_PASSWORD="${{ secrets.DEV_DB_PASSWORD }}" \
-              supabase db execute --project-ref $PROJECT_REF -f digeclip/seeds/dev_seed.sql
+            # シードデータを適用
+            echo "シードデータを適用しています..."
+            # SQLファイルを直接実行
+            PGPASSWORD="${{ secrets.DEV_DB_PASSWORD }}" \
+            psql "host=$SUPABASE_PROJECT_ID.supabase.co port=5432 user=postgres dbname=postgres sslmode=require" \
+              -f digeclip/seeds/dev_seed.sql > seed_apply.log 2>&1
 
-              if [ $? -eq 0 ]; then
-                echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
-              else
-                echo "シードデータ適用に失敗しました"
-                exit 1
-              fi
+            if [ $? -eq 0 ]; then
+              echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
+              echo "適用結果サマリー:"
+              grep -v "password\|token" seed_apply.log | tail -n 10
+            else
+              echo "シードデータ適用に失敗しました。エラー詳細:"
+              grep -v "password\|token" seed_apply.log
+              exit 1
             fi
 
           elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
             # 本番環境の設定
             SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}"
             SUPABASE_KEY="${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}"
+            SUPABASE_PROJECT_ID=$(echo $SUPABASE_URL | sed 's|https://||' | sed 's|.supabase.co||')
             echo "環境: 本番環境 (スキーマのみ適用)" >> $GITHUB_STEP_SUMMARY
-
-            # プロジェクト参照IDを抽出
-            PROJECT_REF=$(echo $SUPABASE_URL | sed 's|https://||' | sed 's|.supabase.co||')
-            echo "Supabase プロジェクト参照ID: $PROJECT_REF"
+            echo "Supabase プロジェクトID: $SUPABASE_PROJECT_ID"
 
             # スキーマのみ適用
             echo "本番環境のスキーマを適用しています..."
-            SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
-            SUPABASE_DB_PASSWORD="${{ secrets.PROD_DB_PASSWORD }}" \
-            supabase db execute --project-ref $PROJECT_REF -f digeclip/seeds/dev_schema.sql
+            export SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}"
+            export PGPASSWORD="${{ secrets.PROD_DB_PASSWORD }}"
+
+            # ドライラン
+            supabase db push \
+              --debug \
+              --db-url "postgresql://postgres:${{ secrets.PROD_DB_PASSWORD }}@$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" \
+              --dry-run > schema_dryrun.log 2>&1
+
+            echo "ドライラン結果:"
+            grep -v "password\|token" schema_dryrun.log | tail -n 20
+
+            # 実際の適用
+            supabase db push \
+              --db-url "postgresql://postgres:${{ secrets.PROD_DB_PASSWORD }}@$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" > schema_apply.log 2>&1
 
             if [ $? -eq 0 ]; then
               echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+              echo "適用結果サマリー:"
+              grep -v "password\|token" schema_apply.log | tail -n 10
             else
-              echo "スキーマ適用に失敗しました"
+              echo "スキーマ適用に失敗しました。エラー詳細:"
+              grep -v "password\|token" schema_apply.log
               exit 1
             fi
           else
