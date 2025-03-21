@@ -65,7 +65,7 @@ jobs:
       - name: スキーマをデプロイ
         run: |
           # 両環境ともにスキーマを適用
-          cat digeclip/seeds/dev_schema.sql | supabase db execute --project-id $SUPABASE_PROJECT_ID
+          cat digeclip/seeds/dev_schema.sql | supabase db query --project-ref $SUPABASE_PROJECT_ID
 
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             echo "開発環境用スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
@@ -77,5 +77,5 @@ jobs:
         if: env.APPLY_SEED == 'true'
         run: |
           echo "開発環境用シードデータを適用します"
-          cat digeclip/seeds/dev_seed.sql | supabase db execute --project-id $SUPABASE_PROJECT_ID
+          cat digeclip/seeds/dev_seed.sql | supabase db query --project-ref $SUPABASE_PROJECT_ID
           echo "開発環境用シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
