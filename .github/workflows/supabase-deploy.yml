@@ -17,6 +17,7 @@ jobs:
   deploy-supabase:
     name: Supabase スキーマデプロイ
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # ジョブの最大実行時間を設定
 
     steps:
       - name: リポジトリをチェックアウト
@@ -40,6 +41,14 @@ jobs:
 
       - name: 環境変数の設定と適用
         run: |
+          # プロジェクト構造の確認
+          echo "プロジェクト構造を確認しています..."
+          ls -la
+          echo "digeclipディレクトリの内容:"
+          ls -la digeclip/
+          echo "seedsディレクトリの内容:"
+          ls -la digeclip/seeds/
+
           # 環境変数を設定
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             # 開発環境の設定
@@ -60,50 +69,72 @@ jobs:
 
             if [ $? -ne 0 ]; then
               echo "Supabase CLI接続テストに失敗しました。詳細:"
-              grep -v "password\|token" cli_test.log
+              cat cli_test.log | grep -v "password\|token\|secret\|key"
               exit 1
             else
               echo "Supabase CLI接続テスト成功"
             fi
 
-            # スキーマ適用
-            echo "スキーマファイルを適用しています..."
-            supabase db push \
-              --debug \
-              --db-url "postgresql://postgres:${{ secrets.DEV_DB_PASSWORD }}@$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" \
-              --dry-run > schema_dryrun.log 2>&1
-
-            echo "ドライラン結果:"
-            grep -v "password\|token" schema_dryrun.log | tail -n 20
-
-            # 実際の適用
-            supabase db push \
-              --db-url "postgresql://postgres:${{ secrets.DEV_DB_PASSWORD }}@$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" > schema_apply.log 2>&1
-
-            if [ $? -eq 0 ]; then
-              echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
-              echo "適用結果サマリー:"
-              grep -v "password\|token" schema_apply.log | tail -n 10
+            # スキーマファイルの確認
+            if [ -f "digeclip/seeds/dev_schema.sql" ]; then
+              echo "スキーマファイルが見つかりました: digeclip/seeds/dev_schema.sql"
             else
-              echo "スキーマ適用に失敗しました。エラー詳細:"
-              grep -v "password\|token" schema_apply.log
-              exit 1
+              echo "警告: スキーマファイル digeclip/seeds/dev_schema.sql が見つかりません"
+              ls -la digeclip/seeds/ || echo "seeds ディレクトリが見つかりません"
+            fi
+
+            # スキーマの直接適用
+            echo "スキーマファイルを直接適用しています..."
+            if [ -f "digeclip/seeds/dev_schema.sql" ]; then
+              timeout 120 PGPASSWORD="${{ secrets.DEV_DB_PASSWORD }}" \
+              psql "host=$SUPABASE_PROJECT_ID.supabase.co port=5432 user=postgres dbname=postgres sslmode=require" \
+                -f digeclip/seeds/dev_schema.sql > schema_apply.log 2>&1
+
+              SCHEMA_STATUS=$?
+              if [ $SCHEMA_STATUS -eq 0 ]; then
+                echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+                echo "適用結果サマリー:"
+                cat schema_apply.log | grep -v "password\|token\|secret\|key" | tail -n 10
+              elif [ $SCHEMA_STATUS -eq 124 ]; then
+                echo "スキーマ適用がタイムアウトしました。処理に時間がかかりすぎています。"
+                cat schema_apply.log | grep -v "password\|token\|secret\|key"
+                exit 1
+              else
+                echo "スキーマ適用に失敗しました。エラー詳細 (終了コード: $SCHEMA_STATUS):"
+                cat schema_apply.log | grep -v "password\|token\|secret\|key"
+                exit 1
+              fi
+            else
+              echo "スキーマファイルが見つからないためスキップします"
             fi
 
             # シードデータを適用
             echo "シードデータを適用しています..."
-            # SQLファイルを直接実行
-            PGPASSWORD="${{ secrets.DEV_DB_PASSWORD }}" \
-            psql "host=$SUPABASE_PROJECT_ID.supabase.co port=5432 user=postgres dbname=postgres sslmode=require" \
-              -f digeclip/seeds/dev_seed.sql > seed_apply.log 2>&1
+            # シードファイルの存在確認
+            if [ -f "digeclip/seeds/dev_seed.sql" ]; then
+              echo "シードファイルが見つかりました: digeclip/seeds/dev_seed.sql"
+              # SQLファイルを直接実行
+              timeout 120 PGPASSWORD="${{ secrets.DEV_DB_PASSWORD }}" \
+              psql "host=$SUPABASE_PROJECT_ID.supabase.co port=5432 user=postgres dbname=postgres sslmode=require" \
+                -f digeclip/seeds/dev_seed.sql > seed_apply.log 2>&1
 
-            if [ $? -eq 0 ]; then
-              echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
-              echo "適用結果サマリー:"
-              grep -v "password\|token" seed_apply.log | tail -n 10
+              SEED_STATUS=$?
+              if [ $SEED_STATUS -eq 0 ]; then
+                echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
+                echo "適用結果サマリー:"
+                cat seed_apply.log | grep -v "password\|token\|secret\|key" | tail -n 10
+              elif [ $SEED_STATUS -eq 124 ]; then
+                echo "シードデータ適用がタイムアウトしました。処理に時間がかかりすぎています。"
+                cat seed_apply.log | grep -v "password\|token\|secret\|key"
+                exit 1
+              else
+                echo "シードデータ適用に失敗しました。エラー詳細 (終了コード: $SEED_STATUS):"
+                cat seed_apply.log | grep -v "password\|token\|secret\|key"
+                exit 1
+              fi
             else
-              echo "シードデータ適用に失敗しました。エラー詳細:"
-              grep -v "password\|token" seed_apply.log
+              echo "エラー: シードファイル digeclip/seeds/dev_seed.sql が見つかりません"
+              ls -la digeclip/seeds/ || echo "seeds ディレクトリが見つかりません"
               exit 1
             fi
 
@@ -120,27 +151,37 @@ jobs:
             export SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}"
             export PGPASSWORD="${{ secrets.PROD_DB_PASSWORD }}"
 
-            # ドライラン
-            supabase db push \
-              --debug \
-              --db-url "postgresql://postgres:${{ secrets.PROD_DB_PASSWORD }}@$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" \
-              --dry-run > schema_dryrun.log 2>&1
-
-            echo "ドライラン結果:"
-            grep -v "password\|token" schema_dryrun.log | tail -n 20
-
-            # 実際の適用
-            supabase db push \
-              --db-url "postgresql://postgres:${{ secrets.PROD_DB_PASSWORD }}@$SUPABASE_PROJECT_ID.supabase.co:5432/postgres" > schema_apply.log 2>&1
-
-            if [ $? -eq 0 ]; then
-              echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
-              echo "適用結果サマリー:"
-              grep -v "password\|token" schema_apply.log | tail -n 10
+            # スキーマファイルの確認
+            if [ -f "digeclip/seeds/dev_schema.sql" ]; then
+              echo "スキーマファイルが見つかりました: digeclip/seeds/dev_schema.sql"
             else
-              echo "スキーマ適用に失敗しました。エラー詳細:"
-              grep -v "password\|token" schema_apply.log
-              exit 1
+              echo "警告: スキーマファイル digeclip/seeds/dev_schema.sql が見つかりません"
+              ls -la digeclip/seeds/ || echo "seeds ディレクトリが見つかりません"
+            fi
+
+            # スキーマの直接適用
+            echo "スキーマファイルを直接適用しています..."
+            if [ -f "digeclip/seeds/dev_schema.sql" ]; then
+              timeout 120 PGPASSWORD="${{ secrets.PROD_DB_PASSWORD }}" \
+              psql "host=$SUPABASE_PROJECT_ID.supabase.co port=5432 user=postgres dbname=postgres sslmode=require" \
+                -f digeclip/seeds/dev_schema.sql > schema_apply.log 2>&1
+
+              SCHEMA_STATUS=$?
+              if [ $SCHEMA_STATUS -eq 0 ]; then
+                echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+                echo "適用結果サマリー:"
+                cat schema_apply.log | grep -v "password\|token\|secret\|key" | tail -n 10
+              elif [ $SCHEMA_STATUS -eq 124 ]; then
+                echo "スキーマ適用がタイムアウトしました。処理に時間がかかりすぎています。"
+                cat schema_apply.log | grep -v "password\|token\|secret\|key"
+                exit 1
+              else
+                echo "スキーマ適用に失敗しました。エラー詳細 (終了コード: $SCHEMA_STATUS):"
+                cat schema_apply.log | grep -v "password\|token\|secret\|key"
+                exit 1
+              fi
+            else
+              echo "スキーマファイルが見つからないためスキップします"
             fi
           else
             echo "サポートされていないブランチです: $GITHUB_REF"
