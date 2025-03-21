@@ -22,207 +22,80 @@ jobs:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v3
 
-      - name: PostgreSQLクライアントをインストール
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client dnsutils iputils-ping
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-      - name: データベースデプロイ
+      - name: Supabase CLIをインストール
+        run: npm install -g supabase
+
+      - name: 環境変数の設定と適用
         run: |
           # 環境変数を設定
           if [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             # 開発環境の設定
             SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_DEV }}"
-            DB_USER="${{ secrets.DEV_DB_USER }}"
-            DB_PASSWORD="${{ secrets.DEV_DB_PASSWORD }}"
+            SUPABASE_KEY="${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}"
             APPLY_SEED=true
             echo "環境: 開発環境 (シードデータ適用あり)" >> $GITHUB_STEP_SUMMARY
+
+            # プロジェクト参照IDを抽出
+            PROJECT_REF=$(echo $SUPABASE_URL | sed 's|https://||' | sed 's|.supabase.co||')
+            echo "Supabase プロジェクト参照ID: $PROJECT_REF"
+
+            # スキーマを適用
+            echo "開発環境のスキーマを適用しています..."
+            SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            SUPABASE_DB_PASSWORD="${{ secrets.DEV_DB_PASSWORD }}" \
+            supabase db execute --project-ref $PROJECT_REF -f digeclip/seeds/dev_schema.sql
+
+            if [ $? -eq 0 ]; then
+              echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "スキーマ適用に失敗しました"
+              exit 1
+            fi
+
+            # シードデータを適用（開発環境のみ）
+            if [ "$APPLY_SEED" == "true" ]; then
+              echo "シードデータを適用しています..."
+              SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+              SUPABASE_DB_PASSWORD="${{ secrets.DEV_DB_PASSWORD }}" \
+              supabase db execute --project-ref $PROJECT_REF -f digeclip/seeds/dev_seed.sql
+
+              if [ $? -eq 0 ]; then
+                echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "シードデータ適用に失敗しました"
+                exit 1
+              fi
+            fi
+
           elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
             # 本番環境の設定
             SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}"
-            DB_USER="${{ secrets.PROD_DB_USER }}"
-            DB_PASSWORD="${{ secrets.PROD_DB_PASSWORD }}"
-            APPLY_SEED=false
+            SUPABASE_KEY="${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}"
             echo "環境: 本番環境 (スキーマのみ適用)" >> $GITHUB_STEP_SUMMARY
+
+            # プロジェクト参照IDを抽出
+            PROJECT_REF=$(echo $SUPABASE_URL | sed 's|https://||' | sed 's|.supabase.co||')
+            echo "Supabase プロジェクト参照ID: $PROJECT_REF"
+
+            # スキーマのみ適用
+            echo "本番環境のスキーマを適用しています..."
+            SUPABASE_ACCESS_TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            SUPABASE_DB_PASSWORD="${{ secrets.PROD_DB_PASSWORD }}" \
+            supabase db execute --project-ref $PROJECT_REF -f digeclip/seeds/dev_schema.sql
+
+            if [ $? -eq 0 ]; then
+              echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "スキーマ適用に失敗しました"
+              exit 1
+            fi
           else
             echo "サポートされていないブランチです: $GITHUB_REF"
             exit 1
-          fi
-
-          # URLからホスト名を抽出
-          HOST=$(echo "${SUPABASE_URL#https://}")
-          DB_HOST="db.${HOST}"
-
-          # スキーマファイルの存在確認
-          if [[ ! -f "digeclip/seeds/dev_schema.sql" ]]; then
-            echo "Error: digeclip/seeds/dev_schema.sql ファイルが見つかりません。"
-            exit 1
-          fi
-
-          # パスワードを設定
-          export PGPASSWORD="$DB_PASSWORD"
-
-          # 接続情報をログに出力（パスワードは除く）
-          echo "データベース接続情報: ホスト=$DB_HOST, ユーザー=$DB_USER"
-
-          # ネットワーク診断情報の収集
-          echo "ネットワーク診断情報:"
-          echo "ホスト名解決結果:"
-          host $DB_HOST || echo "ホスト名解決に失敗しました"
-
-          # ping試行（失敗しても続行）
-          echo "Ping 試行 ($DB_HOST):"
-          ping -c 3 $DB_HOST || echo "Pingに失敗しました（Supabaseはpingを無効にしている可能性があります）"
-
-          # DNSレコードの詳細情報収集
-          echo "DNSレコード情報:"
-          echo "IPv4アドレス:"
-          dig +short $DB_HOST A
-          echo "IPv6アドレス:"
-          dig +short $DB_HOST AAAA
-          echo "他のDNSレコード:"
-          dig +short $DB_HOST ANY || echo "追加DNSレコードなし"
-
-          # IPv4アドレスの解決を試みる
-          echo "IPv4アドレス解決を試みています..."
-          IPV4_ADDRESSES=$(dig +short $DB_HOST A)
-
-          # IPv6アドレスの解決を試みる
-          echo "IPv6アドレス解決を試みています..."
-          IPV6_ADDRESSES=$(dig +short $DB_HOST AAAA)
-
-          # 標準接続文字列（ホスト名使用）
-          # タイムアウト設定を追加
-          CONNECTION_STRING="sslmode=require host=$DB_HOST port=5432 user=$DB_USER dbname=postgres connect_timeout=15"
-
-          # 接続試行回数
-          MAX_CONNECTION_TRIES=3
-          CONNECTION_SUCCESS=false
-
-          # 1. IPv4アドレスでの接続を試みる
-          if [ -n "$IPV4_ADDRESSES" ]; then
-            echo "IPv4アドレスが見つかりました: $IPV4_ADDRESSES"
-
-            # 各IPv4アドレスで接続を試行
-            for IP in $IPV4_ADDRESSES; do
-              echo "IPv4アドレス $IP で接続を試みています..."
-              IPV4_CONNECTION_STRING="sslmode=require host=$IP port=5432 user=$DB_USER dbname=postgres connect_timeout=15"
-
-              # リトライロジック
-              for ((i=1; i<=$MAX_CONNECTION_TRIES; i++)); do
-                echo "IPv4接続試行 $i/$MAX_CONNECTION_TRIES..."
-                if PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "$IPV4_CONNECTION_STRING" -c '\conninfo' &> /dev/null; then
-                  echo "IPv4接続成功! ($IP)"
-                  CONNECTION_STRING="$IPV4_CONNECTION_STRING"
-                  CONNECTION_SUCCESS=true
-                  break 2  # 二重ループを抜ける
-                else
-                  echo "IPv4接続試行 $i に失敗しました。"
-                  sleep 2
-                fi
-              done
-            done
-          else
-            echo "IPv4アドレスが解決できませんでした"
-          fi
-
-          # 2. IPv4での接続に失敗した場合、IPv6アドレスで試行
-          if [ "$CONNECTION_SUCCESS" != "true" ] && [ -n "$IPV6_ADDRESSES" ]; then
-            echo "IPv6アドレスが見つかりました: $IPV6_ADDRESSES"
-
-            # 各IPv6アドレスで接続を試行
-            for IP in $IPV6_ADDRESSES; do
-              echo "IPv6アドレス $IP で接続を試みています..."
-              IPV6_CONNECTION_STRING="sslmode=require host=$IP port=5432 user=$DB_USER dbname=postgres connect_timeout=15"
-
-              # リトライロジック
-              for ((i=1; i<=$MAX_CONNECTION_TRIES; i++)); do
-                echo "IPv6接続試行 $i/$MAX_CONNECTION_TRIES..."
-                if PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "$IPV6_CONNECTION_STRING" -c '\conninfo' &> /dev/null; then
-                  echo "IPv6接続成功! ($IP)"
-                  CONNECTION_STRING="$IPV6_CONNECTION_STRING"
-                  CONNECTION_SUCCESS=true
-                  break 2  # 二重ループを抜ける
-                else
-                  echo "IPv6接続試行 $i に失敗しました。"
-                  sleep 2
-                fi
-              done
-            done
-          else
-            if [ "$CONNECTION_SUCCESS" != "true" ]; then
-              echo "IPv6アドレスが解決できないか、IPv4接続がすでに成功しています"
-            fi
-          fi
-
-          # 3. IPアドレスでの接続に失敗した場合、ホスト名で試行
-          if [ "$CONNECTION_SUCCESS" != "true" ]; then
-            echo "IPアドレスでの接続に失敗しました。ホスト名で試行します..."
-
-            for ((i=1; i<=$MAX_CONNECTION_TRIES; i++)); do
-              echo "ホスト名接続試行 $i/$MAX_CONNECTION_TRIES..."
-              if PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "$CONNECTION_STRING" -c '\conninfo' &> /dev/null; then
-                echo "ホスト名接続成功!"
-                CONNECTION_SUCCESS=true
-                break
-              else
-                echo "ホスト名接続試行 $i に失敗しました。"
-                sleep 2
-              fi
-            done
-          fi
-
-          # 接続試行結果の確認
-          if [ "$CONNECTION_SUCCESS" != "true" ]; then
-            echo "警告: すべての接続方法が失敗しました。それでもデータベース操作を試みます..."
-          else
-            echo "データベース接続に成功しました。スキーマ適用を開始します..."
-          fi
-
-          # スキーマを適用（リトライロジック）
-          echo "psqlコマンドを実行中..."
-          MAX_RETRIES=3
-          for ((i=1; i<=$MAX_RETRIES; i++)); do
-            echo "スキーマ適用試行 $i/$MAX_RETRIES..."
-            if PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "$CONNECTION_STRING" -f digeclip/seeds/dev_schema.sql; then
-              echo "スキーマを適用しました" >> $GITHUB_STEP_SUMMARY
-              SCHEMA_APPLIED=true
-              break
-            else
-              echo "スキーマ適用に失敗しました。"
-              # エラー詳細を出力
-              echo "データベース接続状態を確認しています..."
-              PGOPTIONS="-c client_min_messages=warning" psql "$CONNECTION_STRING" -c '\conninfo' || echo "接続確認も失敗しました"
-              sleep 3
-            fi
-          done
-
-          if [ "$SCHEMA_APPLIED" != "true" ]; then
-            echo "エラー: スキーマの適用に${MAX_RETRIES}回失敗しました。"
-            exit 1
-          fi
-
-          # シードデータの適用（開発環境のみ）
-          if [[ "$APPLY_SEED" == "true" ]]; then
-            if [[ ! -f "digeclip/seeds/dev_seed.sql" ]]; then
-              echo "Error: digeclip/seeds/dev_seed.sql ファイルが見つかりません。"
-              exit 1
-            fi
-
-            echo "シードデータを適用しています..."
-            MAX_RETRIES=3
-            for ((i=1; i<=$MAX_RETRIES; i++)); do
-              echo "シードデータ適用試行 $i/$MAX_RETRIES..."
-              if PGOPTIONS="-c client_min_messages=warning" psql -v ON_ERROR_STOP=1 "$CONNECTION_STRING" -f digeclip/seeds/dev_seed.sql; then
-                echo "シードデータを適用しました" >> $GITHUB_STEP_SUMMARY
-                SEED_APPLIED=true
-                break
-              else
-                echo "シードデータ適用に失敗しました。"
-                sleep 3
-              fi
-            done
-
-            if [ "$SEED_APPLIED" != "true" ]; then
-              echo "エラー: シードデータの適用に${MAX_RETRIES}回失敗しました。"
-              exit 1
-            fi
           fi
